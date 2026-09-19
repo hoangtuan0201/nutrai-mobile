@@ -1,5 +1,6 @@
-import axios from 'axios';
+import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { ENV } from '../config/env';
+import { storage } from './storage';
 
 export const apiClient = axios.create({
   baseURL: ENV.API_URL,
@@ -11,18 +12,27 @@ export const apiClient = axios.create({
 
 // Request interceptor — attach JWT from storage
 apiClient.interceptors.request.use(
-  async (config) => {
-    // TODO: const token = await storage.getToken(); config.headers.Authorization = `Bearer ${token}`;
+  async (config: InternalAxiosRequestConfig) => {
+    try {
+      const token = await storage.getToken();
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch {
+      // Ignore token read error in offline or initial launch
+    }
     return config;
   },
-  (error) => Promise.reject(error),
+  (error: AxiosError) => Promise.reject(error),
 );
 
 // Response interceptor — handle 401 / refresh token
 apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    // TODO: handle token refresh on 401
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      // Could trigger auth token refresh or logout
+    }
     return Promise.reject(error);
   },
 );
