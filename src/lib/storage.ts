@@ -19,6 +19,9 @@ export const storage = {
     await AsyncStorage.setItem(KEYS.REFRESH_TOKEN, token);
   },
   async clearAll(): Promise<void> {
-    await AsyncStorage.multiRemove([KEYS.ACCESS_TOKEN, KEYS.REFRESH_TOKEN]);
+    await Promise.all([
+      AsyncStorage.removeItem(KEYS.ACCESS_TOKEN),
+      AsyncStorage.removeItem(KEYS.REFRESH_TOKEN),
+    ]);
   },
 };
