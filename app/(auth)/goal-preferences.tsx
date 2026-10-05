@@ -68,7 +68,7 @@ export default function GoalPreferencesScreen() {
         {/* Friendly AI Coach Speech Bubble */}
         <View style={styles.speechBubbleWrapper}>
           <View style={styles.speechBubble}>
-            <Text style={styles.speechBubbleText}>Set your target 🎯</Text>
+            <Text style={styles.speechBubbleText}>Set your target</Text>
           </View>
         </View>
 

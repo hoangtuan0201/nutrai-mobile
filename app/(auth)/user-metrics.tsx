@@ -46,7 +46,7 @@ export default function UserMetricsScreen() {
         {/* Friendly AI Coach Speech Bubble */}
         <View style={styles.speechBubbleWrapper}>
           <View style={styles.speechBubble}>
-            <Text style={styles.speechBubbleText}>About you 👤</Text>
+            <Text style={styles.speechBubbleText}>About you</Text>
           </View>
         </View>
 
