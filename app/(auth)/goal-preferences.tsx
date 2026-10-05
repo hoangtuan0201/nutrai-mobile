@@ -3,14 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, ArrowRight, Target, Calendar, Check } from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button, Input, Card } from '../../src/components';
+import { Button, Input, Card, Logo } from '../../src/components';
 
 export default function GoalPreferencesScreen() {
   const router = useRouter();
@@ -54,7 +54,7 @@ export default function GoalPreferencesScreen() {
           <ArrowLeft size={20} color={theme.colors.textPrimary} />
         </TouchableOpacity>
 
-        <Text style={styles.brandTitle}>NutraAI</Text>
+        <Logo variant="full" size="sm" />
 
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: '90%' }]} />

@@ -85,9 +85,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
             strokeDasharray={`${Math.max(arcLength - 2, 0)} ${circumference}`}
             strokeLinecap="round"
             fill="none"
-            originX={center}
-            originY={center}
-            rotation={currentAngle}
+            transform={`rotate(${currentAngle} ${center} ${center})`}
           />
         );
       })
@@ -141,9 +139,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
               strokeDashoffset={singleOffset}
               strokeLinecap="round"
               fill="none"
-              originX={center}
-              originY={center}
-              rotation="-90"
+              transform={`rotate(-90 ${center} ${center})`}
             />
           )}
         </Svg>

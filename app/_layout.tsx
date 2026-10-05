@@ -1,5 +1,5 @@
-import React from 'react';
-import { Stack } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -11,8 +11,37 @@ import {
   Manrope_800ExtraBold,
 } from '@expo-google-fonts/manrope';
 import { theme } from '../src/constants';
+import { QueryProvider } from '../src/lib/queryClient';
+import { useAuthStore } from '../src/store/authStore';
+
+/**
+ * Auth guard — auto-redirect based on authentication state.
+ * Runs after hydration completes.
+ */
+function useProtectedRoute() {
+  const { user, isHydrated } = useAuthStore();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isHydrated) return; // wait for SecureStore read
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!user && !inAuthGroup) {
+      // Not logged in and not on auth screen → redirect to welcome
+      router.replace('/(auth)/welcome');
+    } else if (user && inAuthGroup) {
+      // Logged in but still on auth screen → redirect to main app
+      router.replace('/(main)');
+    }
+  }, [user, isHydrated, segments]);
+}
 
 export default function RootLayout() {
+  const hydrate = useAuthStore((s) => s.hydrate);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
@@ -21,25 +50,42 @@ export default function RootLayout() {
     Manrope_800ExtraBold,
   });
 
-  if (!fontsLoaded) {
+  // Hydrate auth state from SecureStore on first mount
+  useEffect(() => {
+    hydrate();
+  }, []);
+
+  // Show nothing until fonts + auth state are loaded (splash screen covers this)
+  if (!fontsLoaded || !isHydrated) {
     return null;
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: theme.colors.surfaceBase },
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(main)" />
-        <Stack.Screen name="ai" />
-        <Stack.Screen name="settings" />
-      </Stack>
-    </SafeAreaProvider>
+    <QueryProvider>
+      <SafeAreaProvider>
+        <StatusBar style="dark" />
+        <RootNav />
+      </SafeAreaProvider>
+    </QueryProvider>
+  );
+}
+
+/** Separated so useProtectedRoute can access router (must be under Stack) */
+function RootNav() {
+  useProtectedRoute();
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: theme.colors.surfaceBase },
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(main)" />
+      <Stack.Screen name="ai" />
+      <Stack.Screen name="settings" />
+    </Stack>
   );
 }

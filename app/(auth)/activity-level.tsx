@@ -3,14 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, ArrowRight, Armchair, Footprints, Flame, Zap, Check } from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button } from '../../src/components';
+import { Button, Logo } from '../../src/components';
 
 export default function ActivityLevelScreen() {
   const router = useRouter();
@@ -60,7 +60,7 @@ export default function ActivityLevelScreen() {
           <ArrowLeft size={20} color={theme.colors.textPrimary} />
         </TouchableOpacity>
 
-        <Text style={styles.brandTitle}>NutraAI</Text>
+        <Logo variant="full" size="sm" />
 
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: '75%' }]} />

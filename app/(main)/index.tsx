@@ -6,9 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  SafeAreaView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
   Settings,
@@ -27,6 +27,7 @@ import {
   Badge,
   Pill,
   Button,
+  Logo,
 } from '../../src/components';
 
 interface DayItem {
@@ -91,7 +92,7 @@ export default function HomeScreen() {
             />
           </TouchableOpacity>
 
-          <Text style={styles.brandTitle}>NUTRAI</Text>
+          <Logo variant="full" size="md" />
 
           <TouchableOpacity
             activeOpacity={0.7}

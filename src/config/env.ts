@@ -3,7 +3,7 @@
  * Reads from .env — never hardcode secrets here
  */
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL!;
 
 export const ENV = {
   API_URL,
