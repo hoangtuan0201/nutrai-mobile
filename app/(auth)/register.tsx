@@ -1,51 +1,90 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   Image,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { User, Mail, ArrowRight, ShieldCheck, Check } from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button, Input, Pill } from '../../src/components';
+import { Button, Input, Pill, Logo } from '../../src/components';
+import { useAuthStore } from '../../src/store/authStore';
+import { registerSchema, RegisterFormData } from '../../src/features/auth/validation';
+import { performGoogleAuth } from '../../src/features/auth/services/googleAuth';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { register: registerUser, isLoading, error, clearError } = useAuthStore();
 
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(true);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { name: '', email: '', password: '' },
+  });
 
-  const handleRegister = () => {
-    // UI demo: navigate straight to (main) or start tracking
-    router.replace('/(main)');
+  const [agreeTerms, setAgreeTerms] = React.useState(true);
+  const [googleLoading, setGoogleLoading] = React.useState(false);
+
+  const onSubmit = async (data: RegisterFormData) => {
+    if (!agreeTerms) {
+      Alert.alert('Terms Required', 'Please agree to the Terms of Service and Privacy Policy.');
+      return;
+    }
+    clearError();
+    try {
+      await registerUser(data);
+      // Auth guard in _layout.tsx will auto-redirect to (main)
+    } catch {
+      // Error is set in store
+    }
   };
 
-  const handleGoogleSignUp = () => {
-    // UI demo: simulate Google sign-up
-    router.replace('/(main)');
+  const handleGoogleSignUp = async () => {
+    setGoogleLoading(true);
+    clearError();
+    try {
+      const result = await performGoogleAuth();
+      if (!result.success && result.error) {
+        if (Platform.OS === 'web') {
+          window.alert(result.error);
+        } else {
+          Alert.alert('Google Sign-Up', result.error);
+        }
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        enabled={Platform.OS === 'ios'}
         style={styles.keyboardView}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          removeClippedSubviews={false}
         >
-          {/* Top Brand Pill */}
+          {/* Top Brand Logo */}
           <View style={styles.topRow}>
-            <Pill label="Start Today" variant="saffron" size="sm" />
+            <Logo variant="full" size="md" />
           </View>
 
           {/* Title Header */}
@@ -58,33 +97,64 @@ export default function RegisterScreen() {
 
           {/* Form Inputs */}
           <View style={styles.form}>
-            <Input
-              label="Full Name"
-              placeholder="e.g. Alex Johnson"
-              value={fullName}
-              onChangeText={setFullName}
-              autoCapitalize="words"
-              leftIcon={<User size={18} color={theme.colors.textSecondary} />}
+            {/* Server error */}
+            {error && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, value, onBlur } }) => (
+                <Input
+                  label="Full Name"
+                  placeholder="e.g. Alex Johnson"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  autoCapitalize="words"
+                  leftIcon={<User size={18} color={theme.colors.textSecondary} />}
+                  error={errors.name?.message}
+                />
+              )}
             />
 
-            <Input
-              label="Email Address"
-              placeholder="e.g. alex@nutrai.health"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon={<Mail size={18} color={theme.colors.textSecondary} />}
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, value, onBlur } }) => (
+                <Input
+                  label="Email Address"
+                  placeholder="e.g. alex@nutrai.health"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  leftIcon={<Mail size={18} color={theme.colors.textSecondary} />}
+                  error={errors.email?.message}
+                />
+              )}
             />
 
-            <Input
-              label="Password"
-              placeholder="At least 8 characters"
-              value={password}
-              onChangeText={setPassword}
-              isPassword
-              secureTextEntry
-              helperText="Must be at least 8 characters with a mix of letters and numbers"
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, value, onBlur } }) => (
+                <Input
+                  label="Password"
+                  placeholder="At least 8 characters"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  isPassword
+                  secureTextEntry
+                  helperText="Must be at least 8 characters with a mix of letters and numbers"
+                  error={errors.password?.message}
+                />
+              )}
             />
 
             {/* Terms Checkbox */}
@@ -105,12 +175,13 @@ export default function RegisterScreen() {
 
             {/* Create Account CTA */}
             <Button
-              title="Create Account"
+              title={isLoading ? 'Creating account...' : 'Create Account'}
               size="lg"
               variant="primary"
               fullWidth
               rightIcon={<ArrowRight size={18} color="#FFFFFF" />}
-              onPress={handleRegister}
+              onPress={handleSubmit(onSubmit)}
+              disabled={isLoading}
               style={styles.registerBtn}
             />
 
@@ -125,6 +196,7 @@ export default function RegisterScreen() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleGoogleSignUp}
+              disabled={isLoading || googleLoading}
               style={styles.googleBtn}
             >
               <Image
@@ -132,7 +204,9 @@ export default function RegisterScreen() {
                 style={styles.googleIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.googleBtnText}>Continue with Google</Text>
+              <Text style={styles.googleBtnText}>
+                {googleLoading ? 'Connecting to Google...' : 'Continue with Google'}
+              </Text>
             </TouchableOpacity>
 
             {/* Switch to Sign In */}
@@ -195,6 +269,21 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 4,
+  },
+  errorBox: {
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderRadius: theme.radius.sm,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: theme.spacing.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: '#EF4444',
+  },
+  errorText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 13,
+    color: '#DC2626',
+    lineHeight: 18,
   },
   termsRow: {
     flexDirection: 'row',

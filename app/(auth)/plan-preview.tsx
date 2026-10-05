@@ -3,14 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Sparkles, ArrowRight, UserPlus } from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button, Card, ProgressRing } from '../../src/components';
+import { Button, Card, ProgressRing, Logo } from '../../src/components';
 
 export default function PlanPreviewScreen() {
   const router = useRouter();
@@ -35,7 +35,7 @@ export default function PlanPreviewScreen() {
           <ArrowLeft size={20} color={theme.colors.textPrimary} />
         </TouchableOpacity>
 
-        <Text style={styles.brandTitle}>NutraAI</Text>
+        <Logo variant="full" size="sm" />
 
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: '100%' }]} />

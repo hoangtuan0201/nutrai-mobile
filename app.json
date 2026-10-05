@@ -6,6 +6,11 @@
     "orientation": "portrait",
     "scheme": "nutraai",
     "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F4F2E7"
+    },
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
@@ -17,7 +22,9 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#F4F2E7"
       },
-      "package": "com.nutraai.mobile"
+      "package": "com.nutraai.mobile",
+      "googleServicesFile": "./google-services.json",
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "bundler": "metro",
@@ -27,7 +34,9 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

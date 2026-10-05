@@ -3,14 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, ArrowRight, Calendar, Ruler, Weight } from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button, Input } from '../../src/components';
+import { Button, Input, Logo } from '../../src/components';
 
 export default function UserMetricsScreen() {
   const router = useRouter();
@@ -32,7 +32,7 @@ export default function UserMetricsScreen() {
           <ArrowLeft size={20} color={theme.colors.textPrimary} />
         </TouchableOpacity>
 
-        <Text style={styles.brandTitle}>NutraAI</Text>
+        <Logo variant="full" size="sm" />
 
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: '50%' }]} />

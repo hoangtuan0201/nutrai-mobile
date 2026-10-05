@@ -3,14 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Sparkles, Scan } from 'lucide-react-native';
+import { Sparkles, Camera, Zap, ShieldCheck } from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button } from '../../src/components';
+import { Button, Logo } from '../../src/components';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -18,23 +18,19 @@ export default function WelcomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Top Stepper Indicator (1 - 2 - 3) */}
-        <View style={styles.stepperRow}>
-          <View style={[styles.stepCircle, styles.stepActive]}>
-            <Text style={styles.stepActiveText}>1</Text>
-          </View>
-          <View style={styles.stepConnector} />
-          <View style={styles.stepCircle}>
-            <Text style={styles.stepText}>2</Text>
-          </View>
-          <View style={styles.stepConnector} />
-          <View style={styles.stepCircle}>
-            <Text style={styles.stepText}>3</Text>
+        {/* Top Header: Brand Logo & Step Indicator */}
+        <View style={styles.topHeader}>
+          <Logo variant="full" size="md" />
+          <View style={styles.stepperRow}>
+            <View style={[styles.stepDot, styles.stepDotActive]} />
+            <View style={styles.stepDot} />
+            <View style={styles.stepDot} />
           </View>
         </View>
 
-        {/* Center Hero Card with Food Scan Preview */}
+        {/* Center Hero Section */}
         <View style={styles.heroSection}>
+          {/* Minimalist Preview Card */}
           <View style={styles.heroCard}>
             <View style={styles.imageContainer}>
               <Image
@@ -42,24 +38,36 @@ export default function WelcomeScreen() {
                   uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80',
                 }}
                 style={styles.foodImage}
+                resizeMode="cover"
               />
-              {/* Scan Laser Line Overlay in Saffron */}
-              <View style={styles.scanLaser} />
-              <View style={styles.scanCorners} />
+              {/* Floating Macro Badges on Image */}
+              <View style={styles.macroBadge}>
+                <View style={styles.macroDotGreen} />
+                <Text style={styles.macroText}>34g Protein • 520 kcal</Text>
+              </View>
             </View>
-            <View style={styles.analyzingBadge}>
-              <Sparkles size={14} color={theme.colors.saffron} />
-              <Text style={styles.analyzingText}>NutraAI is analyzing</Text>
+
+            {/* AI Nutrition Pill Under Image */}
+            <View style={styles.nutritionMeta}>
+              <View style={styles.metaItem}>
+                <Logo variant="mark" size="sm" />
+                <Text style={styles.metaLabel}>AI Precision 98%</Text>
+              </View>
+              <View style={styles.metaDivider} />
+              <View style={styles.metaItem}>
+                <Zap size={14} color={theme.colors.saffron} />
+                <Text style={styles.metaLabel}>Instant Scan</Text>
+              </View>
             </View>
           </View>
 
-          {/* Logo Mark & Minimalist Headline */}
-          <View style={styles.brandGroup}>
-            <View style={styles.logoBadge}>
-              <Scan size={22} color={theme.colors.saffron} strokeWidth={2.4} />
-            </View>
+          {/* Minimalist Brand Typography */}
+          <View style={styles.textGroup}>
             <Text style={styles.headline}>
-              Precise AI{'\n'}Easy Logging
+              Mindful Eating,{'\n'}Simplified.
+            </Text>
+            <Text style={styles.subtitle}>
+              Snap your meal to log calories, balance macros, and unlock your personal AI nutritionist.
             </Text>
           </View>
         </View>
@@ -104,57 +112,44 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: theme.spacing.screenMargin,
     justifyContent: 'space-between',
-    paddingTop: 16,
-    paddingBottom: 28,
+    paddingTop: 12,
+    paddingBottom: 24,
+  },
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
   },
   stepperRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
+    gap: 6,
   },
-  stepCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(19, 19, 19, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  stepDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(19, 19, 19, 0.15)',
   },
-  stepActive: {
+  stepDotActive: {
+    width: 20,
     backgroundColor: theme.colors.saffron,
-  },
-  stepActiveText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 12,
-    color: '#FFFFFF',
-  },
-  stepText: {
-    fontFamily: theme.fonts.medium,
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-  },
-  stepConnector: {
-    width: 36,
-    height: 2,
-    backgroundColor: 'rgba(19, 19, 19, 0.1)',
-    marginHorizontal: 8,
   },
   heroSection: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   heroCard: {
-    width: '88%',
+    width: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 12,
-    alignItems: 'center',
     ...theme.shadows.elevation2,
   },
   imageContainer: {
     width: '100%',
-    height: 200,
+    height: 190,
     borderRadius: 18,
     overflow: 'hidden',
     position: 'relative',
@@ -163,56 +158,96 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  scanLaser: {
+  macroBadge: {
     position: 'absolute',
-    top: '48%',
-    left: 0,
-    right: 0,
-    height: 3,
-    backgroundColor: theme.colors.saffron,
-    shadowColor: theme.colors.saffron,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  scanCorners: {
-    ...StyleSheet.absoluteFill,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 145, 20, 0.4)',
-    borderRadius: 18,
-  },
-  analyzingBadge: {
+    bottom: 10,
+    left: 10,
+    backgroundColor: 'rgba(19, 19, 19, 0.82)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 10,
   },
-  analyzingText: {
-    fontFamily: theme.fonts.medium,
-    fontSize: 13,
-    color: theme.colors.textSecondary,
+  macroDotGreen: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#8EDC5E',
   },
-  brandGroup: {
-    alignItems: 'center',
-    marginTop: 26,
+  macroText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 12,
+    color: '#FFFFFF',
   },
-  logoBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 145, 20, 0.12)',
+  nutritionMeta: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    paddingTop: 12,
+    paddingBottom: 4,
+    gap: 16,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaLabel: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+  },
+  metaDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: 'rgba(19, 19, 19, 0.1)',
+  },
+  textGroup: {
+    alignItems: 'center',
+    marginTop: 20,
+    paddingHorizontal: 10,
   },
   headline: {
     fontFamily: theme.fonts.bold,
-    fontSize: 32,
-    lineHeight: 38,
+    fontSize: 30,
+    lineHeight: 36,
     color: theme.colors.textPrimary,
     textAlign: 'center',
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
+  },
+  subtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 8,
+  },
+  featuresRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+  },
+  featureChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(19, 19, 19, 0.06)',
+  },
+  featureChipText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 11,
+    color: theme.colors.textPrimary,
   },
   footerSection: {
     gap: 12,

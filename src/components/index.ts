@@ -6,6 +6,7 @@ export * from './ui/Badge';
 export * from './ui/ProgressRing';
 export * from './ui/BottomNav';
 export * from './ui/Loading';
+export * from './ui/Logo';
 
 // Common & Feature Components
 export * from './common/Text';

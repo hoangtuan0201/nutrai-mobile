@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef } from 'react';
 import {
   View,
   TextInput,
@@ -9,6 +9,7 @@ import {
   ViewStyle,
   TextStyle,
   StyleProp,
+  Platform,
 } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { theme } from '../../constants';
@@ -25,7 +26,7 @@ export interface InputProps extends TextInputProps {
   inputStyle?: StyleProp<TextStyle>;
 }
 
-export const Input: React.FC<InputProps> = ({
+export const Input = forwardRef<TextInput, InputProps>(({
   label,
   error,
   helperText,
@@ -39,7 +40,7 @@ export const Input: React.FC<InputProps> = ({
   onFocus,
   onBlur,
   ...props
-}) => {
+}, ref) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -56,10 +57,11 @@ export const Input: React.FC<InputProps> = ({
   const isSecure = isPassword && !showPassword;
 
   return (
-    <View style={[styles.wrapper, containerStyle]}>
+    <View style={[styles.wrapper, containerStyle]} collapsable={false}>
       {label && <Text style={styles.label}>{label}</Text>}
 
       <View
+        collapsable={false}
         style={[
           styles.inputContainer,
           styles[`rounded_${rounded}`],
@@ -70,11 +72,13 @@ export const Input: React.FC<InputProps> = ({
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
 
         <TextInput
+          ref={ref}
           style={[styles.input, inputStyle]}
           placeholderTextColor={theme.colors.textMuted}
           secureTextEntry={isPassword ? isSecure : secureTextEntry}
           onFocus={handleFocus}
           onBlur={handleBlur}
+          underlineColorAndroid="transparent"
           {...props}
         />
 
@@ -102,7 +106,9 @@ export const Input: React.FC<InputProps> = ({
       ) : null}
     </View>
   );
-};
+});
+
+Input.displayName = 'Input';
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -118,11 +124,11 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surfaceWhite,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: 'rgba(19, 19, 19, 0.08)',
     paddingHorizontal: theme.spacing.lg,
-    minHeight: 50,
+    height: 52,
   },
   rounded_full: {
     borderRadius: theme.radius.full,
@@ -135,22 +141,19 @@ const styles = StyleSheet.create({
   },
   focusedBorder: {
     borderColor: theme.colors.saffron,
-    backgroundColor: '#FFFFFF',
-    shadowColor: theme.colors.saffron,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 2,
   },
   errorBorder: {
     borderColor: theme.colors.scarlet,
   },
   input: {
     flex: 1,
+    height: '100%',
     fontSize: 15,
     fontFamily: theme.fonts.medium,
     color: theme.colors.textPrimary,
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: 0,
+    textAlignVertical: 'center',
+    ...(Platform.OS === 'android' ? { includeFontPadding: false } : {}),
   },
   leftIcon: {
     marginRight: theme.spacing.sm,

@@ -1,50 +1,87 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   Image,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, ArrowRight, ShieldCheck, Check } from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button, Input, Pill } from '../../src/components';
+import { Button, Input, Pill, Logo } from '../../src/components';
+import { useAuthStore } from '../../src/store/authStore';
+import { loginSchema, LoginFormData } from '../../src/features/auth/validation';
+import { performGoogleAuth } from '../../src/features/auth/services/googleAuth';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login, isLoading, error, clearError } = useAuthStore();
 
-  const [email, setEmail] = useState('alex@nutrai.health');
-  const [password, setPassword] = useState('supersecret123');
-  const [rememberMe, setRememberMe] = useState(true);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
 
-  const handleSignIn = () => {
-    // UI demo: navigate straight to (main)
-    router.replace('/(main)');
+  const [rememberMe, setRememberMe] = React.useState(true);
+  const [googleLoading, setGoogleLoading] = React.useState(false);
+
+  const onSubmit = async (data: LoginFormData) => {
+    clearError();
+    try {
+      await login(data);
+      // Auth guard in _layout.tsx will auto-redirect to (main)
+    } catch {
+      // Error is set in store — displayed below
+    }
   };
 
-  const handleGoogleSignIn = () => {
-    // UI demo: simulate Google sign-in
-    router.replace('/(main)');
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    clearError();
+    try {
+      const result = await performGoogleAuth();
+      if (!result.success && result.error) {
+        if (Platform.OS === 'web') {
+          window.alert(result.error);
+        } else {
+          Alert.alert('Google Sign-In', result.error);
+        }
+      }
+      // If success, auth guard in _layout.tsx will auto-redirect to (main)
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        enabled={Platform.OS === 'ios'}
         style={styles.keyboardView}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          removeClippedSubviews={false}
         >
-          {/* Top Brand Pill */}
+          {/* Top Brand Logo */}
           <View style={styles.topRow}>
-            <Pill label="NutraAI" variant="saffron" size="sm" />
+            <Logo variant="full" size="md" />
           </View>
 
           {/* Title Header */}
@@ -57,14 +94,29 @@ export default function LoginScreen() {
 
           {/* Form Inputs */}
           <View style={styles.form}>
-            <Input
-              label="Email Address"
-              placeholder="e.g. alex@nutrai.health"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon={<Mail size={18} color={theme.colors.textSecondary} />}
+            {/* Server error */}
+            {error && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, value, onBlur } }) => (
+                <Input
+                  label="Email Address"
+                  placeholder="e.g. alex@nutrai.health"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  leftIcon={<Mail size={18} color={theme.colors.textSecondary} />}
+                  error={errors.email?.message}
+                />
+              )}
             />
 
             <View style={styles.passwordWrapper}>
@@ -78,12 +130,20 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Input
-                placeholder="Enter your password"
-                value={password}
-                onChangeText={setPassword}
-                isPassword
-                secureTextEntry
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, value, onBlur } }) => (
+                  <Input
+                    placeholder="Enter your password"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    isPassword
+                    secureTextEntry
+                    error={errors.password?.message}
+                  />
+                )}
               />
             </View>
 
@@ -99,17 +159,17 @@ export default function LoginScreen() {
                 </View>
                 <Text style={styles.rememberText}>Remember this device</Text>
               </View>
-              <Text style={styles.durationBadge}>30 days</Text>
             </TouchableOpacity>
 
             {/* Sign In CTA */}
             <Button
-              title="Sign In"
+              title={isLoading ? 'Signing in...' : 'Sign In'}
               size="lg"
               variant="primary"
               fullWidth
               rightIcon={<ArrowRight size={18} color="#FFFFFF" />}
-              onPress={handleSignIn}
+              onPress={handleSubmit(onSubmit)}
+              disabled={isLoading}
               style={styles.signInBtn}
             />
 
@@ -124,6 +184,7 @@ export default function LoginScreen() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleGoogleSignIn}
+              disabled={isLoading || googleLoading}
               style={styles.googleBtn}
             >
               <Image
@@ -131,7 +192,9 @@ export default function LoginScreen() {
                 style={styles.googleIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.googleBtnText}>Continue with Google</Text>
+              <Text style={styles.googleBtnText}>
+                {googleLoading ? 'Connecting to Google...' : 'Continue with Google'}
+              </Text>
             </TouchableOpacity>
 
             {/* Sign Up Navigation */}
@@ -145,13 +208,7 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Security Footnote */}
-            <View style={styles.securityFootnote}>
-              <ShieldCheck size={16} color={theme.colors.textSecondary} />
-              <Text style={styles.securityText}>
-                Biometric & 256-bit encrypted credentials
-              </Text>
-            </View>
+         
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -194,6 +251,21 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 4,
+  },
+  errorBox: {
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderRadius: theme.radius.sm,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: theme.spacing.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: '#EF4444',
+  },
+  errorText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 13,
+    color: '#DC2626',
+    lineHeight: 18,
   },
   passwordWrapper: {
     marginBottom: theme.spacing.xs,
