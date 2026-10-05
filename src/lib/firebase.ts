@@ -26,8 +26,14 @@ export const firebaseAuth = (() => {
     return getAuth(firebaseApp);
   }
   try {
+    // @ts-ignore
+    const storage = typeof AsyncStorage.createAsyncStorage === 'function'
+      // @ts-ignore
+      ? AsyncStorage.createAsyncStorage('nutraai-auth')
+      : AsyncStorage;
+
     return initializeAuth(firebaseApp, {
-      persistence: getReactNativePersistence(AsyncStorage),
+      persistence: getReactNativePersistence(storage),
     });
   } catch {
     return getAuth(firebaseApp);

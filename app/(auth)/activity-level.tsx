@@ -74,7 +74,7 @@ export default function ActivityLevelScreen() {
         {/* Friendly AI Coach Speech Bubble */}
         <View style={styles.speechBubbleWrapper}>
           <View style={styles.speechBubble}>
-            <Text style={styles.speechBubbleText}>How active are you? 🏃</Text>
+            <Text style={styles.speechBubbleText}>How active are you?</Text>
           </View>
         </View>
 
