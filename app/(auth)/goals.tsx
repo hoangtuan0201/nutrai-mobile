@@ -209,7 +209,8 @@ const styles = StyleSheet.create({
   },
   optionCardActive: {
     borderColor: theme.colors.saffron,
-    backgroundColor: 'rgba(255, 145, 20, 0.06)',
+    borderWidth: 2,
+    backgroundColor: '#FFF7ED',
   },
   optionLeft: {
     flexDirection: 'row',
@@ -225,7 +226,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconWrapActive: {
-    backgroundColor: 'rgba(255, 145, 20, 0.12)',
+    backgroundColor: '#FFE8D1',
   },
   optionTitle: {
     fontFamily: theme.fonts.bold,

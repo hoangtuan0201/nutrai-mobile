@@ -230,7 +230,8 @@ const styles = StyleSheet.create({
   },
   paceCardActive: {
     borderColor: theme.colors.saffron,
-    backgroundColor: 'rgba(255, 145, 20, 0.06)',
+    borderWidth: 2,
+    backgroundColor: '#FFF7ED',
   },
   paceHeader: {
     flexDirection: 'row',
