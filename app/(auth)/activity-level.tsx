@@ -104,15 +104,19 @@ export default function ActivityLevelScreen() {
                     {item.icon(iconColor)}
                   </View>
                   <View style={styles.optionTitleWrap}>
-                    <Text
-                      style={[
-                        styles.optionTitle,
-                        isSelected && styles.optionTitleActive,
-                      ]}
-                    >
-                      {item.title}
-                    </Text>
-                    <Text style={styles.badgeText}>{item.badge}</Text>
+                    <View style={styles.titleAndBadgeRow}>
+                      <Text
+                        style={[
+                          styles.optionTitle,
+                          isSelected && styles.optionTitleActive,
+                        ]}
+                      >
+                        {item.title}
+                      </Text>
+                      <View style={styles.badgePill}>
+                        <Text style={styles.badgeText}>{item.badge}</Text>
+                      </View>
+                    </View>
                   </View>
                   {isSelected && (
                     <View style={styles.checkCircle}>
@@ -217,7 +221,8 @@ const styles = StyleSheet.create({
   },
   optionCardActive: {
     borderColor: theme.colors.saffron,
-    backgroundColor: 'rgba(255, 145, 20, 0.06)',
+    borderWidth: 2,
+    backgroundColor: '#FFF7ED',
   },
   optionHeader: {
     flexDirection: 'row',
@@ -234,14 +239,19 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   iconWrapActive: {
-    backgroundColor: 'rgba(255, 145, 20, 0.12)',
+    backgroundColor: '#FFE8D1',
   },
   optionTitleWrap: {
     flex: 1,
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  titleAndBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginRight: 8,
+    flexWrap: 'wrap',
+    gap: 6,
   },
   optionTitle: {
     fontFamily: theme.fonts.bold,
@@ -251,9 +261,15 @@ const styles = StyleSheet.create({
   optionTitleActive: {
     color: theme.colors.saffron,
   },
+  badgePill: {
+    backgroundColor: 'rgba(19, 19, 19, 0.05)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
   badgeText: {
     fontFamily: theme.fonts.medium,
-    fontSize: 12,
+    fontSize: 11,
     color: theme.colors.textSecondary,
   },
   checkCircle: {

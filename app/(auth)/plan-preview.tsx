@@ -7,25 +7,49 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { ArrowLeft, Sparkles, ArrowRight, UserPlus } from 'lucide-react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import {
+  ArrowLeft,
+  Flame,
+  Info,
+  BicepsFlexed,
+  Wheat,
+  Droplet,
+  ChevronRight,
+  Leaf,
+} from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button, Card, ProgressRing, Logo } from '../../src/components';
+import { Button, Logo } from '../../src/components';
+import { useAuthStore } from '../../src/store/authStore';
 
 export default function PlanPreviewScreen() {
   const router = useRouter();
+  const { user, accessToken } = useAuthStore();
+  const isLoggedIn = Boolean(user || accessToken);
+  const params = useLocalSearchParams<{
+    calories?: string;
+    protein?: string;
+    carbs?: string;
+    fat?: string;
+  }>();
 
-  // Multi-segment targets: 1,900 kcal
-  // Carbs: 215g, Protein: 140g, Fat: 53g with original macro colors
-  const previewSegments = [
-    { color: theme.colors.green, calories: 860, value: 215, label: 'Carbs' },
-    { color: theme.colors.blue, calories: 560, value: 140, label: 'Protein' },
-    { color: theme.colors.yellow, calories: 480, value: 53, label: 'Fat' },
-  ];
+  // Target values from params or reference defaults (2,350 kcal / 120g / 290g / 70g)
+  const calories = params.calories || '2,350';
+  const protein = params.protein || '120';
+  const carbs = params.carbs || '290';
+  const fat = params.fat || '70';
+
+  const handleContinue = () => {
+    if (isLoggedIn) {
+      router.replace('/(main)');
+    } else {
+      router.push('/(auth)/register');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top Header with Back + Brand + Segmented Progress Bar */}
+      {/* Top Header with Back + Brand + Progress Bar (100% completed) */}
       <View style={styles.header}>
         <TouchableOpacity
           activeOpacity={0.7}
@@ -42,136 +66,136 @@ export default function PlanPreviewScreen() {
         </View>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Friendly AI Coach Speech Bubble */}
-        <View style={styles.speechBubbleWrapper}>
-          <View style={styles.speechBubble}>
-            <Text style={styles.speechBubbleText}>Your daily targets 🎉</Text>
-          </View>
-        </View>
-
-        {/* Calculated Calories Hero Ring Card */}
-        <Card style={styles.ringCard} padding="lg">
-          <ProgressRing
-            size={190}
-            strokeWidth={15}
-            segments={previewSegments}
-            totalTarget={1900}
-            centerValue="1,900"
-            centerLabel="DAILY TARGET"
-            centerSublabel="KCAL / DAY"
-          />
-
-          {/* Energy Breakdown Grid */}
-          <View style={styles.energyStatsRow}>
-            <View style={styles.eStatCol}>
-              <Text style={styles.eStatLabel}>Basal Burn</Text>
-              <Text style={styles.eStatVal}>1,550 kcal</Text>
-              <Text style={styles.eStatSub}>BMR</Text>
-            </View>
-
-            <View style={styles.eDivider} />
-
-            <View style={styles.eStatCol}>
-              <Text style={styles.eStatLabel}>Total Expenditure</Text>
-              <Text style={styles.eStatVal}>2,400 kcal</Text>
-              <Text style={styles.eStatSub}>TDEE</Text>
-            </View>
-
-            <View style={styles.eDivider} />
-
-            <View style={styles.eStatCol}>
-              <Text style={styles.eStatLabel}>Safe Deficit</Text>
-              <Text style={[styles.eStatVal, { color: theme.colors.scarlet }]}>-500 kcal</Text>
-              <Text style={styles.eStatSub}>Deficit</Text>
-            </View>
-          </View>
-        </Card>
-
-        {/* Macro Distribution Card */}
-        <Card style={styles.macrosCard} padding="lg">
-          <Text style={styles.sectionTitle}>Macronutrient Distribution</Text>
-
-          {/* Carbs */}
-          <View style={styles.macroRow}>
-            <View style={styles.macroLeft}>
-              <View style={[styles.macroDot, { backgroundColor: theme.colors.green }]} />
-              <View>
-                <Text style={styles.macroName}>Carbohydrates</Text>
-                <Text style={styles.macroSub}>Clean fuel for brain and daily activities</Text>
-              </View>
-            </View>
-            <View style={styles.macroRight}>
-              <Text style={styles.macroGrams}>215g</Text>
-              <Text style={styles.macroPercent}>45%</Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Badge: Your starting targets */}
+          <View style={styles.badgeRow}>
+            <View style={styles.startingBadge}>
+              <Text style={styles.startingBadgeText}>Your starting targets</Text>
             </View>
           </View>
 
-          {/* Protein */}
-          <View style={styles.macroRow}>
-            <View style={styles.macroLeft}>
-              <View style={[styles.macroDot, { backgroundColor: theme.colors.blue }]} />
-              <View>
-                <Text style={styles.macroName}>Protein</Text>
-                <Text style={styles.macroSub}>Preserves lean muscle and maximizes satiety</Text>
-              </View>
-            </View>
-            <View style={styles.macroRight}>
-              <Text style={styles.macroGrams}>140g</Text>
-              <Text style={styles.macroPercent}>30%</Text>
-            </View>
-          </View>
-
-          {/* Fat */}
-          <View style={styles.macroRow}>
-            <View style={styles.macroLeft}>
-              <View style={[styles.macroDot, { backgroundColor: theme.colors.yellow }]} />
-              <View>
-                <Text style={styles.macroName}>Dietary Fat</Text>
-                <Text style={styles.macroSub}>Supports healthy hormones and nutrient absorption</Text>
-              </View>
-            </View>
-            <View style={styles.macroRight}>
-              <Text style={styles.macroGrams}>53g</Text>
-              <Text style={styles.macroPercent}>25%</Text>
-            </View>
-          </View>
-        </Card>
-
-        {/* Minimalist Note Banner */}
-        <Card variant="default" padding="md" style={styles.aiTipCard}>
-          <View style={styles.aiTipRow}>
-            <Sparkles size={20} color={theme.colors.saffron} />
-            <Text style={styles.aiTipText}>
-              This target plan is fully adaptive. NutraAI will refine your targets as you log meals.
+          {/* Heading Section */}
+          <View style={styles.headingSection}>
+            <Text style={styles.title}>
+              Your daily{'\n'}nutrition <Text style={styles.titleHighlight}>plan</Text>
+            </Text>
+            <Text style={styles.subtitle}>
+              Here is your estimated daily nutrition plan. You can adjust it later in settings.
             </Text>
           </View>
-        </Card>
-      </ScrollView>
 
-      {/* Footer Actions */}
-      <View style={styles.footer}>
-        <Button
-          title="Start Tracking"
-          size="lg"
-          variant="primary"
-          fullWidth
-          rightIcon={<ArrowRight size={18} color="#FFFFFF" />}
-          onPress={() => router.replace('/(main)')}
-        />
+          {/* Daily Calorie Estimate Hero Card (Forest Green #1E2F25) */}
+          <View style={styles.calorieCard}>
+            <View style={styles.calorieHeader}>
+              <View style={styles.calorieTitleRow}>
+                <Flame size={18} color={theme.colors.saffron} />
+                <Text style={styles.calorieCardTitle}>Daily calorie estimate</Text>
+              </View>
+              <View style={styles.estimateBadge}>
+                <Text style={styles.estimateBadgeText}>Estimate</Text>
+              </View>
+            </View>
 
-        <Button
-          title="Create Account to Save Plan"
-          variant="ghost"
-          fullWidth
-          leftIcon={<UserPlus size={16} color={theme.colors.saffron} />}
-          onPress={() => router.push('/(auth)/register')}
-        />
-      </View>
-    </SafeAreaView>
+            <Text style={styles.calorieNumber}>{calories} kcal</Text>
+
+            <View style={styles.calorieInfoRow}>
+              <Info size={14} color="rgba(255, 255, 255, 0.65)" />
+              <Text style={styles.calorieInfoText}>
+                Illustrative value — calculate from the user's submitted profile.
+              </Text>
+            </View>
+
+            {/* Subtle background decorative leaf */}
+            <View style={styles.watermarkLeaf}>
+              <Leaf size={110} color="rgba(255, 255, 255, 0.05)" />
+            </View>
+          </View>
+
+          {/* Suggested Macro Targets */}
+          <View style={styles.macroSection}>
+            <Text style={styles.macroSectionTitle}>Suggested macro targets</Text>
+
+            <View style={styles.macroGrid}>
+              {/* Protein Card */}
+              <View style={styles.macroCard}>
+                <View
+                  style={[
+                    styles.macroIconWrap,
+                    { backgroundColor: 'rgba(136, 168, 247, 0.22)' },
+                  ]}
+                >
+                  <BicepsFlexed size={20} color={theme.colors.blue} />
+                </View>
+                <Text style={styles.macroLabel}>Protein</Text>
+                <Text style={styles.macroValue}>{protein} g</Text>
+              </View>
+
+              {/* Carbs Card */}
+              <View style={styles.macroCard}>
+                <View
+                  style={[
+                    styles.macroIconWrap,
+                    { backgroundColor: 'rgba(142, 220, 94, 0.22)' },
+                  ]}
+                >
+                  <Wheat size={20} color={theme.colors.green} />
+                </View>
+                <Text style={styles.macroLabel}>Carbs</Text>
+                <Text style={styles.macroValue}>{carbs} g</Text>
+              </View>
+
+              {/* Fat Card */}
+              <View style={styles.macroCard}>
+                <View
+                  style={[
+                    styles.macroIconWrap,
+                    { backgroundColor: 'rgba(253, 217, 34, 0.25)' },
+                  ]}
+                >
+                  <Droplet size={20} color={theme.colors.yellow} />
+                </View>
+                <Text style={styles.macroLabel}>Fat</Text>
+                <Text style={styles.macroValue}>{fat} g</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Info Callout Box */}
+          <View style={styles.calloutCard}>
+            <Info
+              size={16}
+              color={theme.colors.textSecondary}
+              style={styles.calloutIcon}
+            />
+            <Text style={styles.calloutText}>
+              These numbers are estimates based on your profile and goal. You can edit them anytime in Settings.
+            </Text>
+            <ChevronRight size={16} color={theme.colors.textSecondary} />
+          </View>
+        </ScrollView>
+
+        {/* Footer Actions */}
+        <View style={styles.footer}>
+          <Button
+            title="Continue"
+            size="lg"
+            variant="primary"
+            fullWidth
+            onPress={handleContinue}
+          />
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => router.back()}
+            style={styles.backLink}
+          >
+            <Text style={styles.backLinkText}>Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
   );
 }
 
@@ -195,11 +219,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(19, 19, 19, 0.04)',
   },
-  brandTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-    color: theme.colors.textPrimary,
-  },
   progressBar: {
     flex: 1,
     height: 4,
@@ -215,148 +234,182 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: theme.spacing.screenMargin,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingTop: 8,
+    paddingBottom: 24,
   },
-  speechBubbleWrapper: {
-    alignItems: 'flex-start',
+  badgeRow: {
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  startingBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: 'rgba(200, 194, 155, 0.35)',
+  },
+  startingBadgeText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: '#3F3C31',
+  },
+  headingSection: {
     marginBottom: 20,
   },
-  speechBubble: {
+  title: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 34,
+    lineHeight: 40,
+    color: theme.colors.textPrimary,
+    letterSpacing: -0.6,
+  },
+  titleHighlight: {
+    fontFamily: theme.fonts.extraBold,
+  },
+  subtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: theme.colors.textSecondary,
+    marginTop: 8,
+  },
+  calorieCard: {
+    backgroundColor: '#1E2F25',
+    borderRadius: 24,
+    padding: 20,
+    position: 'relative',
+    overflow: 'hidden',
+    ...theme.shadows.elevation2,
+  },
+  calorieHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  calorieTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  calorieCardTitle: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  estimateBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+  },
+  estimateBadgeText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  calorieNumber: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 38,
+    lineHeight: 46,
+    color: '#FFFFFF',
+    marginVertical: 14,
+    letterSpacing: -0.5,
+  },
+  calorieInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  calorieInfoText: {
+    flex: 1,
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: 'rgba(255, 255, 255, 0.72)',
+  },
+  watermarkLeaf: {
+    position: 'absolute',
+    right: -14,
+    bottom: -16,
+    transform: [{ rotate: '-15deg' }],
+    pointerEvents: 'none',
+  },
+  macroSection: {
+    marginTop: 22,
+  },
+  macroSectionTitle: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 17,
+    color: theme.colors.textPrimary,
+    marginBottom: 12,
+  },
+  macroGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  macroCard: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
     borderRadius: 20,
-    borderBottomLeftRadius: 6,
+    padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(19, 19, 19, 0.06)',
+    borderColor: 'rgba(19, 19, 19, 0.05)',
     ...theme.shadows.elevation1,
   },
-  speechBubbleText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 18,
-    color: theme.colors.textPrimary,
-  },
-  ringCard: {
-    alignItems: 'center',
-    borderRadius: 24,
-    backgroundColor: '#FFFFFF',
-    marginBottom: theme.spacing.md,
-  },
-  energyStatsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingTop: theme.spacing.lg,
-    marginTop: theme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(19, 19, 19, 0.06)',
-  },
-  eStatCol: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  eDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: 'rgba(19, 19, 19, 0.08)',
-  },
-  eStatLabel: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  eStatVal: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 15,
-    color: theme.colors.textPrimary,
-  },
-  eStatSub: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 10,
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  macrosCard: {
+  macroIconWrap: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    marginBottom: theme.spacing.md,
-  },
-  sectionTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-    color: theme.colors.textPrimary,
-    marginBottom: 14,
-  },
-  macroRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(19, 19, 19, 0.04)',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
-  macroLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 10,
-  },
-  macroDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 12,
-  },
-  macroName: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 14,
-    color: theme.colors.textPrimary,
-  },
-  macroSub: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    marginTop: 2,
-  },
-  macroRight: {
-    alignItems: 'flex-end',
-  },
-  macroGrams: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 15,
-    color: theme.colors.textPrimary,
-  },
-  macroPercent: {
+  macroLabel: {
     fontFamily: theme.fonts.medium,
     fontSize: 12,
     color: theme.colors.textSecondary,
-    marginTop: 2,
   },
-  aiTipCard: {
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+  macroValue: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 19,
+    color: theme.colors.textPrimary,
+    marginTop: 4,
   },
-  aiTipRow: {
+  calloutCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    backgroundColor: 'rgba(200, 194, 155, 0.22)',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 18,
   },
-  aiTipText: {
+  calloutIcon: {
+    marginRight: 10,
+  },
+  calloutText: {
     flex: 1,
     fontFamily: theme.fonts.regular,
-    fontSize: 13,
-    color: theme.colors.textPrimary,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 17,
+    color: '#4A483E',
+    marginRight: 6,
   },
   footer: {
     paddingHorizontal: theme.spacing.screenMargin,
-    paddingBottom: 28,
-    paddingTop: 8,
-    gap: 4,
-    backgroundColor: theme.colors.surfaceBase,
+    paddingTop: 10,
+    paddingBottom: 20,
+    gap: 8,
+    backgroundColor: 'transparent',
+  },
+  backLink: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  backLinkText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
   },
 });
+
