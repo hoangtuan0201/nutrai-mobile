@@ -1,3 +1,7 @@
+/**
+ * user-metrics.tsx — CaloriQ-inspired "Tell us about yourself" screen
+ * With inline numeric inputs, unit toggles (cm/ft, kg/lbs), and biological sex selection.
+ */
 import React, { useState } from 'react';
 import {
   View,
@@ -5,128 +9,318 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, ArrowRight, Calendar, Ruler, Weight } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button, Input, Logo } from '../../src/components';
+import { Button } from '../../src/components';
+
+// ─── Segmented progress bar ─────────────────────────────────────────
+const TOTAL_STEPS = 4;
+function StepBar({ step }: { step: number }) {
+  return (
+    <View style={barStyles.row}>
+      {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+        <View
+          key={i}
+          style={[barStyles.segment, i < step && barStyles.segmentActive]}
+        />
+      ))}
+    </View>
+  );
+}
+const barStyles = StyleSheet.create({
+  row: { flexDirection: 'row', gap: 4, flex: 1, marginHorizontal: 10 },
+  segment: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(19,19,19,0.10)',
+  },
+  segmentActive: { backgroundColor: theme.colors.saffron },
+});
+
+type Gender = 'male' | 'female';
+type HeightUnit = 'cm' | 'ft';
+type WeightUnit = 'kg' | 'lbs';
 
 export default function UserMetricsScreen() {
   const router = useRouter();
 
-  const [gender, setGender] = useState<'male' | 'female'>('male');
-  const [age, setAge] = useState<string>('26');
-  const [height, setHeight] = useState<string>('172');
-  const [weight, setWeight] = useState<string>('68');
+  const [gender, setGender] = useState<Gender>('male');
+  const [age, setAge] = useState('26');
+
+  // Height state
+  const [heightUnit, setHeightUnit] = useState<HeightUnit>('cm');
+  const [height, setHeight] = useState('180');
+
+  // Weight state
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
+  const [weight, setWeight] = useState('82');
+
+  const handleHeightUnitToggle = (unit: HeightUnit) => {
+    if (unit === heightUnit) return;
+    const currentVal = parseFloat(height);
+    if (!isNaN(currentVal) && currentVal > 0) {
+      if (unit === 'ft') {
+        setHeight((currentVal / 30.48).toFixed(1));
+      } else {
+        setHeight(Math.round(currentVal * 30.48).toString());
+      }
+    }
+    setHeightUnit(unit);
+  };
+
+  const handleWeightUnitToggle = (unit: WeightUnit) => {
+    if (unit === weightUnit) return;
+    const currentVal = parseFloat(weight);
+    if (!isNaN(currentVal) && currentVal > 0) {
+      if (unit === 'lbs') {
+        setWeight(Math.round(currentVal * 2.20462).toString());
+      } else {
+        setWeight(Math.round(currentVal / 2.20462).toString());
+      }
+    }
+    setWeightUnit(unit);
+  };
+
+  const handleNext = () => {
+    const finalHeightCm =
+      heightUnit === 'cm'
+        ? height
+        : Math.round(parseFloat(height) * 30.48).toString();
+    const finalWeightKg =
+      weightUnit === 'kg'
+        ? weight
+        : Math.round(parseFloat(weight) / 2.20462).toString();
+
+    router.push({
+      pathname: '/(auth)/activity-level',
+      params: {
+        gender,
+        age,
+        height: finalHeightCm,
+        weight: finalWeightKg,
+      },
+    } as any);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top Header with Back + Brand + Segmented Progress Bar */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => router.back()}
-          style={styles.backBtn}
-        >
-          <ArrowLeft size={20} color={theme.colors.textPrimary} />
-        </TouchableOpacity>
-
-        <Logo variant="full" size="sm" />
-
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '50%' }]} />
-        </View>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
       >
-        {/* Friendly AI Coach Speech Bubble */}
-        <View style={styles.speechBubbleWrapper}>
-          <View style={styles.speechBubble}>
-            <Text style={styles.speechBubbleText}>About you</Text>
-          </View>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => router.back()}
+            style={styles.backBtn}
+          >
+            <ArrowLeft size={20} color={theme.colors.textPrimary} />
+          </TouchableOpacity>
+          <StepBar step={2} />
+          <TouchableOpacity
+            activeOpacity={0.6}
+            onPress={() => router.push('/(auth)/activity-level' as any)}
+          >
+            <Text style={styles.skipText}>Skip</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Biological Sex Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Biological Sex</Text>
-          <View style={styles.genderRow}>
-            {[
-              { id: 'male' as const, label: 'Male' },
-              { id: 'female' as const, label: 'Female' },
-            ].map((g) => {
-              const isSelected = gender === g.id;
-              return (
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Title & Subtitle */}
+          <Text style={styles.title}>Tell us about yourself</Text>
+          <Text style={styles.subtitle}>
+            We use these metrics to calculate your BMR and baseline daily energy needs.
+          </Text>
+
+          {/* Biological Sex Section */}
+          <View style={styles.fieldSection}>
+            <Text style={styles.fieldLabel}>
+              Biological Sex (for metabolic rate calculation)
+            </Text>
+            <View style={styles.genderRow}>
+              {([
+                { id: 'male' as Gender, emoji: '👨', label: 'Male' },
+                { id: 'female' as Gender, emoji: '👩', label: 'Female' },
+              ] as { id: Gender; emoji: string; label: string }[]).map((g) => {
+                const active = gender === g.id;
+                return (
+                  <TouchableOpacity
+                    key={g.id}
+                    style={[styles.genderCard, active && styles.genderCardActive]}
+                    activeOpacity={0.8}
+                    onPress={() => setGender(g.id)}
+                  >
+                    <Text style={styles.genderEmoji}>{g.emoji}</Text>
+                    <Text
+                      style={[
+                        styles.genderLabel,
+                        active && styles.genderLabelActive,
+                      ]}
+                    >
+                      {g.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Height Input with cm / ft toggle */}
+          <View style={styles.fieldSection}>
+            <View style={styles.fieldHeaderRow}>
+              <Text style={styles.fieldLabel}>Height</Text>
+              <View style={styles.togglePill}>
                 <TouchableOpacity
-                  key={g.id}
-                  activeOpacity={0.8}
-                  onPress={() => setGender(g.id)}
                   style={[
-                    styles.genderCard,
-                    isSelected && styles.genderCardActive,
+                    styles.toggleBtn,
+                    heightUnit === 'cm' && styles.toggleBtnActive,
                   ]}
+                  onPress={() => handleHeightUnitToggle('cm')}
+                  activeOpacity={0.7}
                 >
                   <Text
                     style={[
-                      styles.genderText,
-                      isSelected && styles.genderTextActive,
+                      styles.toggleText,
+                      heightUnit === 'cm' && styles.toggleTextActive,
                     ]}
                   >
-                    {g.label}
+                    cm
                   </Text>
                 </TouchableOpacity>
-              );
-            })}
+                <TouchableOpacity
+                  style={[
+                    styles.toggleBtn,
+                    heightUnit === 'ft' && styles.toggleBtnActive,
+                  ]}
+                  onPress={() => handleHeightUnitToggle('ft')}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.toggleText,
+                      heightUnit === 'ft' && styles.toggleTextActive,
+                    ]}
+                  >
+                    ft
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.numericInput}
+                value={height}
+                onChangeText={setHeight}
+                keyboardType="numeric"
+                placeholder="180"
+                placeholderTextColor={theme.colors.textMuted}
+              />
+              <Text style={styles.unitText}>{heightUnit}</Text>
+            </View>
           </View>
+
+          {/* Current Weight Input with kg / lbs toggle */}
+          <View style={styles.fieldSection}>
+            <View style={styles.fieldHeaderRow}>
+              <Text style={styles.fieldLabel}>Current Weight</Text>
+              <View style={styles.togglePill}>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleBtn,
+                    weightUnit === 'kg' && styles.toggleBtnActive,
+                  ]}
+                  onPress={() => handleWeightUnitToggle('kg')}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.toggleText,
+                      weightUnit === 'kg' && styles.toggleTextActive,
+                    ]}
+                  >
+                    kg
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleBtn,
+                    weightUnit === 'lbs' && styles.toggleBtnActive,
+                  ]}
+                  onPress={() => handleWeightUnitToggle('lbs')}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.toggleText,
+                      weightUnit === 'lbs' && styles.toggleTextActive,
+                    ]}
+                  >
+                    lbs
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.numericInput}
+                value={weight}
+                onChangeText={setWeight}
+                keyboardType="numeric"
+                placeholder="82"
+                placeholderTextColor={theme.colors.textMuted}
+              />
+              <Text style={styles.unitText}>{weightUnit}</Text>
+            </View>
+          </View>
+
+          {/* Age Input */}
+          <View style={styles.fieldSection}>
+            <Text style={styles.fieldLabel}>Age</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.numericInput}
+                value={age}
+                onChangeText={setAge}
+                keyboardType="numeric"
+                placeholder="26"
+                placeholderTextColor={theme.colors.textMuted}
+              />
+              <Text style={styles.unitText}>years</Text>
+            </View>
+          </View>
+
+          {/* Trust badge */}
+          <View style={styles.trustBadge}>
+            <Text style={styles.trustText}>
+              Backed by results: 80% of users achieve sustainable weight loss.
+            </Text>
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <Button
+            title="Next"
+            size="lg"
+            variant="primary"
+            fullWidth
+            onPress={handleNext}
+          />
         </View>
-
-        {/* Age Input */}
-        <Input
-          label="Age (Years)"
-          value={age}
-          onChangeText={setAge}
-          keyboardType="numeric"
-          placeholder="e.g. 26"
-          leftIcon={<Calendar size={18} color={theme.colors.textSecondary} />}
-          helperText="Used to adjust metabolic expenditure curves with age"
-        />
-
-        {/* Height Input */}
-        <Input
-          label="Height (cm)"
-          value={height}
-          onChangeText={setHeight}
-          keyboardType="numeric"
-          placeholder="e.g. 172"
-          leftIcon={<Ruler size={18} color={theme.colors.textSecondary} />}
-        />
-
-        {/* Current Weight Input */}
-        <Input
-          label="Current Weight (kg)"
-          value={weight}
-          onChangeText={setWeight}
-          keyboardType="numeric"
-          placeholder="e.g. 68"
-          leftIcon={<Weight size={18} color={theme.colors.textSecondary} />}
-          helperText="Determines baseline caloric needs and minimum protein requirements"
-        />
-      </ScrollView>
-
-      {/* Bottom CTA */}
-      <View style={styles.footer}>
-        <Button
-          title="Continue"
-          size="lg"
-          variant="primary"
-          fullWidth
-          rightIcon={<ArrowRight size={18} color="#FFFFFF" />}
-          onPress={() => router.push('/(auth)/activity-level' as any)}
-        />
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -141,7 +335,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.screenMargin,
     paddingVertical: 14,
-    gap: 12,
   },
   backBtn: {
     width: 36,
@@ -149,58 +342,106 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(19, 19, 19, 0.04)',
+    backgroundColor: 'rgba(19, 19, 19, 0.05)',
   },
-  brandTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-    color: theme.colors.textPrimary,
+  skipText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginLeft: 10,
   },
-  progressBar: {
-    flex: 1,
-    height: 4,
-    backgroundColor: 'rgba(19, 19, 19, 0.08)',
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginLeft: 8,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: theme.colors.saffron,
-    borderRadius: 2,
-  },
-  scrollContent: {
+  scroll: {
     paddingHorizontal: theme.spacing.screenMargin,
     paddingTop: 16,
-    paddingBottom: 40,
+    paddingBottom: 24,
   },
-  speechBubbleWrapper: {
-    alignItems: 'flex-start',
+  title: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 28,
+    lineHeight: 36,
+    color: theme.colors.textPrimary,
+    letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: theme.colors.textSecondary,
+    marginBottom: 24,
+  },
+  fieldSection: {
     marginBottom: 20,
   },
-  speechBubble: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderBottomLeftRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(19, 19, 19, 0.06)',
-    ...theme.shadows.elevation1,
+  fieldHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  speechBubbleText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 18,
-    color: theme.colors.textPrimary,
-  },
-  section: {
-    marginBottom: theme.spacing.lg,
-  },
-  sectionLabel: {
+  fieldLabel: {
     fontFamily: theme.fonts.semiBold,
-    fontSize: 13,
+    fontSize: 14,
     color: theme.colors.textPrimary,
     marginBottom: 8,
+  },
+  togglePill: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(19, 19, 19, 0.06)',
+    borderRadius: 8,
+    padding: 2,
+    alignItems: 'center',
+  },
+  toggleBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  toggleBtnActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#131313',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  toggleText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.textMuted,
+  },
+  toggleTextActive: {
+    fontFamily: theme.fonts.bold,
+    color: theme.colors.textPrimary,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    height: 56,
+    borderWidth: 1,
+    borderColor: 'rgba(19, 19, 19, 0.07)',
+    shadowColor: '#131313',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  numericInput: {
+    flex: 1,
+    fontFamily: theme.fonts.bold,
+    fontSize: 20,
+    color: theme.colors.textPrimary,
+    paddingVertical: 0,
+  },
+  unitText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 15,
+    color: theme.colors.textSecondary,
+    marginLeft: 8,
   },
   genderRow: {
     flexDirection: 'row',
@@ -208,32 +449,52 @@ const styles = StyleSheet.create({
   },
   genderCard: {
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 18,
     backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingVertical: 18,
+    alignItems: 'center',
+    gap: 8,
     borderWidth: 1.5,
     borderColor: 'rgba(19, 19, 19, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...theme.shadows.elevation1,
+    shadowColor: '#131313',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
   genderCardActive: {
     borderColor: theme.colors.saffron,
     borderWidth: 2,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#FFFBF5',
   },
-  genderText: {
-    fontFamily: theme.fonts.bold,
+  genderEmoji: {
+    fontSize: 32,
+  },
+  genderLabel: {
+    fontFamily: theme.fonts.semiBold,
     fontSize: 15,
-    color: theme.colors.textPrimary,
+    color: theme.colors.textSecondary,
   },
-  genderTextActive: {
+  genderLabelActive: {
     color: theme.colors.saffron,
+  },
+  trustBadge: {
+    backgroundColor: 'rgba(200, 194, 155, 0.22)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  trustText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 17,
   },
   footer: {
     paddingHorizontal: theme.spacing.screenMargin,
     paddingBottom: 28,
     paddingTop: 12,
-    backgroundColor: theme.colors.surfaceBase,
   },
 });
