@@ -1,3 +1,7 @@
+/**
+ * activity-level.tsx — CaloriQ-inspired activity selection
+ * Simple white cards, large title, radio selection pattern.
+ */
 import React, { useState } from 'react';
 import {
   View,
@@ -8,49 +12,90 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, ArrowRight, Armchair, Footprints, Flame, Zap, Check } from 'lucide-react-native';
+import { ArrowLeft, Armchair, Footprints, Flame, Zap, BicepsFlexed } from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button, Logo } from '../../src/components';
+import { Button } from '../../src/components';
+
+// ─── Segmented progress bar ─────────────────────────────────────────
+const TOTAL_STEPS = 4;
+function StepBar({ step }: { step: number }) {
+  return (
+    <View style={barStyles.row}>
+      {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+        <View
+          key={i}
+          style={[barStyles.segment, i < step && barStyles.segmentActive]}
+        />
+      ))}
+    </View>
+  );
+}
+const barStyles = StyleSheet.create({
+  row: { flexDirection: 'row', gap: 4, flex: 1, marginHorizontal: 10 },
+  segment: {
+    flex: 1, height: 4, borderRadius: 2,
+    backgroundColor: 'rgba(19,19,19,0.10)',
+  },
+  segmentActive: { backgroundColor: theme.colors.saffron },
+});
+
+// ─── Options ──────────────────────────────────────────────────────────
+const OPTIONS = [
+  {
+    id: 'sedentary',
+    icon: Armchair,
+    iconColor: '#88A8F7',
+    iconBg: 'rgba(136,168,247,0.15)',
+    label: 'Sedentary',
+    desc: 'Desk job, little or no exercise',
+    multiplier: '×1.2',
+  },
+  {
+    id: 'light',
+    icon: Footprints,
+    iconColor: '#8EDC5E',
+    iconBg: 'rgba(142,220,94,0.15)',
+    label: 'Lightly Active',
+    desc: 'Light exercise 1–3 days/week',
+    multiplier: '×1.375',
+  },
+  {
+    id: 'moderate',
+    icon: Flame,
+    iconColor: '#FF9114',
+    iconBg: 'rgba(255,145,20,0.12)',
+    label: 'Moderately Active',
+    desc: 'Moderate exercise 3–5 days/week',
+    multiplier: '×1.55',
+    recommended: true,
+  },
+  {
+    id: 'very',
+    icon: Zap,
+    iconColor: '#FDD922',
+    iconBg: 'rgba(253,217,34,0.18)',
+    label: 'Very Active',
+    desc: 'Hard training 6–7 days/week',
+    multiplier: '×1.725',
+  },
+  {
+    id: 'extra',
+    icon: BicepsFlexed,
+    iconColor: '#F04B37',
+    iconBg: 'rgba(240,75,55,0.12)',
+    label: 'Extra Active',
+    desc: 'Very hard training + physical job',
+    multiplier: '×1.9',
+  },
+];
 
 export default function ActivityLevelScreen() {
   const router = useRouter();
-
-  const [selectedActivity, setSelectedActivity] = useState<string>('moderate');
-
-  const activityOptions = [
-    {
-      id: 'sedentary',
-      title: 'Sedentary',
-      desc: 'Desk job, mostly sitting, minimal daily movement',
-      icon: (color: string) => <Armchair size={20} color={color} strokeWidth={2.2} />,
-      badge: '1.2x PAL',
-    },
-    {
-      id: 'light',
-      title: 'Lightly Active',
-      desc: 'Regular daily walking or 1–3 light workouts per week',
-      icon: (color: string) => <Footprints size={20} color={color} strokeWidth={2.2} />,
-      badge: '1.37x PAL',
-    },
-    {
-      id: 'moderate',
-      title: 'Moderately Active',
-      desc: 'Gym training, running, or sports 3–5 days per week',
-      icon: (color: string) => <Flame size={20} color={color} strokeWidth={2.2} />,
-      badge: '1.55x (Recommended)',
-    },
-    {
-      id: 'heavy',
-      title: 'Very Active',
-      desc: 'Heavy physical work or intense training 6–7 days/week',
-      icon: (color: string) => <Zap size={20} color={color} strokeWidth={2.2} />,
-      badge: '1.72x PAL',
-    },
-  ];
+  const [selected, setSelected] = useState('moderate');
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top Header with Back + Brand + Segmented Progress Bar */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           activeOpacity={0.7}
@@ -59,86 +104,65 @@ export default function ActivityLevelScreen() {
         >
           <ArrowLeft size={20} color={theme.colors.textPrimary} />
         </TouchableOpacity>
-
-        <Logo variant="full" size="sm" />
-
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '75%' }]} />
-        </View>
+        <StepBar step={3} />
+        <TouchableOpacity activeOpacity={0.6} onPress={() => router.push('/(auth)/goal-preferences' as any)}>
+          <Text style={styles.skipText}>Skip</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Friendly AI Coach Speech Bubble */}
-        <View style={styles.speechBubbleWrapper}>
-          <View style={styles.speechBubble}>
-            <Text style={styles.speechBubbleText}>How active are you?</Text>
-          </View>
-        </View>
+        <Text style={styles.title}>How active{'\n'}are you?</Text>
 
-        {/* Minimalist Selection Cards */}
         <View style={styles.optionsList}>
-          {activityOptions.map((item) => {
-            const isSelected = selectedActivity === item.id;
-            const iconColor = isSelected ? theme.colors.saffron : theme.colors.textSecondary;
-
+          {OPTIONS.map((item) => {
+            const isSelected = selected === item.id;
+            const Icon = item.icon;
             return (
               <TouchableOpacity
                 key={item.id}
                 activeOpacity={0.8}
-                onPress={() => setSelectedActivity(item.id)}
-                style={[
-                  styles.optionCard,
-                  isSelected && styles.optionCardActive,
-                ]}
+                onPress={() => setSelected(item.id)}
+                style={[styles.card, isSelected && styles.cardActive]}
               >
-                <View style={styles.optionHeader}>
-                  <View
-                    style={[
-                      styles.iconWrap,
-                      isSelected && styles.iconWrapActive,
-                    ]}
-                  >
-                    {item.icon(iconColor)}
-                  </View>
-                  <View style={styles.optionTitleWrap}>
-                    <View style={styles.titleAndBadgeRow}>
-                      <Text
-                        style={[
-                          styles.optionTitle,
-                          isSelected && styles.optionTitleActive,
-                        ]}
-                      >
-                        {item.title}
-                      </Text>
-                      <View style={styles.badgePill}>
-                        <Text style={styles.badgeText}>{item.badge}</Text>
-                      </View>
-                    </View>
-                  </View>
-                  {isSelected && (
-                    <View style={styles.checkCircle}>
-                      <Check size={14} color="#FFFFFF" strokeWidth={3} />
-                    </View>
-                  )}
+                {/* Left: icon */}
+                <View style={[styles.iconBubble, { backgroundColor: item.iconBg }]}>
+                  <Icon size={20} color={item.iconColor} strokeWidth={2.2} />
                 </View>
-                <Text style={styles.optionDesc}>{item.desc}</Text>
+
+                {/* Middle: label + desc */}
+                <View style={styles.cardContent}>
+                  <View style={styles.cardTitleRow}>
+                    <Text style={[styles.cardLabel, isSelected && styles.cardLabelActive]}>
+                      {item.label}
+                    </Text>
+                    {item.recommended && (
+                      <View style={styles.recommendedBadge}>
+                        <Text style={styles.recommendedText}>Recommended</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.cardDesc}>{item.desc}</Text>
+                </View>
+
+                {/* Right: radio */}
+                <View style={[styles.radio, isSelected && styles.radioActive]}>
+                  {isSelected && <View style={styles.radioDot} />}
+                </View>
               </TouchableOpacity>
             );
           })}
         </View>
       </ScrollView>
 
-      {/* Bottom CTA */}
       <View style={styles.footer}>
         <Button
-          title="Continue"
+          title="Next"
           size="lg"
           variant="primary"
           fullWidth
-          rightIcon={<ArrowRight size={18} color="#FFFFFF" />}
           onPress={() => router.push('/(auth)/goal-preferences' as any)}
         />
       </View>
@@ -156,7 +180,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.screenMargin,
     paddingVertical: 14,
-    gap: 12,
   },
   backBtn: {
     width: 36,
@@ -164,133 +187,115 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(19, 19, 19, 0.04)',
+    backgroundColor: 'rgba(19, 19, 19, 0.05)',
   },
-  brandTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-    color: theme.colors.textPrimary,
+  skipText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginLeft: 10,
   },
-  progressBar: {
-    flex: 1,
-    height: 4,
-    backgroundColor: 'rgba(19, 19, 19, 0.08)',
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginLeft: 8,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: theme.colors.saffron,
-    borderRadius: 2,
-  },
-  scrollContent: {
+  scroll: {
     paddingHorizontal: theme.spacing.screenMargin,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
-  speechBubbleWrapper: {
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
-  speechBubble: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderBottomLeftRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(19, 19, 19, 0.06)',
-    ...theme.shadows.elevation1,
-  },
-  speechBubbleText: {
+  title: {
     fontFamily: theme.fonts.bold,
-    fontSize: 18,
+    fontSize: 30,
+    lineHeight: 38,
     color: theme.colors.textPrimary,
+    letterSpacing: -0.5,
+    marginBottom: 28,
   },
   optionsList: {
     gap: 12,
   },
-  optionCard: {
-    padding: 16,
-    borderRadius: 18,
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderWidth: 1.5,
-    borderColor: 'rgba(19, 19, 19, 0.08)',
-    ...theme.shadows.elevation1,
+    borderColor: 'rgba(19,19,19,0.07)',
+    gap: 12,
+    shadowColor: '#131313',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
-  optionCardActive: {
+  cardActive: {
     borderColor: theme.colors.saffron,
     borderWidth: 2,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#FFFBF5',
   },
-  optionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  iconWrap: {
-    width: 38,
-    height: 38,
+  iconBubble: {
+    width: 40,
+    height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(19, 19, 19, 0.04)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    flexShrink: 0,
   },
-  iconWrapActive: {
-    backgroundColor: '#FFE8D1',
-  },
-  optionTitleWrap: {
+  cardContent: {
     flex: 1,
-    justifyContent: 'center',
-    marginRight: 8,
+    gap: 2,
   },
-  titleAndBadgeRow: {
+  cardTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 6,
   },
-  optionTitle: {
-    fontFamily: theme.fonts.bold,
+  cardLabel: {
+    fontFamily: theme.fonts.semiBold,
     fontSize: 15,
     color: theme.colors.textPrimary,
   },
-  optionTitleActive: {
-    color: theme.colors.saffron,
+  cardLabelActive: {
+    color: theme.colors.textPrimary,
   },
-  badgePill: {
-    backgroundColor: 'rgba(19, 19, 19, 0.05)',
+  recommendedBadge: {
+    backgroundColor: 'rgba(255,145,20,0.15)',
+    borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 6,
   },
-  badgeText: {
+  recommendedText: {
     fontFamily: theme.fonts.medium,
-    fontSize: 11,
-    color: theme.colors.textSecondary,
+    fontSize: 10,
+    color: theme.colors.saffron,
   },
-  checkCircle: {
+  cardDesc: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    color: theme.colors.textMuted,
+    lineHeight: 17,
+  },
+  radio: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: theme.colors.saffron,
+    borderWidth: 2,
+    borderColor: 'rgba(19,19,19,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  optionDesc: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 13,
-    color: theme.colors.textSecondary,
-    lineHeight: 18,
-    paddingLeft: 50,
+  radioActive: {
+    borderColor: theme.colors.saffron,
+  },
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.colors.saffron,
   },
   footer: {
     paddingHorizontal: theme.spacing.screenMargin,
-    paddingBottom: 28,
+    paddingBottom: 32,
     paddingTop: 12,
-    backgroundColor: theme.colors.surfaceBase,
   },
 });
