@@ -10,100 +10,152 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import Svg, { Circle } from 'react-native-svg';
 import {
-  Settings,
-  Plus,
-  Droplets,
+  Bell,
   Flame,
-  ChevronRight,
-  Sparkles,
-  Utensils,
+  Pencil,
+  ChevronDown,
   Dumbbell,
+  Wheat,
+  Droplet,
+  Sparkles,
+  ArrowRight,
+  ChevronRight,
+  Leaf,
 } from 'lucide-react-native';
-import { theme } from '../../src/constants';
+import theme from '../../src/constants/theme';
+import { Logo } from '../../src/components';
+import { useAuthStore } from '../../src/store/authStore';
+import { useProfile } from '../../src/features/profile/hooks/useProfile';
+import { useOnboardingStore } from '../../src/store/onboardingStore';
 import {
-  Card,
-  ProgressRing,
-  Badge,
-  Pill,
-  Button,
-  Logo,
-} from '../../src/components';
-
-interface DayItem {
-  dayName: string;
-  dayNumber: number;
-  dateStr: string;
-}
+  calculateClientNutritionPlan,
+  FitnessGoalType,
+  GenderType,
+  ActivityLevelType,
+} from '../../src/utils/nutritionCalculator';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const { profile } = useProfile();
+  const onboarding = useOnboardingStore();
 
-  // Selected date state (defaults to Wednesday 14)
+  const [selectedTimeframe, setSelectedTimeframe] = useState('Today');
   const [selectedDay, setSelectedDay] = useState<number>(14);
 
-  // Hydration tracker state
-  const [waterCups, setWaterCups] = useState<number>(7);
-  const totalCups = 10;
-
-  // Days list matching the screenshot
-  const days: DayItem[] = [
-    { dayName: 'MON', dayNumber: 12, dateStr: '2026-09-12' },
-    { dayName: 'TUE', dayNumber: 13, dateStr: '2026-09-13' },
-    { dayName: 'WED', dayNumber: 14, dateStr: '2026-09-14' },
-    { dayName: 'THU', dayNumber: 15, dateStr: '2026-09-15' },
-    { dayName: 'FRI', dayNumber: 16, dateStr: '2026-09-16' },
-    { dayName: 'SAT', dayNumber: 17, dateStr: '2026-09-17' },
+  const days = [
+    { dayName: 'MON', dayNumber: 12 },
+    { dayName: 'TUE', dayNumber: 13 },
+    { dayName: 'WED', dayNumber: 14 },
+    { dayName: 'THU', dayNumber: 15 },
+    { dayName: 'FRI', dayNumber: 16 },
+    { dayName: 'SAT', dayNumber: 17 },
   ];
 
-  // Multi-segment macro calories for the signature ring
-  // Total consumed = 1,840 kcal, Goal = 2,400 kcal
-  const macroSegments = [
-    { color: theme.colors.green, calories: 720, value: 180, label: 'Carbs' },
-    { color: theme.colors.blue, calories: 440, value: 110, label: 'Protein' },
-    { color: theme.colors.yellow, calories: 405, value: 45, label: 'Fat' },
-  ];
-
-  const handleAddWater = () => {
-    if (waterCups < totalCups) {
-      setWaterCups((prev) => prev + 1);
-    }
+  // Compute Greeting based on local time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
+  // User details
+  const userName = user?.name ? user.name.split(' ')[0] : 'Tuan';
+  const userWeight = profile?.weightKg || onboarding.weightKg || 60;
+  const userHeight = profile?.heightCm || onboarding.heightCm || 174;
+  const userGender = (profile?.gender || onboarding.gender || 'MALE') as GenderType;
+  const userAge = onboarding.age || 21;
+  const userActivity = (profile?.activityLevel || onboarding.activityLevel || 'MODERATE') as ActivityLevelType;
+  const userFitnessGoal = profile?.fitnessGoal ||
+    (onboarding.fitnessGoal === 'LOSE_WEIGHT' ? 'WEIGHT_LOSS' : onboarding.fitnessGoal === 'BUILD_MUSCLE' ? 'MUSCLE_GAIN' : 'MAINTENANCE');
+
+  const mappedCalcGoal: FitnessGoalType =
+    userFitnessGoal === 'WEIGHT_LOSS'
+      ? 'LOSE_WEIGHT'
+      : userFitnessGoal === 'MUSCLE_GAIN'
+      ? 'BUILD_MUSCLE'
+      : 'MAINTAIN_WEIGHT';
+
+  // Scientific calculation engine (Protein = weight * 1.8, Fat = weight * 0.9, Carbs = remainder)
+  const computedPlan = calculateClientNutritionPlan({
+    gender: userGender,
+    weightKg: userWeight,
+    heightCm: userHeight,
+    age: userAge,
+    activityLevel: userActivity,
+    fitnessGoal: mappedCalcGoal,
+  });
+
+  const targetCalories = profile?.activeTarget?.dailyCalories || computedPlan.calories || 2500;
+  const targetProtein = profile?.activeTarget?.dailyProtein || computedPlan.protein || 120;
+  const targetCarbs = profile?.activeTarget?.dailyCarbs || computedPlan.carbs || 290;
+  const targetFat = profile?.activeTarget?.dailyFat || computedPlan.fat || 70;
+
+  // Example consumed values
+  const consumedCalories = 1250;
+  const remainingCalories = Math.max(0, targetCalories - consumedCalories);
+  const consumedProtein = 85;
+  const consumedCarbs = 120;
+  const consumedFat = 35;
+
+  // Progress ring math
+  const ringSize = 96;
+  const strokeWidth = 9;
+  const radius = (ringSize - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progressRatio = Math.min(1, Math.max(0, consumedCalories / (targetCalories || 1)));
+  const strokeDashoffset = circumference * (1 - progressRatio);
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Top Header ──────────────────────────────────────── */}
-        <View style={styles.header}>
+    <SafeAreaView style={styles.container}>
+      {/* ── Top Header Bar ───────────────────────────────────────── */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Logo variant="full" size="md" />
+        </View>
+
+        <View style={styles.headerRight}>
+          {/* Notification Bell */}
           <TouchableOpacity
+            style={styles.bellBtn}
+            activeOpacity={0.7}
+            onPress={() => router.push('/settings')}
+          >
+            <Bell size={20} color="#1B281B" />
+            <View style={styles.notificationDot} />
+          </TouchableOpacity>
+
+          {/* User Profile Avatar -> Clicking navigates to /settings (Unified Profile & Settings) */}
+          <TouchableOpacity
+            style={styles.avatarBtn}
             activeOpacity={0.8}
-            onPress={() => router.push('/(main)/profile')}
-            style={styles.avatarWrap}
+            onPress={() => router.push('/settings')}
           >
             <Image
               source={{
-                uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+                uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
               }}
-              style={styles.avatar}
+              style={styles.avatarImg}
             />
           </TouchableOpacity>
+        </View>
+      </View>
 
-          <Logo variant="full" size="md" />
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => router.push('/settings')}
-            style={styles.settingsBtn}
-          >
-            <Settings size={22} color={theme.colors.textPrimary} />
-          </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Greeting Section ─────────────────────────────────────── */}
+        <View style={styles.greetingSection}>
+          <Text style={styles.greetingTime}>{getGreeting()}
+            <Text style={styles.userNameText}> {userName}</Text>
+          </Text>
         </View>
 
-        {/* ── Date Selector ────────────────────────────────────── */}
+        {/* ── Date Selector (Weekly strip matching design) ──────────── */}
         <View style={styles.dateSelectorRow}>
           {days.map((d) => {
             const isSelected = selectedDay === d.dayNumber;
@@ -133,537 +185,652 @@ export default function HomeScreen() {
                 >
                   {d.dayNumber}
                 </Text>
-                {isSelected && <View style={styles.activeDot} />}
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* ── 1. Energy Summary Card ───────────────────────────── */}
-        <Card style={styles.sectionCard} padding="lg">
-          <Text style={styles.cardTitle}>Energy Summary</Text>
-
-          <View style={styles.ringWrapper}>
-            <ProgressRing
-              size={200}
-              strokeWidth={15}
-              segments={macroSegments}
-              totalTarget={2400}
-              centerValue="1,840"
-              centerLabel="KCAL CONSUMED"
-              showStats
-              goal={2400}
-              remaining={560}
-            />
-          </View>
-        </Card>
-
-        {/* ── 2. Daily Macros Card ─────────────────────────────── */}
-        <Card style={styles.sectionCard} padding="lg">
-          <Text style={styles.cardTitle}>Daily Macros</Text>
-
-          {/* Carbs */}
-          <View style={styles.macroRow}>
-            <View
-              style={[
-                styles.macroIconCircle,
-                { backgroundColor: 'rgba(142, 220, 94, 0.2)' },
-              ]}
-            >
-              <View
-                style={[
-                  styles.macroMiniGrid,
-                  { backgroundColor: theme.colors.green },
-                ]}
-              />
-            </View>
-            <View style={styles.macroInfo}>
-              <View style={styles.macroTextHeader}>
-                <Text style={styles.macroLabel}>Carbs</Text>
-                <Text style={styles.macroValues}>
-                  <Text style={styles.macroCurrent}>180</Text>
-                  <Text style={styles.macroTarget}> / 250g</Text>
-                </Text>
-              </View>
-              <View style={styles.macroTrack}>
-                <View
-                  style={[
-                    styles.macroFill,
-                    {
-                      width: `${(180 / 250) * 100}%`,
-                      backgroundColor: theme.colors.green,
-                    },
-                  ]}
+        {/* ── Calorie Remaining Card ───────────────────────────────── */}
+        <View style={styles.calorieCard}>
+          <View style={styles.calorieMainRow}>
+            {/* Left Progress Ring */}
+            <View style={styles.ringContainer}>
+              <Svg width={ringSize} height={ringSize}>
+                {/* Track */}
+                <Circle
+                  cx={ringSize / 2}
+                  cy={ringSize / 2}
+                  r={radius}
+                  stroke="#F3EFE6"
+                  strokeWidth={strokeWidth}
+                  fill="transparent"
                 />
-              </View>
-            </View>
-          </View>
-
-          {/* Protein */}
-          <View style={styles.macroRow}>
-            <View
-              style={[
-                styles.macroIconCircle,
-                { backgroundColor: 'rgba(136, 168, 247, 0.22)' },
-              ]}
-            >
-              <View
-                style={[
-                  styles.macroMiniDot,
-                  { backgroundColor: theme.colors.blue },
-                ]}
-              />
-            </View>
-            <View style={styles.macroInfo}>
-              <View style={styles.macroTextHeader}>
-                <Text style={styles.macroLabel}>Protein</Text>
-                <Text style={styles.macroValues}>
-                  <Text style={styles.macroCurrent}>110</Text>
-                  <Text style={styles.macroTarget}> / 140g</Text>
-                </Text>
-              </View>
-              <View style={styles.macroTrack}>
-                <View
-                  style={[
-                    styles.macroFill,
-                    {
-                      width: `${(110 / 140) * 100}%`,
-                      backgroundColor: theme.colors.blue,
-                    },
-                  ]}
+                {/* Progress */}
+                <Circle
+                  cx={ringSize / 2}
+                  cy={ringSize / 2}
+                  r={radius}
+                  stroke="#FF9114"
+                  strokeWidth={strokeWidth}
+                  fill="transparent"
+                  strokeDasharray={`${circumference} ${circumference}`}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
                 />
-              </View>
-            </View>
-          </View>
+              </Svg>
 
-          {/* Fat */}
-          <View style={styles.macroRow}>
-            <View
-              style={[
-                styles.macroIconCircle,
-                { backgroundColor: 'rgba(253, 217, 34, 0.25)' },
-              ]}
-            >
-              <View
-                style={[
-                  styles.macroMiniDot,
-                  { backgroundColor: theme.colors.yellow },
-                ]}
-              />
-            </View>
-            <View style={styles.macroInfo}>
-              <View style={styles.macroTextHeader}>
-                <Text style={styles.macroLabel}>Fat</Text>
-                <Text style={styles.macroValues}>
-                  <Text style={styles.macroCurrent}>45</Text>
-                  <Text style={styles.macroTarget}> / 65g</Text>
+              <View style={styles.ringCenterContent}>
+                <Flame size={20} color="#FF9114" style={{ marginBottom: 2 }} />
+                <Text style={styles.ringValText}>
+                  {consumedCalories.toLocaleString()}
                 </Text>
-              </View>
-              <View style={styles.macroTrack}>
-                <View
-                  style={[
-                    styles.macroFill,
-                    {
-                      width: `${(45 / 65) * 100}%`,
-                      backgroundColor: theme.colors.yellow,
-                    },
-                  ]}
-                />
+                <Text style={styles.ringSubText}>kcal</Text>
               </View>
             </View>
-          </View>
-        </Card>
 
-        {/* ── 3. Hydration Card ────────────────────────────────── */}
-        <Card style={styles.sectionCard} padding="lg">
-          <View style={styles.hydrationHeader}>
-            <Text style={styles.cardTitle}>Hydration</Text>
-            <Pill
-              label={`${(waterCups * 0.25).toFixed(2)} L`}
-              variant="blue"
-              size="md"
-            />
+            {/* Right Information */}
+            <View style={styles.calorieInfoCol}>
+              <View style={styles.timeframeRow}>
+                <Text style={styles.calorieRemainingLabel}>Calories remaining</Text>
+                <TouchableOpacity
+                  style={styles.timeframePill}
+                  activeOpacity={0.7}
+                  onPress={() => setSelectedTimeframe(selectedTimeframe === 'Today' ? 'Week' : 'Today')}
+                >
+                  <Text style={styles.timeframeText}>{selectedTimeframe}</Text>
+                  <ChevronDown size={13} color="#686C63" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.bigCalorieRow}>
+                <Text style={styles.bigCalorieNumber}>
+                  {remainingCalories.toLocaleString()}
+                </Text>
+                <Text style={styles.bigCalorieUnit}>kcal</Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.targetRow}
+                activeOpacity={0.7}
+                onPress={() => router.push('/settings')}
+              >
+                <Text style={styles.targetText}>
+                  Target {targetCalories.toLocaleString()} kcal
+                </Text>
+                <Pencil size={12} color="#797E74" style={{ marginLeft: 4 }} />
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View style={styles.hydrationBody}>
-            <View style={styles.cupsGrid}>
-              {Array.from({ length: totalCups }).map((_, idx) => {
-                const filled = idx < waterCups;
-                return (
-                  <View
-                    key={idx}
-                    style={[
-                      styles.cupIconWrap,
-                      filled && styles.cupIconWrapFilled,
-                    ]}
-                  >
-                    <Droplets
-                      size={16}
-                      color={
-                        filled
-                          ? theme.colors.blue
-                          : 'rgba(19, 19, 19, 0.2)'
-                      }
-                    />
-                  </View>
-                );
-              })}
+          <View style={styles.calorieCardDivider} />
+
+          {/* Bottom Macro Breakdown Pills */}
+          <View style={styles.macroPillsRow}>
+            {/* Protein */}
+            <View style={styles.macroPillItem}>
+              <View style={[styles.macroDot, { backgroundColor: '#5D80E6' }]} />
+              <Text style={styles.macroPillLabel}>Protein</Text>
+              <Text style={styles.macroPillValue}>
+                {consumedProtein} / {targetProtein} g
+              </Text>
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleAddWater}
-              style={styles.addWaterBtn}
-            >
-              <Plus size={18} color={theme.colors.blue} strokeWidth={2.5} />
-            </TouchableOpacity>
-          </View>
-        </Card>
-
-        {/* ── 4. Today's Meals Card ────────────────────────────── */}
-        <Card style={styles.sectionCard} padding="lg">
-          <View style={styles.mealsHeader}>
-            <Text style={styles.cardTitle}>Today's Meals</Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => router.push('/(main)/meals')}
-            >
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Meal Item 1: Avocado Toast */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => router.push('/(main)/meals/1')}
-            style={styles.mealItem}
-          >
-            <Image
-              source={{
-                uri: 'https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?w=160&auto=format&fit=crop&q=80',
-              }}
-              style={styles.mealThumb}
-            />
-            <View style={styles.mealDetails}>
-              <Text style={styles.mealName}>Avocado Toast</Text>
-              <Text style={styles.mealMeta}>Breakfast • 8:30 AM</Text>
+            {/* Carbs */}
+            <View style={styles.macroPillItem}>
+              <View style={[styles.macroDot, { backgroundColor: '#7BC754' }]} />
+              <Text style={styles.macroPillLabel}>Carbs</Text>
+              <Text style={styles.macroPillValue}>
+                {consumedCarbs} / {targetCarbs} g
+              </Text>
             </View>
-            <Text style={styles.mealCalories}>420 kcal</Text>
-          </TouchableOpacity>
 
-          {/* Meal Item 2: Grilled Salmon Salad */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => router.push('/(main)/meals/2')}
-            style={styles.mealItem}
-          >
-            <Image
-              source={{
-                uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=160&auto=format&fit=crop&q=80',
-              }}
-              style={styles.mealThumb}
-            />
-            <View style={styles.mealDetails}>
-              <Text style={styles.mealName}>Grilled Salmon Salad</Text>
-              <Text style={styles.mealMeta}>Lunch • 1:15 PM</Text>
+            {/* Fat */}
+            <View style={styles.macroPillItem}>
+              <View style={[styles.macroDot, { backgroundColor: '#F5A623' }]} />
+              <Text style={styles.macroPillLabel}>Fat</Text>
+              <Text style={styles.macroPillValue}>
+                {consumedFat} / {targetFat} g
+              </Text>
             </View>
-            <Text style={styles.mealCalories}>650 kcal</Text>
-          </TouchableOpacity>
+          </View>
+        </View>
 
-          {/* Dashed Add Meal Button */}
+        {/* ── Macro Targets Section ────────────────────────────────── */}
+        <View style={styles.sectionHeaderWrap}>
+          <Text style={styles.sectionTitle}>Macro Targets</Text>
+          <Text style={styles.sectionSubtitle}>
+            Balance your nutrition, reach your goals.
+          </Text>
+        </View>
+
+        <View style={styles.macroCardsRow}>
+          {/* Card 1: Protein */}
+          <View style={styles.macroTargetCard}>
+            <View style={[styles.macroBadgeCircle, { backgroundColor: '#E4ECFB' }]}>
+              <Dumbbell size={18} color="#5D80E6" />
+            </View>
+            <Text style={styles.macroCardName}>Protein</Text>
+            <Text style={styles.macroCardValue}>{targetProtein} g</Text>
+            <Text style={styles.macroCardSub}>/ day</Text>
+          </View>
+
+          {/* Card 2: Carbs */}
+          <View style={styles.macroTargetCard}>
+            <View style={[styles.macroBadgeCircle, { backgroundColor: '#E8F6E4' }]}>
+              <Wheat size={18} color="#559C38" />
+            </View>
+            <Text style={styles.macroCardName}>Carbs</Text>
+            <Text style={styles.macroCardValue}>{targetCarbs} g</Text>
+            <Text style={styles.macroCardSub}>/ day</Text>
+          </View>
+
+          {/* Card 3: Fat */}
+          <View style={styles.macroTargetCard}>
+            <View style={[styles.macroBadgeCircle, { backgroundColor: '#FEF8DE' }]}>
+              <Droplet size={18} color="#E5A817" />
+            </View>
+            <Text style={styles.macroCardName}>Fat</Text>
+            <Text style={styles.macroCardValue}>{targetFat} g</Text>
+            <Text style={styles.macroCardSub}>/ day</Text>
+          </View>
+        </View>
+
+        {/* ── AI Nutrition Assistant Banner ────────────────────────── */}
+        <TouchableOpacity
+          style={styles.aiBanner}
+          activeOpacity={0.85}
+          onPress={() => router.push('/ai')}
+        >
+          <View style={styles.aiSparkleWrap}>
+            <Sparkles size={18} color="#2A382A" />
+          </View>
+          <View style={styles.aiTextCol}>
+            <Text style={styles.aiTitle}>AI Nutrition Assistant</Text>
+            <Text style={styles.aiSubtitle}>
+              Get personalized advice, meal ideas and more.
+            </Text>
+          </View>
+          <View style={styles.aiArrowBtn}>
+            <ArrowRight size={16} color="#1B281B" />
+          </View>
+        </TouchableOpacity>
+
+        {/* ── Recent Meals Section ─────────────────────────────────── */}
+        <View style={styles.mealsHeaderRow}>
+          <Text style={styles.sectionTitle}>Recent Meals</Text>
           <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push('/(main)/meals/add')}
-            style={styles.dashedAddBtn}
+            activeOpacity={0.7}
+            onPress={() => router.push('/(main)/meals')}
+            style={styles.seeAllBtn}
           >
-            <Plus size={18} color={theme.colors.saffron} strokeWidth={2.4} />
-            <Text style={styles.dashedAddText}>Log Another Meal</Text>
+            <Text style={styles.seeAllText}>See all</Text>
+            <ChevronRight size={14} color="#686C63" />
           </TouchableOpacity>
-        </Card>
+        </View>
+
+        {/* Meal 1 */}
+        <TouchableOpacity
+          style={styles.mealCard}
+          activeOpacity={0.8}
+          onPress={() => router.push('/(main)/meals')}
+        >
+          <Image
+            source={{
+              uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=80',
+            }}
+            style={styles.mealThumb}
+          />
+          <View style={styles.mealInfoCol}>
+            <Text style={styles.mealName}>Grilled Chicken Bowl</Text>
+            <Text style={styles.mealMacros}>
+              520 kcal  •  P 42g  •  C 55g  •  F 18g
+            </Text>
+            <Text style={styles.mealTime}>12:30 PM</Text>
+          </View>
+          <ChevronRight size={18} color="#A6ABA1" />
+        </TouchableOpacity>
+
+        {/* Meal 2 */}
+        <TouchableOpacity
+          style={styles.mealCard}
+          activeOpacity={0.8}
+          onPress={() => router.push('/(main)/meals')}
+        >
+          <Image
+            source={{
+              uri: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=200&auto=format&fit=crop&q=80',
+            }}
+            style={styles.mealThumb}
+          />
+          <View style={styles.mealInfoCol}>
+            <Text style={styles.mealName}>Berry Smoothie</Text>
+            <Text style={styles.mealMacros}>
+              280 kcal  •  P 18g  •  C 32g  •  F 8g
+            </Text>
+            <Text style={styles.mealTime}>8:15 AM</Text>
+          </View>
+          <ChevronRight size={18} color="#A6ABA1" />
+        </TouchableOpacity>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
-    backgroundColor: theme.colors.surfaceBase,
+    backgroundColor: '#F6F5EE', // Warm oat beige matching CaloriQ design
   },
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: theme.spacing.screenMargin,
-    paddingTop: Platform.OS === 'android' ? 24 : 10,
-    paddingBottom: 110, // Avoid overlapping floating bottom bar
-  },
-
-  // Header
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 10,
   },
-  avatarWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  bellBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(27, 40, 27, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 7,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#FF9114',
+  },
+  avatarBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: 'rgba(19, 19, 19, 0.1)',
+    borderColor: '#DFDCD0',
   },
-  avatar: {
+  avatarImg: {
     width: '100%',
     height: '100%',
   },
-  brandTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 20,
-    letterSpacing: 1.2,
-    color: '#8B4513', // Warm golden bronze
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 6,
   },
-  settingsBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(19, 19, 19, 0.04)',
+  // ── Greeting
+  greetingSection: {
+    marginBottom: 16,
+  },
+  greetingTime: {
+    fontSize: 16,
+    color: '#656A60',
+    fontWeight: '500',
   },
 
-  // Date Selector
+  userNameText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1B281B',
+    letterSpacing: -0.5,
+  },
+  leafIcon: {
+    fontSize: 20,
+  },
+  greetingSub: {
+    fontSize: 14,
+    color: '#6E7369',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  // ── Date Selector
   dateSelectorRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.lg,
-    paddingHorizontal: 2,
+    marginBottom: 16,
+    gap: 6,
   },
   dayCell: {
+    flex: 1,
+    height: 60,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EFECE2',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: theme.radius.sm,
-    minWidth: 46,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 3,
+    elevation: 1,
   },
   dayCellActive: {
-    backgroundColor: theme.colors.saffron,
-    borderRadius: 16,
-    paddingVertical: 12,
-    ...theme.shadows.elevation2,
+    backgroundColor: '#131313',
+    borderColor: '#131313',
+    shadowOpacity: 0.12,
+    elevation: 3,
   },
   dayName: {
-    fontFamily: theme.fonts.semiBold,
     fontSize: 10,
-    color: theme.colors.textSecondary,
-    marginBottom: 4,
-    letterSpacing: 0.5,
+    fontWeight: '700',
+    color: '#285880', // Soft blue text matching Image 1
+    marginBottom: 2,
+    letterSpacing: 0.2,
   },
   dayNameActive: {
     color: '#FFFFFF',
   },
   dayNumber: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-    color: theme.colors.textPrimary,
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#1B281B',
   },
   dayNumberActive: {
     color: '#FFFFFF',
   },
-  activeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+  // ── Calorie Card
+  calorieCard: {
     backgroundColor: '#FFFFFF',
-    marginTop: 4,
-  },
-
-  // Cards
-  sectionCard: {
-    marginBottom: theme.spacing.lg,
     borderRadius: 24,
+    padding: 18,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#EFECE2',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  cardTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 17,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.md,
-  },
-
-  // Energy Summary
-  ringWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.sm,
-  },
-
-  // Daily Macros
-  macroRow: {
+  calorieMainRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
   },
-  macroIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  ringContainer: {
+    position: 'relative',
+    width: 96,
+    height: 96,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  ringCenterContent: {
+    position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: theme.spacing.md,
   },
-  macroMiniGrid: {
-    width: 14,
-    height: 14,
-    borderRadius: 3,
+  ringValText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1B281B',
+    lineHeight: 18,
   },
-  macroMiniDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  ringSubText: {
+    fontSize: 11,
+    color: '#767B71',
+    fontWeight: '600',
   },
-  macroInfo: {
+  calorieInfoCol: {
     flex: 1,
   },
-  macroTextHeader: {
+  timeframeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 2,
   },
-  macroLabel: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 15,
-    color: theme.colors.textPrimary,
+  calorieRemainingLabel: {
+    fontSize: 12,
+    color: '#767B71',
+    fontWeight: '600',
   },
-  macroValues: {
-    fontFamily: theme.fonts.regular,
-  },
-  macroCurrent: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 15,
-    color: theme.colors.textPrimary,
-  },
-  macroTarget: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 13,
-    color: theme.colors.textSecondary,
-  },
-  macroTrack: {
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(19, 19, 19, 0.06)',
-    overflow: 'hidden',
-  },
-  macroFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-
-  // Hydration
-  hydrationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  hydrationBody: {
+  timeframePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: '#F3F2EB',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    gap: 2,
   },
-  cupsGrid: {
+  timeframeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#556052',
+  },
+  bigCalorieRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    flex: 1,
-    gap: 8,
+    alignItems: 'baseline',
+    gap: 4,
   },
-  cupIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    backgroundColor: 'rgba(19, 19, 19, 0.04)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  bigCalorieNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1B281B',
+    letterSpacing: -0.5,
   },
-  cupIconWrapFilled: {
-    backgroundColor: 'rgba(136, 168, 247, 0.15)',
-  },
-  addWaterBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(136, 168, 247, 0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: theme.spacing.md,
-  },
-
-  // Today's Meals
-  mealsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  viewAllText: {
-    fontFamily: theme.fonts.bold,
+  bigCalorieUnit: {
     fontSize: 14,
-    color: '#A0522D', // Sienna / Warm brown
+    fontWeight: '700',
+    color: '#1B281B',
   },
-  mealItem: {
+  targetRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surfaceCard,
-    padding: theme.spacing.md,
+    marginTop: 2,
+  },
+  targetText: {
+    fontSize: 12,
+    color: '#767B71',
+    fontWeight: '600',
+  },
+  calorieCardDivider: {
+    height: 1,
+    backgroundColor: '#F3EFE8',
+    marginVertical: 14,
+  },
+  macroPillsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  macroPillItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  macroDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  macroPillLabel: {
+    fontSize: 11,
+    color: '#656A60',
+    fontWeight: '600',
+  },
+  macroPillValue: {
+    fontSize: 11,
+    color: '#1B281B',
+    fontWeight: '700',
+  },
+  // ── Macro Targets
+  sectionHeaderWrap: {
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1B281B',
+    letterSpacing: -0.3,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: '#767B71',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  macroCardsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 18,
+  },
+  macroTargetCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#EFECE2',
+    alignItems: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  macroBadgeCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  macroCardName: {
+    fontSize: 12,
+    color: '#656A60',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  macroCardValue: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#1B281B',
+    letterSpacing: -0.3,
+  },
+  macroCardSub: {
+    fontSize: 11,
+    color: '#8A8F85',
+    fontWeight: '500',
+    marginTop: 1,
+  },
+  // ── AI Banner
+  aiBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EAE7DD',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#DFDBD0',
+  },
+  aiSparkleWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  aiTextCol: {
+    flex: 1,
+  },
+  aiTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#1B281B',
+    marginBottom: 1,
+  },
+  aiSubtitle: {
+    fontSize: 11,
+    color: '#656A60',
+    fontWeight: '500',
+  },
+  aiArrowBtn: {
+    width: 32,
+    height: 32,
     borderRadius: 16,
-    marginBottom: theme.spacing.sm,
+    backgroundColor: '#DCD8CE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // ── Recent Meals
+  mealsHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  seeAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  seeAllText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#656A60',
+  },
+  mealCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#EFECE2',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
   mealThumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
-    marginRight: theme.spacing.md,
+    width: 54,
+    height: 54,
+    borderRadius: 14,
+    marginRight: 12,
+    backgroundColor: '#EFECE2',
   },
-  mealDetails: {
+  mealInfoCol: {
     flex: 1,
   },
   mealName: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 15,
-    color: theme.colors.textPrimary,
-    marginBottom: 4,
-  },
-  mealMeta: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-  },
-  mealCalories: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 15,
-    color: theme.colors.textPrimary,
-  },
-  dashedAddBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255, 145, 20, 0.4)',
-    borderRadius: 16,
-    marginTop: theme.spacing.xs,
-    backgroundColor: 'rgba(255, 145, 20, 0.04)',
-    gap: 6,
-  },
-  dashedAddText: {
-    fontFamily: theme.fonts.bold,
     fontSize: 14,
-    color: theme.colors.saffron,
+    fontWeight: '700',
+    color: '#1B281B',
+    marginBottom: 3,
+  },
+  mealMacros: {
+    fontSize: 11,
+    color: '#656A60',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  mealTime: {
+    fontSize: 10,
+    color: '#8A8F85',
+    fontWeight: '500',
   },
 });

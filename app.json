@@ -24,7 +24,8 @@
       },
       "package": "com.nutraai.mobile",
       "googleServicesFile": "./google-services.json",
-      "softwareKeyboardLayoutMode": "pan"
+      "softwareKeyboardLayoutMode": "pan",
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",

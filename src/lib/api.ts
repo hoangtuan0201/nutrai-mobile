@@ -66,6 +66,12 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
+    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      console.warn(
+        `[NutraAI Network Error] Failed to reach: ${originalRequest?.baseURL || ''}${originalRequest?.url || ''}. Check if Backend is running at that URL.`,
+      );
+    }
+
     // Only attempt refresh on 401 and non-auth endpoints (prevent loops)
     const isAuthEndpoint = originalRequest?.url?.startsWith('/auth/');
     if (

@@ -44,32 +44,52 @@ const barStyles = StyleSheet.create({
   segmentActive: { backgroundColor: theme.colors.saffron },
 });
 
+import { useOnboardingStore } from '../../src/store/onboardingStore';
+import {
+  cmToFt,
+  ftToCm,
+  kgToLb,
+  lbToKg,
+} from '../../src/utils/nutritionCalculator';
+
 type Gender = 'male' | 'female';
 type HeightUnit = 'cm' | 'ft';
 type WeightUnit = 'kg' | 'lbs';
 
 export default function UserMetricsScreen() {
   const router = useRouter();
+  const setMetrics = useOnboardingStore((s) => s.setMetrics);
 
-  const [gender, setGender] = useState<Gender>('male');
-  const [age, setAge] = useState('26');
+  const initialStore = useOnboardingStore.getState();
+
+  const [gender, setGender] = useState<Gender>(
+    initialStore.gender === 'FEMALE' ? 'female' : 'male',
+  );
+  const [age, setAge] = useState(
+    initialStore.age ? initialStore.age.toString() : '26',
+  );
 
   // Height state
   const [heightUnit, setHeightUnit] = useState<HeightUnit>('cm');
-  const [height, setHeight] = useState('180');
+  const [height, setHeight] = useState(
+    initialStore.heightCm ? initialStore.heightCm.toString() : '175',
+  );
 
   // Weight state
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
-  const [weight, setWeight] = useState('82');
+  const [weight, setWeight] = useState(
+    initialStore.weightKg ? initialStore.weightKg.toString() : '70',
+  );
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleHeightUnitToggle = (unit: HeightUnit) => {
     if (unit === heightUnit) return;
     const currentVal = parseFloat(height);
     if (!isNaN(currentVal) && currentVal > 0) {
       if (unit === 'ft') {
-        setHeight((currentVal / 30.48).toFixed(1));
+        setHeight(cmToFt(currentVal).toFixed(1));
       } else {
-        setHeight(Math.round(currentVal * 30.48).toString());
+        setHeight(ftToCm(currentVal).toString());
       }
     }
     setHeightUnit(unit);
@@ -80,33 +100,61 @@ export default function UserMetricsScreen() {
     const currentVal = parseFloat(weight);
     if (!isNaN(currentVal) && currentVal > 0) {
       if (unit === 'lbs') {
-        setWeight(Math.round(currentVal * 2.20462).toString());
+        setWeight(Math.round(kgToLb(currentVal)).toString());
       } else {
-        setWeight(Math.round(currentVal / 2.20462).toString());
+        setWeight(Math.round(lbToKg(currentVal)).toString());
       }
     }
     setWeightUnit(unit);
   };
 
   const handleNext = () => {
+    setErrorMsg(null);
+    const parsedHeight = parseFloat(height);
+    const parsedWeight = parseFloat(weight);
+    const parsedAge = parseInt(age, 10);
+
+    if (isNaN(parsedHeight) || parsedHeight <= 0) {
+      setErrorMsg('Please enter a valid height.');
+      return;
+    }
+    if (isNaN(parsedWeight) || parsedWeight <= 0) {
+      setErrorMsg('Please enter a valid weight.');
+      return;
+    }
+    if (isNaN(parsedAge) || parsedAge < 10 || parsedAge > 120) {
+      setErrorMsg('Please enter a valid age between 10 and 120.');
+      return;
+    }
+
     const finalHeightCm =
       heightUnit === 'cm'
-        ? height
-        : Math.round(parseFloat(height) * 30.48).toString();
+        ? Math.round(parsedHeight)
+        : ftToCm(parsedHeight);
+
     const finalWeightKg =
       weightUnit === 'kg'
-        ? weight
-        : Math.round(parseFloat(weight) / 2.20462).toString();
+        ? Math.round(parsedWeight)
+        : Math.round(lbToKg(parsedWeight));
 
-    router.push({
-      pathname: '/(auth)/activity-level',
-      params: {
-        gender,
-        age,
-        height: finalHeightCm,
-        weight: finalWeightKg,
-      },
-    } as any);
+    if (finalHeightCm < 80 || finalHeightCm > 260) {
+      setErrorMsg('Height must be between 80 cm and 260 cm.');
+      return;
+    }
+    if (finalWeightKg < 30 || finalWeightKg > 350) {
+      setErrorMsg('Weight must be between 30 kg and 350 kg.');
+      return;
+    }
+
+    // Save to global onboarding store
+    setMetrics({
+      gender: gender === 'female' ? 'FEMALE' : 'MALE',
+      age: parsedAge,
+      heightCm: finalHeightCm,
+      weightKg: finalWeightKg,
+    });
+
+    router.push('/(auth)/activity-level' as any);
   };
 
   return (
@@ -303,10 +351,17 @@ export default function UserMetricsScreen() {
             </View>
           </View>
 
+          {/* Error Banner */}
+          {errorMsg ? (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>{errorMsg}</Text>
+            </View>
+          ) : null}
+
           {/* Trust badge */}
           <View style={styles.trustBadge}>
             <Text style={styles.trustText}>
-              Backed by results: 80% of users achieve sustainable weight loss.
+              Backed by science: Mifflin–St Jeor equation for clinical-grade precision.
             </Text>
           </View>
         </ScrollView>
@@ -477,6 +532,21 @@ const styles = StyleSheet.create({
   },
   genderLabelActive: {
     color: theme.colors.saffron,
+  },
+  errorBanner: {
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#F87171',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 13,
+    color: '#B91C1C',
+    textAlign: 'center',
   },
   trustBadge: {
     backgroundColor: 'rgba(200, 194, 155, 0.22)',

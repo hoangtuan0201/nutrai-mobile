@@ -63,24 +63,38 @@ const GOALS = [
     iconColor: '#88A8F7',
   },
   {
-    id: 'muscle',
+    id: 'build_muscle',
     icon: Dumbbell,
-    label: 'Gain weight',
-    iconBg: 'rgba(142,220,94,0.18)',
-    iconColor: '#5DBB3A',
-  },
-  {
-    id: 'performance',
-    icon: Zap,
     label: 'Build muscle',
     iconBg: 'rgba(253,217,34,0.22)',
     iconColor: '#C8A000',
   },
 ];
 
+import { useOnboardingStore, FitnessGoalType } from '../../src/store/onboardingStore';
+
 export default function ChooseGoalScreen() {
   const router = useRouter();
-  const [selectedGoal, setSelectedGoal] = useState<string>('lose');
+  const setGoal = useOnboardingStore((s) => s.setGoal);
+  const currentGoal = useOnboardingStore((s) => s.fitnessGoal);
+
+  // Map internal store enum to UI ids
+  const getInitialUiId = () => {
+    if (currentGoal === 'MAINTAIN_WEIGHT') return 'maintain';
+    if (currentGoal === 'BUILD_MUSCLE') return 'build_muscle';
+    return 'lose';
+  };
+
+  const [selectedGoal, setSelectedGoal] = useState<string>(getInitialUiId());
+
+  const handleNext = () => {
+    let goalEnum: FitnessGoalType = 'LOSE_WEIGHT';
+    if (selectedGoal === 'maintain') goalEnum = 'MAINTAIN_WEIGHT';
+    else if (selectedGoal === 'build_muscle') goalEnum = 'BUILD_MUSCLE';
+
+    setGoal(goalEnum);
+    router.push('/(auth)/user-metrics' as any);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -141,7 +155,7 @@ export default function ChooseGoalScreen() {
           size="lg"
           variant="primary"
           fullWidth
-          onPress={() => router.push('/(auth)/user-metrics' as any)}
+          onPress={handleNext}
         />
       </View>
     </SafeAreaView>

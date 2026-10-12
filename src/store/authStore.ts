@@ -179,10 +179,17 @@ async function persistAuthResponse(response: AuthResponse) {
 
 function extractErrorMessage(error: unknown): string {
   if (typeof error === 'object' && error !== null) {
-    const axiosError = error as { response?: { data?: { message?: string | string[] } } };
+    const axiosError = error as {
+      response?: { data?: { message?: string | string[] } };
+      message?: string;
+      code?: string;
+    };
     const msg = axiosError.response?.data?.message;
     if (Array.isArray(msg)) return msg[0];
     if (typeof msg === 'string') return msg;
+    if (axiosError.code === 'ERR_NETWORK' || axiosError.message === 'Network Error') {
+      return 'Network Error: Cannot connect to server. Check Wi-Fi / IP connection.';
+    }
   }
   if (error instanceof Error) return error.message;
   return 'An unexpected error occurred';

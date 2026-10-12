@@ -28,21 +28,41 @@ import { useAuthStore } from '../../src/store/authStore';
 
 const LOADING_DURATION = 5500; // ms (gives realistic AI calculation feeling across all 5 steps)
 
+import {
+  useOnboardingStore,
+  mapGoalToBackend,
+} from '../../src/store/onboardingStore';
+import { calculateClientNutritionPlan } from '../../src/utils/nutritionCalculator';
+import { profileApi } from '../../src/features/profile/api/profile.api';
+
 export default function PlanPreviewScreen() {
   const router = useRouter();
   const { user, accessToken } = useAuthStore();
   const isLoggedIn = Boolean(user || accessToken);
-  const params = useLocalSearchParams<{
-    calories?: string;
-    protein?: string;
-    carbs?: string;
-    fat?: string;
-  }>();
 
-  const calories = params.calories || '2,350';
-  const protein  = params.protein  || '120';
-  const carbs    = params.carbs    || '290';
-  const fat      = params.fat      || '70';
+  const goal = useOnboardingStore((s) => s.fitnessGoal);
+
+  const calculatedPlan = React.useMemo(() => {
+    const s = useOnboardingStore.getState();
+    return (
+      s.calculatedPlan ||
+      calculateClientNutritionPlan({
+        gender: s.gender,
+        weightKg: s.weightKg,
+        heightCm: s.heightCm,
+        age: s.age,
+        activityLevel: s.activityLevel,
+        fitnessGoal: s.fitnessGoal,
+        pace: s.pace,
+        weeklyPaceKg: s.weeklyPaceKg,
+      })
+    );
+  }, []);
+
+  const calories = calculatedPlan.calories.toLocaleString();
+  const protein = calculatedPlan.protein.toString();
+  const carbs = calculatedPlan.carbs.toString();
+  const fat = calculatedPlan.fat.toString();
 
   const [isCalculating, setIsCalculating] = useState(true);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
@@ -59,8 +79,22 @@ export default function PlanPreviewScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (isLoggedIn) {
+      const s = useOnboardingStore.getState();
+      try {
+        await profileApi.updateProfile({
+          gender: s.gender,
+          heightCm: s.heightCm,
+          weightKg: s.weightKg,
+          activityLevel: s.activityLevel,
+          fitnessGoal: mapGoalToBackend(s.fitnessGoal),
+          dateOfBirth: s.dateOfBirth,
+        });
+        s.markSynced();
+      } catch (err) {
+        console.warn('Profile sync on continue warning:', err);
+      }
       router.replace('/(main)');
     } else {
       router.push('/(auth)/register');
@@ -101,7 +135,12 @@ export default function PlanPreviewScreen() {
             Your daily{'\n'}nutrition <Text style={styles.titleAccent}>plan</Text>
           </Text>
           <Text style={styles.subtitle}>
-            Calculated based on your physical stats and {'\n'} weight-loss target.
+            {goal === 'LOSE_WEIGHT' &&
+              'Calculated based on your physical stats and weight-loss target.'}
+            {goal === 'BUILD_MUSCLE' &&
+              'Calculated based on your physical stats and lean muscle target.'}
+            {goal === 'MAINTAIN_WEIGHT' &&
+              'Calculated based on your physical stats and maintenance energy balance.'}
           </Text>
         </View>
 
@@ -128,7 +167,7 @@ export default function PlanPreviewScreen() {
         </View>
 
         {/* Macro grid */}
-        <Text style={styles.sectionTitle}>Marcro Targets</Text>
+        <Text style={styles.sectionTitle}>Macro Targets</Text>
         <View style={styles.macroGrid}>
           {[
             { icon: BicepsFlexed, color: theme.colors.blue,   bg: 'rgba(136,168,247,0.18)', label: 'Protein', value: protein },

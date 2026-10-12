@@ -37,6 +37,28 @@ export default function RegisterScreen() {
   const [agreeTerms, setAgreeTerms] = React.useState(true);
   const [googleLoading, setGoogleLoading] = React.useState(false);
 
+  const syncOnboardingProfile = async () => {
+    try {
+      const { useOnboardingStore, mapGoalToBackend } = await import('../../src/store/onboardingStore');
+      const { profileApi } = await import('../../src/features/profile/api/profile.api');
+      const onboarding = useOnboardingStore.getState();
+
+      if (!onboarding.isSynced) {
+        await profileApi.updateProfile({
+          gender: onboarding.gender,
+          heightCm: onboarding.heightCm,
+          weightKg: onboarding.weightKg,
+          activityLevel: onboarding.activityLevel,
+          fitnessGoal: mapGoalToBackend(onboarding.fitnessGoal),
+          dateOfBirth: onboarding.dateOfBirth,
+        });
+        onboarding.markSynced();
+      }
+    } catch (e) {
+      console.warn('Auto profile sync on register failed:', e);
+    }
+  };
+
   const onSubmit = async (data: RegisterFormData) => {
     if (!agreeTerms) {
       Alert.alert('Terms Required', 'Please agree to the Terms of Service and Privacy Policy.');
@@ -45,6 +67,7 @@ export default function RegisterScreen() {
     clearError();
     try {
       await registerUser(data);
+      await syncOnboardingProfile();
       // Auth guard in _layout.tsx will auto-redirect to (main)
     } catch {
       // Error is set in store
@@ -56,7 +79,9 @@ export default function RegisterScreen() {
     clearError();
     try {
       const result = await performGoogleAuth();
-      if (!result.success && result.error) {
+      if (result.success) {
+        await syncOnboardingProfile();
+      } else if (result.error) {
         if (Platform.OS === 'web') {
           window.alert(result.error);
         } else {

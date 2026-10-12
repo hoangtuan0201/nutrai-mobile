@@ -89,9 +89,36 @@ const OPTIONS = [
   },
 ];
 
+import { useOnboardingStore, ActivityLevelType } from '../../src/store/onboardingStore';
+
 export default function ActivityLevelScreen() {
   const router = useRouter();
-  const [selected, setSelected] = useState('moderate');
+  const setActivityLevel = useOnboardingStore((s) => s.setActivityLevel);
+  const currentLevel = useOnboardingStore((s) => s.activityLevel);
+
+  const getInitialUiId = () => {
+    switch (currentLevel) {
+      case 'SEDENTARY': return 'sedentary';
+      case 'LIGHT': return 'light';
+      case 'VERY_ACTIVE': return 'very';
+      case 'EXTRA_ACTIVE': return 'extra';
+      case 'MODERATE':
+      default: return 'moderate';
+    }
+  };
+
+  const [selected, setSelected] = useState(getInitialUiId());
+
+  const handleNext = () => {
+    let levelEnum: ActivityLevelType = 'MODERATE';
+    if (selected === 'sedentary') levelEnum = 'SEDENTARY';
+    else if (selected === 'light') levelEnum = 'LIGHT';
+    else if (selected === 'very') levelEnum = 'VERY_ACTIVE';
+    else if (selected === 'extra') levelEnum = 'EXTRA_ACTIVE';
+
+    setActivityLevel(levelEnum);
+    router.push('/(auth)/goal-preferences' as any);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -163,7 +190,7 @@ export default function ActivityLevelScreen() {
           size="lg"
           variant="primary"
           fullWidth
-          onPress={() => router.push('/(auth)/goal-preferences' as any)}
+          onPress={handleNext}
         />
       </View>
     </SafeAreaView>
