@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,22 +7,21 @@ import {
   TouchableOpacity,
   Image,
   Platform,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import Svg, { Circle } from 'react-native-svg';
 import {
   Bell,
   Flame,
   Pencil,
-  ChevronDown,
-  Dumbbell,
-  Wheat,
-  Droplet,
   Sparkles,
   ArrowRight,
   ChevronRight,
   Leaf,
+  Plus,
 } from 'lucide-react-native';
 import theme from '../../src/constants/theme';
 import { Logo } from '../../src/components';
@@ -35,6 +34,8 @@ import {
   GenderType,
   ActivityLevelType,
 } from '../../src/utils/nutritionCalculator';
+import { mealsApi } from '../../src/features/meals/api/meals.api';
+import { Meal, DailyNutritionSummary } from '../../src/features/meals/types';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -42,17 +43,46 @@ export default function HomeScreen() {
   const { profile } = useProfile();
   const onboarding = useOnboardingStore();
 
-  const [selectedTimeframe, setSelectedTimeframe] = useState('Today');
-  const [selectedDay, setSelectedDay] = useState<number>(14);
+  // Vietnam local today
+  const todayStr = useMemo(() => {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+  }, []);
 
-  const days = [
-    { dayName: 'MON', dayNumber: 12 },
-    { dayName: 'TUE', dayNumber: 13 },
-    { dayName: 'WED', dayNumber: 14 },
-    { dayName: 'THU', dayNumber: 15 },
-    { dayName: 'FRI', dayNumber: 16 },
-    { dayName: 'SAT', dayNumber: 17 },
-  ];
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+
+  // Dynamic 7 days of the current week based on Asia/Ho_Chi_Minh
+  const weekDays = useMemo(() => {
+    const [y, m, d] = todayStr.split('-').map(Number);
+    const localDate = new Date(Date.UTC(y, m - 1, d));
+    const dayOfWeek = localDate.getUTCDay(); // 0: Sun, 1: Mon...
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+    const result: Array<{
+      dayName: string;
+      dayNumber: number;
+      fullDate: string;
+      isToday: boolean;
+    }> = [];
+    const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+    for (let i = 0; i < 7; i++) {
+      const iter = new Date(localDate);
+      iter.setUTCDate(localDate.getUTCDate() + mondayOffset + i);
+      const iso = iter.toISOString().split('T')[0];
+      result.push({
+        dayName: dayNames[i],
+        dayNumber: iter.getUTCDate(),
+        fullDate: iso,
+        isToday: iso === todayStr,
+      });
+    }
+    return result;
+  }, [todayStr]);
 
   // Compute Greeting based on local time
   const getGreeting = () => {
@@ -94,12 +124,49 @@ export default function HomeScreen() {
   const targetCarbs = profile?.activeTarget?.dailyCarbs || computedPlan.carbs || 290;
   const targetFat = profile?.activeTarget?.dailyFat || computedPlan.fat || 70;
 
-  // Example consumed values
-  const consumedCalories = 1250;
+  // Real meal &    tate from backend
+  const [dailyData, setDailyData] = useState<{
+    summary: DailyNutritionSummary;
+    meals: Meal[];
+  } | null>(null);
+  const [loadingMeals, setLoadingMeals] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchDateData = useCallback(async (targetDate: string) => {
+    try {
+      const res = await mealsApi.getDailyMeals(targetDate);
+      setDailyData({
+        summary: res.summary,
+        meals: res.meals || [],
+      });
+    } catch (err: any) {
+      console.warn('Failed to load meals for dashboard:', err?.message);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchDateData(selectedDate);
+    }, [fetchDateData, selectedDate])
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchDateData(selectedDate);
+    setRefreshing(false);
+  }, [fetchDateData, selectedDate]);
+
+  const handleSelectDay = (targetDate: string) => {
+    setSelectedDate(targetDate);
+    fetchDateData(targetDate);
+  };
+
+  // Consumed nutrition totals from backend (falls back to 0 if none logged)
+  const consumedCalories = dailyData?.summary ? Math.round(dailyData.summary.totalCalories) : 0;
   const remainingCalories = Math.max(0, targetCalories - consumedCalories);
-  const consumedProtein = 85;
-  const consumedCarbs = 120;
-  const consumedFat = 35;
+  const consumedProtein = dailyData?.summary ? Math.round(dailyData.summary.totalProtein) : 0;
+  const consumedCarbs = dailyData?.summary ? Math.round(dailyData.summary.totalCarbs) : 0;
+  const consumedFat = dailyData?.summary ? Math.round(dailyData.summary.totalFat) : 0;
 
   // Progress ring math
   const ringSize = 96;
@@ -108,6 +175,40 @@ export default function HomeScreen() {
   const circumference = 2 * Math.PI * radius;
   const progressRatio = Math.min(1, Math.max(0, consumedCalories / (targetCalories || 1)));
   const strokeDashoffset = circumference * (1 - progressRatio);
+
+  const getMealThumbnail = (meal: Meal): string => {
+    if (meal.items && meal.items[0]?.foodName) {
+      const name = meal.items[0].foodName.toLowerCase();
+      if (name.includes('burger')) {
+        return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&auto=format&fit=crop&q=80';
+      }
+      if (name.includes('fry') || name.includes('fries')) {
+        return 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=200&auto=format&fit=crop&q=80';
+      }
+      if (name.includes('salad')) {
+        return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&auto=format&fit=crop&q=80';
+      }
+      if (name.includes('chicken')) {
+        return 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=200&auto=format&fit=crop&q=80';
+      }
+      if (name.includes('rice')) {
+        return 'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=200&auto=format&fit=crop&q=80';
+      }
+      if (name.includes('smoothie') || name.includes('berry')) {
+        return 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=200&auto=format&fit=crop&q=80';
+      }
+    }
+    if (meal.mealType === 'BREAKFAST') {
+      return 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=200&auto=format&fit=crop&q=80';
+    }
+    if (meal.mealType === 'LUNCH') {
+      return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=80';
+    }
+    if (meal.mealType === 'DINNER') {
+      return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&auto=format&fit=crop&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=200&auto=format&fit=crop&q=80';
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -147,6 +248,13 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#2E7D32"
+          />
+        }
       >
         {/* ── Greeting Section ─────────────────────────────────────── */}
         <View style={styles.greetingSection}>
@@ -155,15 +263,15 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* ── Date Selector (Weekly strip matching design) ──────────── */}
+        {/* ── Date Selector (Dynamic Weekly strip) ──────────────────── */}
         <View style={styles.dateSelectorRow}>
-          {days.map((d) => {
-            const isSelected = selectedDay === d.dayNumber;
+          {weekDays.map((d) => {
+            const isSelected = selectedDate === d.fullDate;
             return (
               <TouchableOpacity
-                key={d.dayNumber}
+                key={d.fullDate}
                 activeOpacity={0.75}
-                onPress={() => setSelectedDay(d.dayNumber)}
+                onPress={() => handleSelectDay(d.fullDate)}
                 style={[
                   styles.dayCell,
                   isSelected && styles.dayCellActive,
@@ -185,6 +293,9 @@ export default function HomeScreen() {
                 >
                   {d.dayNumber}
                 </Text>
+                {d.isToday && !isSelected && (
+                  <View style={styles.todayIndicatorDot} />
+                )}
               </TouchableOpacity>
             );
           })}
@@ -233,14 +344,6 @@ export default function HomeScreen() {
             <View style={styles.calorieInfoCol}>
               <View style={styles.timeframeRow}>
                 <Text style={styles.calorieRemainingLabel}>Calories remaining</Text>
-                <TouchableOpacity
-                  style={styles.timeframePill}
-                  activeOpacity={0.7}
-                  onPress={() => setSelectedTimeframe(selectedTimeframe === 'Today' ? 'Week' : 'Today')}
-                >
-                  <Text style={styles.timeframeText}>{selectedTimeframe}</Text>
-                  <ChevronDown size={13} color="#686C63" />
-                </TouchableOpacity>
               </View>
 
               <View style={styles.bigCalorieRow}>
@@ -296,45 +399,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ── Macro Targets Section ────────────────────────────────── */}
-        <View style={styles.sectionHeaderWrap}>
-          <Text style={styles.sectionTitle}>Macro Targets</Text>
-          <Text style={styles.sectionSubtitle}>
-            Balance your nutrition, reach your goals.
-          </Text>
-        </View>
-
-        <View style={styles.macroCardsRow}>
-          {/* Card 1: Protein */}
-          <View style={styles.macroTargetCard}>
-            <View style={[styles.macroBadgeCircle, { backgroundColor: '#E4ECFB' }]}>
-              <Dumbbell size={18} color="#5D80E6" />
-            </View>
-            <Text style={styles.macroCardName}>Protein</Text>
-            <Text style={styles.macroCardValue}>{targetProtein} g</Text>
-            <Text style={styles.macroCardSub}>/ day</Text>
-          </View>
-
-          {/* Card 2: Carbs */}
-          <View style={styles.macroTargetCard}>
-            <View style={[styles.macroBadgeCircle, { backgroundColor: '#E8F6E4' }]}>
-              <Wheat size={18} color="#559C38" />
-            </View>
-            <Text style={styles.macroCardName}>Carbs</Text>
-            <Text style={styles.macroCardValue}>{targetCarbs} g</Text>
-            <Text style={styles.macroCardSub}>/ day</Text>
-          </View>
-
-          {/* Card 3: Fat */}
-          <View style={styles.macroTargetCard}>
-            <View style={[styles.macroBadgeCircle, { backgroundColor: '#FEF8DE' }]}>
-              <Droplet size={18} color="#E5A817" />
-            </View>
-            <Text style={styles.macroCardName}>Fat</Text>
-            <Text style={styles.macroCardValue}>{targetFat} g</Text>
-            <Text style={styles.macroCardSub}>/ day</Text>
-          </View>
-        </View>
 
         {/* ── AI Nutrition Assistant Banner ────────────────────────── */}
         <TouchableOpacity
@@ -357,6 +421,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         {/* ── Recent Meals Section ─────────────────────────────────── */}
+        {/* ── Recent Meals Section ─────────────────────────────────── */}
         <View style={styles.mealsHeaderRow}>
           <Text style={styles.sectionTitle}>Recent Meals</Text>
           <TouchableOpacity
@@ -369,49 +434,70 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Meal 1 */}
-        <TouchableOpacity
-          style={styles.mealCard}
-          activeOpacity={0.8}
-          onPress={() => router.push('/(main)/meals')}
-        >
-          <Image
-            source={{
-              uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=80',
-            }}
-            style={styles.mealThumb}
-          />
-          <View style={styles.mealInfoCol}>
-            <Text style={styles.mealName}>Grilled Chicken Bowl</Text>
-            <Text style={styles.mealMacros}>
-              520 kcal  •  P 42g  •  C 55g  •  F 18g
-            </Text>
-            <Text style={styles.mealTime}>12:30 PM</Text>
-          </View>
-          <ChevronRight size={18} color="#A6ABA1" />
-        </TouchableOpacity>
+        {dailyData?.meals && dailyData.meals.length > 0 ? (
+          dailyData.meals.slice(0, 3).map((meal) => {
+            const timeStr = meal.loggedAt
+              ? new Date(meal.loggedAt).toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true,
+                })
+              : 'Today';
 
-        {/* Meal 2 */}
-        <TouchableOpacity
-          style={styles.mealCard}
-          activeOpacity={0.8}
-          onPress={() => router.push('/(main)/meals')}
-        >
-          <Image
-            source={{
-              uri: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=200&auto=format&fit=crop&q=80',
-            }}
-            style={styles.mealThumb}
-          />
-          <View style={styles.mealInfoCol}>
-            <Text style={styles.mealName}>Berry Smoothie</Text>
-            <Text style={styles.mealMacros}>
-              280 kcal  •  P 18g  •  C 32g  •  F 8g
-            </Text>
-            <Text style={styles.mealTime}>8:15 AM</Text>
-          </View>
-          <ChevronRight size={18} color="#A6ABA1" />
-        </TouchableOpacity>
+            const summaryTitle =
+              meal.name ||
+              (meal.items && meal.items.length > 0
+                ? meal.items.map((i) => i.foodName).join(', ')
+                : 'Logged Meal');
+
+            return (
+              <TouchableOpacity
+                key={meal.id}
+                style={styles.mealCard}
+                activeOpacity={0.8}
+                onPress={() => router.push('/(main)/meals')}
+              >
+                <Image
+                  source={{
+                    uri: getMealThumbnail(meal),
+                  }}
+                  style={styles.mealThumb}
+                />
+                <View style={styles.mealInfoCol}>
+                  <Text style={styles.mealName} numberOfLines={1}>
+                    {summaryTitle}
+                  </Text>
+                  <Text style={styles.mealMacros}>
+                    {Math.round(meal.totalCalories)} kcal  •  P {Math.round(meal.totalProtein)}g  •  C {Math.round(meal.totalCarbs)}g  •  F {Math.round(meal.totalFat)}g
+                  </Text>
+                  <Text style={styles.mealTime}>{timeStr}</Text>
+                </View>
+                <ChevronRight size={18} color="#A6ABA1" />
+              </TouchableOpacity>
+            );
+          })
+        ) : (
+          <TouchableOpacity
+            style={styles.emptyMealsCard}
+            activeOpacity={0.8}
+            onPress={() =>
+              router.push({
+                pathname: '/(main)/meals/add',
+                params: { from: 'home', date: selectedDate },
+              })
+            }
+          >
+            <View style={styles.emptyMealsLeft}>
+              <Text style={styles.emptyMealsTitle}>No meals logged today</Text>
+              <Text style={styles.emptyMealsSub}>
+                Tap to scan food or search USDA database
+              </Text>
+            </View>
+            <View style={styles.emptyMealsAddBtn}>
+              <Text style={styles.emptyMealsAddText}>+ Log Meal</Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -546,6 +632,14 @@ const styles = StyleSheet.create({
   dayNumberActive: {
     color: '#FFFFFF',
   },
+  todayIndicatorDot: {
+    position: 'absolute',
+    bottom: 4,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#FF9114',
+  },
   // ── Calorie Card
   calorieCard: {
     backgroundColor: '#FFFFFF',
@@ -602,20 +696,6 @@ const styles = StyleSheet.create({
     color: '#767B71',
     fontWeight: '600',
   },
-  timeframePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F2EB',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    gap: 2,
-  },
-  timeframeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#556052',
-  },
   bigCalorieRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -671,66 +751,11 @@ const styles = StyleSheet.create({
     color: '#1B281B',
     fontWeight: '700',
   },
-  // ── Macro Targets
-  sectionHeaderWrap: {
-    marginBottom: 12,
-  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
     color: '#1B281B',
     letterSpacing: -0.3,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: '#767B71',
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  macroCardsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 18,
-  },
-  macroTargetCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#EFECE2',
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  macroBadgeCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  macroCardName: {
-    fontSize: 12,
-    color: '#656A60',
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  macroCardValue: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: '#1B281B',
-    letterSpacing: -0.3,
-  },
-  macroCardSub: {
-    fontSize: 11,
-    color: '#8A8F85',
-    fontWeight: '500',
-    marginTop: 1,
   },
   // ── AI Banner
   aiBanner: {
@@ -832,5 +857,43 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#8A8F85',
     fontWeight: '500',
+  },
+  emptyMealsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#EFECE2',
+    borderStyle: 'dashed',
+  },
+  emptyMealsLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  emptyMealsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1B281B',
+    marginBottom: 4,
+  },
+  emptyMealsSub: {
+    fontSize: 12,
+    color: '#656A60',
+    fontWeight: '500',
+  },
+  emptyMealsAddBtn: {
+    backgroundColor: '#2E7D32',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  emptyMealsAddText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

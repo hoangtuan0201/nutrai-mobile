@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs, useRouter, usePathname } from 'expo-router';
 import { Platform, TouchableOpacity, View, StyleSheet, Text } from 'react-native';
 import { Home, MessageSquare, TrendingUp, User, Plus, Utensils, Compass } from 'lucide-react-native';
 import theme from '../../src/constants/theme';
@@ -8,6 +8,7 @@ import { profileApi } from '../../src/features/profile/api/profile.api';
 
 export default function MainLayout() {
   const router = useRouter();
+  const pathname = usePathname();
 
   // Background fallback sync for pending onboarding data
   useEffect(() => {
@@ -75,7 +76,13 @@ export default function MainLayout() {
             <TouchableOpacity
               activeOpacity={0.85}
               style={styles.fabWrap}
-              onPress={() => router.push('/(main)/meals/add')}
+              onPress={() => {
+                const fromScreen = pathname.includes('meals') ? 'log' : 'home';
+                router.push({
+                  pathname: '/(main)/meals/add',
+                  params: { from: fromScreen },
+                });
+              }}
               accessibilityLabel="Log Meal"
             >
               <View style={styles.fab}>
@@ -129,36 +136,6 @@ export default function MainLayout() {
       />
       <Tabs.Screen
         name="meals/camera"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="nutrition"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="water"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="summary"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="recipes"
         options={{
           href: null,
         }}

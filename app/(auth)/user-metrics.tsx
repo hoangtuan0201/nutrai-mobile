@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, User } from 'lucide-react-native';
 import { theme } from '../../src/constants';
 import { Button } from '../../src/components';
 
@@ -199,9 +199,9 @@ export default function UserMetricsScreen() {
             </Text>
             <View style={styles.genderRow}>
               {([
-                { id: 'male' as Gender, emoji: '👨', label: 'Male' },
-                { id: 'female' as Gender, emoji: '👩', label: 'Female' },
-              ] as { id: Gender; emoji: string; label: string }[]).map((g) => {
+                { id: 'male' as Gender, label: 'Male' },
+                { id: 'female' as Gender, label: 'Female' },
+              ] as { id: Gender; label: string }[]).map((g) => {
                 const active = gender === g.id;
                 return (
                   <TouchableOpacity
@@ -210,7 +210,9 @@ export default function UserMetricsScreen() {
                     activeOpacity={0.8}
                     onPress={() => setGender(g.id)}
                   >
-                    <Text style={styles.genderEmoji}>{g.emoji}</Text>
+                    <View style={[styles.genderIconWrap, active && styles.genderIconWrapActive]}>
+                      <User size={22} color={active ? '#1E3120' : '#8A8F85'} />
+                    </View>
                     <Text
                       style={[
                         styles.genderLabel,
@@ -522,8 +524,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     backgroundColor: '#FFFBF5',
   },
-  genderEmoji: {
-    fontSize: 32,
+  genderIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F5F4EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  genderIconWrapActive: {
+    backgroundColor: '#E8F5E9',
   },
   genderLabel: {
     fontFamily: theme.fonts.semiBold,

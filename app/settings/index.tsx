@@ -261,7 +261,12 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       {/* ── Sticky Top Bar (Logo & Back Button) ─────────── */}
       <View style={styles.topStickyBar}>
-        <Logo variant="full" size="md" />
+        <TouchableOpacity
+          onPress={() => router.replace('/(main)')}
+          activeOpacity={0.7}
+        >
+          <Logo variant="full" size="md" />
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => router.back()}
           activeOpacity={0.7}

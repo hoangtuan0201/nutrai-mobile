@@ -6,320 +6,553 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Sparkles, Check, Plus, Minus } from 'lucide-react-native';
+import {
+  X,
+  Plus,
+  Minus,
+  Trash2,
+  Edit2,
+  Search,
+  Check,
+  CheckCircle2,
+  ArrowRight,
+} from 'lucide-react-native';
 import { theme } from '../../../src/constants';
-import { Button, Card, Pill } from '../../../src/components';
+import { mealsApi } from '../../../src/features/meals/api/meals.api';
+import { MealType, MealItem } from '../../../src/features/meals/types';
 
-export default function AIRecognitionBreakdownScreen() {
+interface DetectedFoodItem {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  servingCount: number;
+  servingUnitText: string;
+  imageUrl: string;
+}
+
+export default function ConfirmMealScreen() {
   const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [successModal, setSuccessModal] = useState<{
+    visible: boolean;
+    calories: number;
+    mealName: string;
+  } | null>(null);
+  const [errorNotice, setErrorNotice] = useState<string | null>(null);
 
-  const [items, setItems] = useState([
-    { id: 1, name: 'Atlantic Salmon (Grilled)', grams: 180, cal: 360, p: 34, c: 0, f: 22 },
-    { id: 2, name: 'Quinoa & Brown Rice', grams: 120, cal: 150, p: 4, c: 28, f: 2 },
-    { id: 3, name: 'Avocado & Mixed Greens', grams: 80, cal: 140, p: 2, c: 6, f: 12 },
+  // Initial recognized items from AI vision
+  const [items, setItems] = useState<DetectedFoodItem[]>([
+    {
+      id: 'item-1',
+      name: 'Hamburger',
+      calories: 295,
+      protein: 17,
+      carbs: 30,
+      fat: 12,
+      servingCount: 1,
+      servingUnitText: 'serving',
+      imageUrl:
+        'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'item-2',
+      name: 'Fries',
+      calories: 312,
+      protein: 4,
+      carbs: 41,
+      fat: 15,
+      servingCount: 1,
+      servingUnitText: 'serving',
+      imageUrl:
+        'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=300&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'item-3',
+      name: 'Water',
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      servingCount: 1,
+      servingUnitText: 'bottle',
+      imageUrl:
+        'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=300&auto=format&fit=crop&q=80',
+    },
   ]);
 
-  const totalCalories = items.reduce((acc, curr) => acc + curr.cal, 0);
-  const totalProtein = items.reduce((acc, curr) => acc + curr.p, 0);
-  const totalCarbs = items.reduce((acc, curr) => acc + curr.c, 0);
-  const totalFat = items.reduce((acc, curr) => acc + curr.f, 0);
-
-  const adjustGrams = (id: number, delta: number) => {
+  const updateServing = (id: string, delta: number) => {
     setItems((prev) =>
       prev.map((item) => {
         if (item.id === id) {
-          const newGrams = Math.max(item.grams + delta, 10);
-          const ratio = newGrams / item.grams;
+          const newCount = Math.max(item.servingCount + delta, 0.5);
           return {
             ...item,
-            grams: newGrams,
-            cal: Math.round(item.cal * ratio),
-            p: Math.round(item.p * ratio),
-            c: Math.round(item.c * ratio),
-            f: Math.round(item.f * ratio),
+            servingCount: Math.round(newCount * 10) / 10,
           };
         }
         return item;
-      })
+      }),
     );
   };
 
+  const removeItem = (id: string) => {
+    setItems((prev) => prev.filter((it) => it.id !== id));
+  };
+
+  // Calculate totals
+  const totalCalories = Math.round(
+    items.reduce((sum, it) => sum + it.calories * it.servingCount, 0),
+  );
+  const totalProtein =
+    Math.round(
+      items.reduce((sum, it) => sum + it.protein * it.servingCount, 0) * 10,
+    ) / 10;
+  const totalCarbs =
+    Math.round(
+      items.reduce((sum, it) => sum + it.carbs * it.servingCount, 0) * 10,
+    ) / 10;
+  const totalFat =
+    Math.round(
+      items.reduce((sum, it) => sum + it.fat * it.servingCount, 0) * 10,
+    ) / 10;
+
+  const handleConfirm = async () => {
+    if (items.length === 0) {
+      setErrorNotice('Please keep at least one food item.');
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorNotice(null);
+    try {
+      const mealItems: MealItem[] = items.map((it) => ({
+        foodName: it.name,
+        portionDescription: `${it.servingCount} ${it.servingUnitText}`,
+        quantity: it.servingCount * 100,
+        unit: it.servingUnitText,
+        calories: Math.round(it.calories * it.servingCount),
+        protein: Math.round(it.protein * it.servingCount * 10) / 10,
+        carbs: Math.round(it.carbs * it.servingCount * 10) / 10,
+        fat: Math.round(it.fat * it.servingCount * 10) / 10,
+      }));
+
+      const todayStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
+
+      const computedMealName = items.map((i) => i.name).slice(0, 2).join(' & ');
+
+      await mealsApi.createMeal({
+        mealType: 'LUNCH',
+        name: computedMealName,
+        totalCalories,
+        totalProtein,
+        totalCarbs,
+        totalFat,
+        source: 'AI_IMAGE',
+        loggedDate: todayStr,
+        items: mealItems,
+      });
+
+      setSuccessModal({
+        visible: true,
+        calories: totalCalories,
+        mealName: computedMealName,
+      });
+    } catch (error: any) {
+      setErrorNotice(error?.message || 'Could not save meal. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => router.back()}
-          style={styles.backBtn}
-        >
-          <ArrowLeft size={22} color={theme.colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>AI Recognition</Text>
-        <Pill label="98% Match" variant="green" size="sm" />
-      </View>
+    <View style={styles.container}>
+      {/* Background Camera Snapshot */}
+      <Image
+        source={{
+          uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80',
+        }}
+        style={styles.backgroundImage}
+      />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Scanned Image Preview */}
-        <View style={styles.imagePreviewWrap}>
-          <Image
-            source={{
-              uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80',
-            }}
-            style={styles.scannedImage}
-          />
-          <View style={styles.floatingBadge}>
-            <Sparkles size={16} color={theme.colors.saffron} />
-            <Text style={styles.floatingBadgeText}>Grilled Salmon Salad</Text>
-          </View>
-        </View>
-
-        {/* Total Summary Card */}
-        <Card style={styles.summaryCard} padding="lg">
-          <View style={styles.summaryRow}>
-            <View>
-              <Text style={styles.totalCalNumber}>{totalCalories}</Text>
-              <Text style={styles.totalCalLabel}>TOTAL KCAL</Text>
+      <SafeAreaView style={styles.overlay} edges={['bottom']}>
+        {/* Bottom Sheet Modal */}
+        <View style={styles.sheetContainer}>
+          {/* Header */}
+          <View style={styles.sheetHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sheetTitle}>Confirm Your Meal</Text>
+              <Text style={styles.sheetSubtitle}>
+                You can add missing meals manually.
+              </Text>
             </View>
-
-            <View style={styles.macrosWrap}>
-              <View style={styles.macroPill}>
-                <Text style={styles.macroVal}>{totalCarbs}g</Text>
-                <Text style={styles.macroType}>Carbs</Text>
-              </View>
-              <View style={styles.macroPill}>
-                <Text style={styles.macroVal}>{totalProtein}g</Text>
-                <Text style={styles.macroType}>Protein</Text>
-              </View>
-              <View style={styles.macroPill}>
-                <Text style={styles.macroVal}>{totalFat}g</Text>
-                <Text style={styles.macroType}>Fat</Text>
-              </View>
-            </View>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.closeBtn}
+              activeOpacity={0.7}
+            >
+              <X size={20} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
           </View>
-        </Card>
 
-        {/* Identified Ingredients */}
-        <Text style={styles.sectionTitle}>Identified Ingredients</Text>
-        <View style={styles.itemsList}>
-          {items.map((item) => (
-            <Card key={item.id} variant="default" padding="md" style={styles.itemCard}>
-              <View style={styles.itemHeader}>
-                <View style={styles.itemHeaderLeft}>
+          {/* Items List */}
+          <ScrollView
+            style={styles.itemsScroll}
+            showsVerticalScrollIndicator={false}
+          >
+            {items.map((item) => (
+              <View key={item.id} style={styles.itemRow}>
+                {/* Thumbnail */}
+                <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
+
+                {/* Details */}
+                <View style={styles.itemDetails}>
                   <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemMacros}>
-                    {item.cal} kcal • P: {item.p}g • C: {item.c}g • F: {item.f}g
+                  <Text style={styles.itemCalories}>
+                    {Math.round(item.calories * item.servingCount)} kcal
                   </Text>
+                  <Text style={styles.itemServingDesc}>
+                    {item.servingCount} {item.servingUnitText}
+                  </Text>
+
+                  {/* Quantity Counter */}
+                  <View style={styles.counterRow}>
+                    <TouchableOpacity
+                      onPress={() => updateServing(item.id, -0.5)}
+                      style={styles.counterBtn}
+                      activeOpacity={0.7}
+                    >
+                      <Minus size={14} color="#555" />
+                    </TouchableOpacity>
+                    <Text style={styles.counterText}>{item.servingCount}</Text>
+                    <TouchableOpacity
+                      onPress={() => updateServing(item.id, 0.5)}
+                      style={styles.counterBtn}
+                      activeOpacity={0.7}
+                    >
+                      <Plus size={14} color="#555" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <Text style={styles.itemGramsText}>{item.grams}g</Text>
-              </View>
 
-              {/* Portion Control */}
-              <View style={styles.portionRow}>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => adjustGrams(item.id, -20)}
-                  style={styles.adjustBtn}
-                >
-                  <Minus size={16} color={theme.colors.textPrimary} />
-                </TouchableOpacity>
-                <Text style={styles.portionLabel}>Adjust portion</Text>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => adjustGrams(item.id, 20)}
-                  style={styles.adjustBtn}
-                >
-                  <Plus size={16} color={theme.colors.textPrimary} />
-                </TouchableOpacity>
+                {/* Actions (Edit / Delete) */}
+                <View style={styles.itemActions}>
+                  <TouchableOpacity
+                    style={styles.actionIconBtn}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/(main)/meals/add',
+                        params: { mealType: 'LUNCH', from: 'log' },
+                      })
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <Edit2 size={16} color="#777777" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.actionIconBtn}
+                    onPress={() => removeItem(item.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Trash2 size={16} color="#F04B37" />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </Card>
-          ))}
+            ))}
+          </ScrollView>
+
+          {/* Action Buttons */}
+          <View style={styles.sheetFooter}>
+            <TouchableOpacity
+              style={styles.addManuallyBtn}
+              onPress={() =>
+                router.push({
+                  pathname: '/(main)/meals/add',
+                  params: { from: 'log' },
+                })
+              }
+              activeOpacity={0.8}
+            >
+              <Search size={16} color={theme.colors.textPrimary} />
+              <Text style={styles.addManuallyText}>Add Manually</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.confirmBtn, submitting && styles.btnDisabled]}
+              onPress={handleConfirm}
+              disabled={submitting}
+              activeOpacity={0.85}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.confirmBtnText}>Confirm ({totalCalories} kcal)</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-      </ScrollView>
+      </SafeAreaView>
 
-      {/* Footer Save */}
-      <View style={styles.footer}>
-        <Button
-          title="Save Meal to Log"
-          size="lg"
-          variant="primary"
-          fullWidth
-          rightIcon={<Check size={18} color="#FFFFFF" />}
-          onPress={() => router.push('/(main)')}
-        />
-      </View>
-    </SafeAreaView>
+      {/* Sleek Confirmation Modal */}
+      <Modal
+        visible={!!successModal?.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSuccessModal(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconWrap}>
+              <CheckCircle2 size={32} color="#2E7D32" />
+            </View>
+            <Text style={styles.modalTitle}>Meal Logged!</Text>
+            <Text style={styles.modalSubtitle}>
+              <Text style={{ fontWeight: '700', color: '#1B281B' }}>
+                {successModal?.mealName}
+              </Text>{' '}
+              ({successModal?.calories} kcal) added to your nutrition diary.
+            </Text>
+            <TouchableOpacity
+              style={styles.modalPrimaryBtn}
+              onPress={() => {
+                setSuccessModal(null);
+                router.replace('/(main)/meals');
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.modalPrimaryText}>View Diary</Text>
+              <ArrowRight size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.surfaceBase,
+    backgroundColor: '#000000',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.screenMargin,
-    paddingVertical: theme.spacing.md,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(19, 19, 19, 0.04)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 18,
-    color: theme.colors.textPrimary,
-  },
-  scrollContent: {
-    paddingHorizontal: theme.spacing.screenMargin,
-    paddingTop: theme.spacing.sm,
-    paddingBottom: 40,
-  },
-  imagePreviewWrap: {
-    height: 180,
-    borderRadius: 24,
-    overflow: 'hidden',
-    position: 'relative',
-    marginBottom: theme.spacing.md,
-  },
-  scannedImage: {
-    width: '100%',
-    height: '100%',
-  },
-  floatingBadge: {
+  backgroundImage: {
     position: 'absolute',
-    bottom: 12,
-    left: 12,
-    backgroundColor: 'rgba(19, 19, 19, 0.85)',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    resizeMode: 'cover',
+    opacity: 0.85,
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    maxHeight: '75%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 20,
+  },
+  sheetHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  floatingBadgeText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 13,
-    color: '#FFFFFF',
-  },
-  summaryCard: {
-    borderRadius: 20,
-    marginBottom: theme.spacing.lg,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  totalCalNumber: {
+  sheetTitle: {
     fontFamily: theme.fonts.bold,
-    fontSize: 32,
+    fontSize: 20,
     color: theme.colors.textPrimary,
   },
-  totalCalLabel: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    letterSpacing: 0.8,
-  },
-  macrosWrap: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  macroPill: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(19, 19, 19, 0.04)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 14,
-  },
-  macroVal: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 14,
-    color: theme.colors.textPrimary,
-  },
-  macroType: {
-    fontFamily: theme.fonts.medium,
-    fontSize: 11,
+  sheetSubtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 13,
     color: theme.colors.textSecondary,
     marginTop: 2,
   },
-  sectionTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 17,
-    color: theme.colors.textPrimary,
-    marginBottom: 12,
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(19, 19, 19, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  itemsList: {
-    gap: 10,
+  itemsScroll: {
+    maxHeight: 280,
   },
-  itemCard: {
-    borderRadius: 18,
-  },
-  itemHeader: {
+  itemRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(19, 19, 19, 0.06)',
   },
-  itemHeaderLeft: {
+  itemImage: {
+    width: 58,
+    height: 58,
+    borderRadius: 14,
+    backgroundColor: '#F0EFEA',
+  },
+  itemDetails: {
     flex: 1,
-    marginRight: 10,
+    marginLeft: 14,
   },
   itemName: {
     fontFamily: theme.fonts.bold,
     fontSize: 15,
     color: theme.colors.textPrimary,
-    marginBottom: 4,
   },
-  itemMacros: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 12,
+  itemCalories: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 13,
     color: theme.colors.textSecondary,
+    marginTop: 1,
   },
-  itemGramsText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-    color: theme.colors.saffron,
+  itemServingDesc: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 11,
+    color: theme.colors.textMuted,
   },
-  portionRow: {
+  counterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(19, 19, 19, 0.05)',
+    backgroundColor: '#F5F5F0',
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
-  adjustBtn: {
-    width: 32,
-    height: 32,
+  counterBtn: {
+    padding: 4,
+  },
+  counterText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 12,
+    color: theme.colors.textPrimary,
+    minWidth: 22,
+    textAlign: 'center',
+  },
+  itemActions: {
+    alignItems: 'center',
+    gap: 12,
+    paddingLeft: 10,
+  },
+  actionIconBtn: {
+    padding: 4,
+  },
+  sheetFooter: {
+    marginTop: 16,
+    gap: 10,
+  },
+  addManuallyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
     borderRadius: 16,
-    backgroundColor: 'rgba(19, 19, 19, 0.06)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(19, 19, 19, 0.15)',
+    backgroundColor: '#FFFFFF',
+    gap: 6,
+  },
+  addManuallyText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 14,
+    color: theme.colors.textPrimary,
+  },
+  confirmBtn: {
+    backgroundColor: '#7CB342', // Clean nature green as shown in the reference image
+    paddingVertical: 14,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  portionLabel: {
-    fontFamily: theme.fonts.medium,
-    fontSize: 12,
-    color: theme.colors.textSecondary,
+  btnDisabled: {
+    opacity: 0.6,
   },
-  footer: {
-    paddingHorizontal: theme.spacing.screenMargin,
-    paddingBottom: 24,
-    paddingTop: 12,
-    backgroundColor: theme.colors.surfaceBase,
+  confirmBtnText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modalIconWrap: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#E8F5E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  modalTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 18,
+    color: '#1B281B',
+    marginBottom: 6,
+  },
+  modalSubtitle: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 13,
+    color: '#656A60',
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: 20,
+  },
+  modalPrimaryBtn: {
+    width: '100%',
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#2E7D32',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  modalPrimaryText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 15,
+    color: '#FFFFFF',
   },
 });
