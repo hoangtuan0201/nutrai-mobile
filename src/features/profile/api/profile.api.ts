@@ -18,7 +18,7 @@ export interface ProfileResponseDto {
   id: string;
   userId: string;
   dateOfBirth?: string;
-  gender?: 'MALE' | 'FEMALE';
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
   heightCm?: number;
   weightKg?: number;
   activityLevel?:
@@ -36,7 +36,7 @@ export interface ProfileResponseDto {
 
 export interface UpdateProfileDto {
   dateOfBirth?: string;
-  gender?: 'MALE' | 'FEMALE';
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
   heightCm?: number;
   weightKg?: number;
   activityLevel?:

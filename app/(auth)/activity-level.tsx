@@ -1,6 +1,6 @@
 /**
- * activity-level.tsx — CaloriQ-inspired activity selection
- * Simple white cards, large title, radio selection pattern.
+ * activity-level.tsx — Onboarding Step 7: "Tell me about your typical daily activity"
+ * Clean selection cards matching image8 with NutraAI aesthetics and Lucide icons.
  */
 import React, { useState } from 'react';
 import {
@@ -12,157 +12,167 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Armchair, Footprints, Flame, Zap, BicepsFlexed } from 'lucide-react-native';
+import {
+  Armchair,
+  Footprints,
+  Flame,
+  Zap,
+  BicepsFlexed,
+} from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button } from '../../src/components';
+import { Button, OnboardingHeader } from '../../src/components';
+import {
+  useOnboardingStore,
+  ActivityLevelType,
+} from '../../src/store/onboardingStore';
+import { calculateClientNutritionPlan } from '../../src/utils/nutritionCalculator';
 
-// ─── Segmented progress bar ─────────────────────────────────────────
-const TOTAL_STEPS = 4;
-function StepBar({ step }: { step: number }) {
-  return (
-    <View style={barStyles.row}>
-      {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-        <View
-          key={i}
-          style={[barStyles.segment, i < step && barStyles.segmentActive]}
-        />
-      ))}
-    </View>
-  );
-}
-const barStyles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 4, flex: 1, marginHorizontal: 10 },
-  segment: {
-    flex: 1, height: 4, borderRadius: 2,
-    backgroundColor: 'rgba(19,19,19,0.10)',
-  },
-  segmentActive: { backgroundColor: theme.colors.saffron },
-});
-
-// ─── Options ──────────────────────────────────────────────────────────
 const OPTIONS = [
   {
     id: 'sedentary',
+    enumValue: 'SEDENTARY' as ActivityLevelType,
     icon: Armchair,
     iconColor: '#88A8F7',
-    iconBg: 'rgba(136,168,247,0.15)',
-    label: 'Sedentary',
-    desc: 'Desk job, little or no exercise',
-    multiplier: '×1.2',
+    iconBg: 'rgba(136, 168, 247, 0.15)',
+    label: 'Not Very Active',
+    desc: 'Desk job, little to no exercise',
   },
   {
     id: 'light',
+    enumValue: 'LIGHT' as ActivityLevelType,
     icon: Footprints,
     iconColor: '#8EDC5E',
-    iconBg: 'rgba(142,220,94,0.15)',
+    iconBg: 'rgba(142, 220, 94, 0.15)',
     label: 'Lightly Active',
-    desc: 'Light exercise 1–3 days/week',
-    multiplier: '×1.375',
+    desc: 'Light exercise 1–3 days/week, daily walking',
   },
   {
     id: 'moderate',
+    enumValue: 'MODERATE' as ActivityLevelType,
     icon: Flame,
     iconColor: '#FF9114',
-    iconBg: 'rgba(255,145,20,0.12)',
+    iconBg: 'rgba(255, 145, 20, 0.12)',
     label: 'Moderately Active',
     desc: 'Moderate exercise 3–5 days/week',
-    multiplier: '×1.55',
     recommended: true,
   },
   {
     id: 'very',
+    enumValue: 'VERY_ACTIVE' as ActivityLevelType,
     icon: Zap,
     iconColor: '#FDD922',
-    iconBg: 'rgba(253,217,34,0.18)',
+    iconBg: 'rgba(253, 217, 34, 0.18)',
     label: 'Very Active',
-    desc: 'Hard training 6–7 days/week',
-    multiplier: '×1.725',
+    desc: 'Hard training 6–7 days/week or active physical job',
   },
   {
     id: 'extra',
+    enumValue: 'EXTRA_ACTIVE' as ActivityLevelType,
     icon: BicepsFlexed,
     iconColor: '#F04B37',
-    iconBg: 'rgba(240,75,55,0.12)',
+    iconBg: 'rgba(240, 75, 55, 0.12)',
     label: 'Extra Active',
-    desc: 'Very hard training + physical job',
-    multiplier: '×1.9',
+    desc: 'Very hard training daily + demanding physical job',
   },
 ];
-
-import { useOnboardingStore, ActivityLevelType } from '../../src/store/onboardingStore';
 
 export default function ActivityLevelScreen() {
   const router = useRouter();
   const setActivityLevel = useOnboardingStore((s) => s.setActivityLevel);
+  const setCalculatedPlan = useOnboardingStore((s) => s.setCalculatedPlan);
   const currentLevel = useOnboardingStore((s) => s.activityLevel);
 
   const getInitialUiId = () => {
     switch (currentLevel) {
-      case 'SEDENTARY': return 'sedentary';
-      case 'LIGHT': return 'light';
-      case 'VERY_ACTIVE': return 'very';
-      case 'EXTRA_ACTIVE': return 'extra';
+      case 'SEDENTARY':
+        return 'sedentary';
+      case 'LIGHT':
+        return 'light';
+      case 'VERY_ACTIVE':
+        return 'very';
+      case 'EXTRA_ACTIVE':
+        return 'extra';
       case 'MODERATE':
-      default: return 'moderate';
+      default:
+        return 'moderate';
     }
   };
 
-  const [selected, setSelected] = useState(getInitialUiId());
+  const [selectedId, setSelectedId] = useState(getInitialUiId());
 
   const handleNext = () => {
-    let levelEnum: ActivityLevelType = 'MODERATE';
-    if (selected === 'sedentary') levelEnum = 'SEDENTARY';
-    else if (selected === 'light') levelEnum = 'LIGHT';
-    else if (selected === 'very') levelEnum = 'VERY_ACTIVE';
-    else if (selected === 'extra') levelEnum = 'EXTRA_ACTIVE';
+    const selectedOption =
+      OPTIONS.find((o) => o.id === selectedId) || OPTIONS[2];
+    const levelEnum = selectedOption.enumValue;
 
+    // 1. Save activity level
     setActivityLevel(levelEnum);
-    router.push('/(auth)/goal-preferences' as any);
+
+    // 2. Compute plan with updated activity level
+    const store = useOnboardingStore.getState();
+    const plan = calculateClientNutritionPlan({
+      gender: store.gender,
+      weightKg: store.weightKg,
+      heightCm: store.heightCm,
+      age: store.age,
+      activityLevel: levelEnum,
+      fitnessGoal: store.fitnessGoal,
+      pace: store.pace,
+      weeklyPaceKg: store.weeklyPaceKg,
+    });
+
+    setCalculatedPlan(plan);
+    router.push('/(auth)/plan-preview' as any);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => router.back()}
-          style={styles.backBtn}
-        >
-          <ArrowLeft size={20} color={theme.colors.textPrimary} />
-        </TouchableOpacity>
-        <StepBar step={3} />
-        <TouchableOpacity activeOpacity={0.6} onPress={() => router.push('/(auth)/goal-preferences' as any)}>
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
-      </View>
+      <OnboardingHeader
+        step={7}
+        totalSteps={7}
+      />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>How active{'\n'}are you?</Text>
+        <Text style={styles.title}>
+          Tell me about your{'\n'}typical daily activity
+        </Text>
+        <Text style={styles.subtitle}>
+          Choose the option that best reflects your current routine.
+        </Text>
 
         <View style={styles.optionsList}>
           {OPTIONS.map((item) => {
-            const isSelected = selected === item.id;
+            const isSelected = selectedId === item.id;
             const Icon = item.icon;
             return (
               <TouchableOpacity
                 key={item.id}
                 activeOpacity={0.8}
-                onPress={() => setSelected(item.id)}
+                onPress={() => setSelectedId(item.id)}
                 style={[styles.card, isSelected && styles.cardActive]}
               >
-                {/* Left: icon */}
-                <View style={[styles.iconBubble, { backgroundColor: item.iconBg }]}>
+                {/* Left: Icon bubble */}
+                <View
+                  style={[
+                    styles.iconBubble,
+                    { backgroundColor: item.iconBg },
+                  ]}
+                >
                   <Icon size={20} color={item.iconColor} strokeWidth={2.2} />
                 </View>
 
-                {/* Middle: label + desc */}
+                {/* Middle: Label + Description */}
                 <View style={styles.cardContent}>
                   <View style={styles.cardTitleRow}>
-                    <Text style={[styles.cardLabel, isSelected && styles.cardLabelActive]}>
+                    <Text
+                      style={[
+                        styles.cardLabel,
+                        isSelected && styles.cardLabelActive,
+                      ]}
+                    >
                       {item.label}
                     </Text>
                     {item.recommended && (
@@ -174,7 +184,7 @@ export default function ActivityLevelScreen() {
                   <Text style={styles.cardDesc}>{item.desc}</Text>
                 </View>
 
-                {/* Right: radio */}
+                {/* Right: Radio check */}
                 <View style={[styles.radio, isSelected && styles.radioActive]}>
                   {isSelected && <View style={styles.radioDot} />}
                 </View>
@@ -186,7 +196,7 @@ export default function ActivityLevelScreen() {
 
       <View style={styles.footer}>
         <Button
-          title="Next"
+          title="Calculate My Plan"
           size="lg"
           variant="primary"
           fullWidth
@@ -202,38 +212,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.surfaceBase,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.screenMargin,
-    paddingVertical: 14,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(19, 19, 19, 0.05)',
-  },
-  skipText: {
-    fontFamily: theme.fonts.medium,
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginLeft: 10,
-  },
   scroll: {
     paddingHorizontal: theme.spacing.screenMargin,
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   title: {
     fontFamily: theme.fonts.bold,
-    fontSize: 30,
-    lineHeight: 38,
+    fontSize: 28,
+    lineHeight: 36,
     color: theme.colors.textPrimary,
     letterSpacing: -0.5,
-    marginBottom: 28,
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: theme.colors.textSecondary,
+    marginBottom: 24,
   },
   optionsList: {
     gap: 12,
@@ -242,12 +239,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderWidth: 1.5,
-    borderColor: 'rgba(19,19,19,0.07)',
-    gap: 12,
+    borderColor: 'rgba(19, 19, 19, 0.07)',
+    gap: 14,
     shadowColor: '#131313',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -260,16 +257,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFBF5',
   },
   iconBubble: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   cardContent: {
     flex: 1,
-    gap: 2,
+    gap: 3,
   },
   cardTitleRow: {
     flexDirection: 'row',
@@ -286,13 +283,13 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
   },
   recommendedBadge: {
-    backgroundColor: 'rgba(255,145,20,0.15)',
+    backgroundColor: 'rgba(255, 145, 20, 0.15)',
     borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 2,
   },
   recommendedText: {
-    fontFamily: theme.fonts.medium,
+    fontFamily: theme.fonts.bold,
     fontSize: 10,
     color: theme.colors.saffron,
   },
@@ -307,7 +304,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: 'rgba(19,19,19,0.18)',
+    borderColor: 'rgba(19, 19, 19, 0.20)',
     alignItems: 'center',
     justifyContent: 'center',
   },

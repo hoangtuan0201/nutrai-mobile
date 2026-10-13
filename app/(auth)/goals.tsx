@@ -14,37 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Scale, Activity, Dumbbell, Zap } from 'lucide-react-native';
 import { theme } from '../../src/constants';
-import { Button } from '../../src/components';
-
-// ─── Segmented progress bar ─────────────────────────────────────────
-const TOTAL_STEPS = 4;
-function StepBar({ step }: { step: number }) {
-  return (
-    <View style={barStyles.row}>
-      {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-        <View
-          key={i}
-          style={[
-            barStyles.segment,
-            i < step && barStyles.segmentActive,
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
-const barStyles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 4, flex: 1, marginLeft: 10 },
-  segment: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(19,19,19,0.10)',
-  },
-  segmentActive: {
-    backgroundColor: theme.colors.saffron,
-  },
-});
+import { Button, OnboardingHeader } from '../../src/components';
 
 // ─── Goal options ────────────────────────────────────────────────────
 const GOALS = [
@@ -93,25 +63,16 @@ export default function ChooseGoalScreen() {
     else if (selectedGoal === 'build_muscle') goalEnum = 'BUILD_MUSCLE';
 
     setGoal(goalEnum);
-    router.push('/(auth)/user-metrics' as any);
+    router.push('/(auth)/gender' as any);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => router.back()}
-          style={styles.backBtn}
-        >
-          <ArrowLeft size={20} color={theme.colors.textPrimary} />
-        </TouchableOpacity>
-        <StepBar step={1} />
-        <TouchableOpacity activeOpacity={0.6} onPress={() => router.push('/(auth)/user-metrics' as any)}>
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
-      </View>
+      <OnboardingHeader
+        step={1}
+        totalSteps={7}
+      />
 
       {/* Body */}
       <View style={styles.body}>

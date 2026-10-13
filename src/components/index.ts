@@ -8,6 +8,7 @@ export * from './ui/BottomNav';
 export * from './ui/Loading';
 export * from './ui/Logo';
 export * from './ui/CalculatingLoader';
+export * from './ui/OnboardingHeader';
 
 // Common & Feature Components
 export * from './common/Text';

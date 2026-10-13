@@ -73,8 +73,8 @@ export default function SettingsScreen() {
   const [inputAge, setInputAge] = useState(
     String(onboarding.age || 21),
   );
-  const [inputGender, setInputGender] = useState<'MALE' | 'FEMALE'>(
-    (profile?.gender || onboarding.gender || 'MALE') as 'MALE' | 'FEMALE',
+  const [inputGender, setInputGender] = useState<GenderType>(
+    (profile?.gender || onboarding.gender || 'MALE') as GenderType,
   );
   const [inputGoal, setInputGoal] = useState<'WEIGHT_LOSS' | 'MUSCLE_GAIN' | 'MAINTENANCE'>(
     profile?.fitnessGoal ||
