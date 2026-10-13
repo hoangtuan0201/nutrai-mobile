@@ -6,6 +6,7 @@ import {
   calculateClientNutritionPlan,
   validateTargetWeight,
   getPaceOptionsForGoal,
+  calculateBMI,
   kgToLb,
   lbToKg,
 } from './nutritionCalculator.ts';
@@ -73,4 +74,28 @@ test('getPaceOptionsForGoal: returns goal-specific options', () => {
   const muscleOptions = getPaceOptionsForGoal('BUILD_MUSCLE');
   assert.equal(muscleOptions.length, 3);
   assert.equal(muscleOptions[0].weeklyRateKg, 0.1);
+});
+
+test('calculateBMR: calculates other/non-binary gender using average offset', () => {
+  // Base: 10*60 + 6.25*170 - 5*28 = 600 + 1062.5 - 140 = 1522.5. Offset: -78 -> 1444.5 -> 1445
+  const otherBmr = calculateBMR('OTHER', 60, 170, 28);
+  assert.equal(otherBmr, 1445);
+});
+
+test('calculateBMI: classifies categories accurately', () => {
+  // Normal: 70kg, 175cm -> 70 / (1.75^2) = 22.86 -> 22.9
+  const normal = calculateBMI(70, 175);
+  assert.equal(normal.bmi, 22.9);
+  assert.equal(normal.category, 'NORMAL');
+  assert.equal(normal.categoryLabel, 'Healthy Weight');
+
+  // Overweight: 85kg, 175cm -> 85 / (1.75^2) = 27.76 -> 27.8
+  const overweight = calculateBMI(85, 175);
+  assert.equal(overweight.bmi, 27.8);
+  assert.equal(overweight.category, 'OVERWEIGHT');
+
+  // Underweight: 48kg, 175cm -> 48 / (1.75^2) = 15.67 -> 15.7
+  const underweight = calculateBMI(48, 175);
+  assert.equal(underweight.bmi, 15.7);
+  assert.equal(underweight.category, 'UNDERWEIGHT');
 });

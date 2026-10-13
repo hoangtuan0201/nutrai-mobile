@@ -5,7 +5,7 @@ export type FitnessGoalType =
   | 'MAINTAIN_WEIGHT'
   | 'BUILD_MUSCLE';
 
-export type GenderType = 'MALE' | 'FEMALE';
+export type GenderType = 'MALE' | 'FEMALE' | 'OTHER';
 
 export type ActivityLevelType =
   | 'SEDENTARY'
@@ -40,6 +40,12 @@ export interface OnboardingState {
   isSynced: boolean;
 
   setGoal: (goal: FitnessGoalType) => void;
+  setGender: (gender: GenderType) => void;
+  setBirthYear: (year: number) => void;
+  setAge: (age: number) => void;
+  setHeightCm: (heightCm: number) => void;
+  setWeightKg: (weightKg: number) => void;
+  setTargetWeightKg: (targetWeightKg: number) => void;
   setMetrics: (data: {
     gender: GenderType;
     age: number;
@@ -81,7 +87,7 @@ const DEFAULT_STATE = {
   gender: 'MALE' as GenderType,
   age: 26,
   dateOfBirth: '2000-01-01',
-  heightCm: 175,
+  heightCm: 170,
   weightKg: 70,
   targetWeightKg: 65,
   activityLevel: 'MODERATE' as ActivityLevelType,
@@ -107,6 +113,38 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
       }
       return { fitnessGoal, targetWeightKg: newTarget, calculatedPlan: null };
     }),
+
+  setGender: (gender) => set({ gender, calculatedPlan: null }),
+
+  setBirthYear: (birthYear) => {
+    const currentYear = new Date().getFullYear();
+    const age = Math.max(10, currentYear - birthYear);
+    const dateOfBirth = `${birthYear}-01-01`;
+    set({ age, dateOfBirth, calculatedPlan: null });
+  },
+
+  setAge: (age) => {
+    const currentYear = new Date().getFullYear();
+    const birthYear = currentYear - age;
+    set({ age, dateOfBirth: `${birthYear}-01-01`, calculatedPlan: null });
+  },
+
+  setHeightCm: (heightCm) => set({ heightCm, calculatedPlan: null }),
+
+  setWeightKg: (weightKg) =>
+    set((state) => {
+      let newTarget = state.targetWeightKg;
+      if (state.fitnessGoal === 'LOSE_WEIGHT' && newTarget >= weightKg) {
+        newTarget = Math.max(30, weightKg - 5);
+      } else if (state.fitnessGoal === 'BUILD_MUSCLE' && newTarget <= weightKg) {
+        newTarget = weightKg + 3;
+      } else if (state.fitnessGoal === 'MAINTAIN_WEIGHT') {
+        newTarget = weightKg;
+      }
+      return { weightKg, targetWeightKg: newTarget, calculatedPlan: null };
+    }),
+
+  setTargetWeightKg: (targetWeightKg) => set({ targetWeightKg, calculatedPlan: null }),
 
   setMetrics: ({ gender, age, heightCm, weightKg }) => {
     const currentYear = new Date().getFullYear();

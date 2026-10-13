@@ -3,7 +3,7 @@ export type FitnessGoalType =
   | 'MAINTAIN_WEIGHT'
   | 'BUILD_MUSCLE';
 
-export type GenderType = 'MALE' | 'FEMALE';
+export type GenderType = 'MALE' | 'FEMALE' | 'OTHER';
 
 export type ActivityLevelType =
   | 'SEDENTARY'
@@ -91,7 +91,8 @@ export function calculateBMR(
     return 0;
   }
   const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
-  return Math.round(gender === 'MALE' ? base + 5 : base - 161);
+  const offset = gender === 'MALE' ? 5 : gender === 'FEMALE' ? -161 : -78;
+  return Math.round(base + offset);
 }
 
 /**
@@ -302,8 +303,8 @@ export function calculateClientNutritionPlan(
     case 'LOSE_WEIGHT': {
       const rawTarget = tdee - dailyDelta;
       // Safeguards:
-      // Minimum calorie floor: 1500 kcal for male, 1200 kcal for female
-      const minSafeFloor = gender === 'MALE' ? 1500 : 1200;
+      // Minimum calorie floor: 1500 kcal for male, 1200 kcal for female, 1350 for other
+      const minSafeFloor = gender === 'MALE' ? 1500 : gender === 'FEMALE' ? 1200 : 1350;
       // Maximum deficit safeguard: not exceeding 30% of TDEE
       const maxDeficitFloor = Math.round(tdee * 0.7);
       const safeFloor = Math.max(minSafeFloor, maxDeficitFloor);
@@ -359,5 +360,74 @@ export function calculateClientNutritionPlan(
     protein: proteinG,
     carbs: carbsG,
     fat: fatG,
+  };
+}
+
+// ─── BMI Calculator & Classification ────────────────────────────────────────
+
+export interface BMIEstimate {
+  bmi: number;
+  category: 'UNDERWEIGHT' | 'NORMAL' | 'OVERWEIGHT' | 'OBESE';
+  categoryLabel: string;
+  categoryColor: string;
+  categoryBg: string;
+  message: string;
+}
+
+export function calculateBMI(weightKg: number, heightCm: number): BMIEstimate {
+  if (!weightKg || !heightCm || weightKg <= 0 || heightCm <= 0) {
+    return {
+      bmi: 0,
+      category: 'NORMAL',
+      categoryLabel: 'Normal',
+      categoryColor: '#16A34A',
+      categoryBg: '#DCFCE7',
+      message: 'Enter your height and weight to view your BMI assessment.',
+    };
+  }
+  const heightM = heightCm / 100;
+  const bmi = Math.round((weightKg / (heightM * heightM)) * 10) / 10;
+
+  if (bmi < 18.5) {
+    return {
+      bmi,
+      category: 'UNDERWEIGHT',
+      categoryLabel: 'Underweight',
+      categoryColor: '#0284C7',
+      categoryBg: '#E0F2FE',
+      message:
+        'Your BMI is below the healthy range. A balanced nutrition plan with adequate calories will support healthy mass and energy levels.',
+    };
+  }
+  if (bmi < 25) {
+    return {
+      bmi,
+      category: 'NORMAL',
+      categoryLabel: 'Healthy Weight',
+      categoryColor: '#16A34A',
+      categoryBg: '#DCFCE7',
+      message:
+        'Your BMI is within the healthy weight range (18.5 - 24.9). This is associated with optimal energy and lower cardiovascular risks.',
+    };
+  }
+  if (bmi < 30) {
+    return {
+      bmi,
+      category: 'OVERWEIGHT',
+      categoryLabel: 'Overweight',
+      categoryColor: '#D97706',
+      categoryBg: '#FEF3C7',
+      message:
+        'Your BMI falls in the overweight range. A moderate calorie deficit and consistent daily activity will help you reach a healthy weight safely.',
+    };
+  }
+  return {
+    bmi,
+    category: 'OBESE',
+    categoryLabel: 'Obese',
+    categoryColor: '#DC2626',
+    categoryBg: '#FEE2E2',
+    message:
+      'A structured, sustainable nutrition plan will help steady your weight and improve cardiovascular and metabolic health.',
   };
 }
