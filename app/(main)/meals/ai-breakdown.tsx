@@ -25,6 +25,7 @@ import {
 import { theme } from '../../../src/constants';
 import { mealsApi } from '../../../src/features/meals/api/meals.api';
 import { MealType, MealItem } from '../../../src/features/meals/types';
+import { useUnitStore } from '../../../src/store/unitStore';
 
 interface DetectedFoodItem {
   id: string;
@@ -40,6 +41,7 @@ interface DetectedFoodItem {
 
 export default function ConfirmMealScreen() {
   const router = useRouter();
+  const { energyUnit } = useUnitStore();
   const [submitting, setSubmitting] = useState(false);
   const [successModal, setSuccessModal] = useState<{
     visible: boolean;
@@ -221,7 +223,7 @@ export default function ConfirmMealScreen() {
                 <View style={styles.itemDetails}>
                   <Text style={styles.itemName}>{item.name}</Text>
                   <Text style={styles.itemCalories}>
-                    {Math.round(item.calories * item.servingCount)} kcal
+                    {Math.round(item.calories * item.servingCount)} {energyUnit}
                   </Text>
                   <Text style={styles.itemServingDesc}>
                     {item.servingCount} {item.servingUnitText}
@@ -298,7 +300,7 @@ export default function ConfirmMealScreen() {
               {submitting ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={styles.confirmBtnText}>Confirm ({totalCalories} kcal)</Text>
+                <Text style={styles.confirmBtnText}>Confirm ({totalCalories} {energyUnit})</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -322,7 +324,7 @@ export default function ConfirmMealScreen() {
               <Text style={{ fontWeight: '700', color: '#1B281B' }}>
                 {successModal?.mealName}
               </Text>{' '}
-              ({successModal?.calories} kcal) added to your nutrition diary.
+              ({successModal?.calories} {energyUnit}) added to your nutrition diary.
             </Text>
             <TouchableOpacity
               style={styles.modalPrimaryBtn}

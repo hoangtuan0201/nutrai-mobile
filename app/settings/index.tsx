@@ -40,17 +40,26 @@ import {
   Scale,
   Ruler,
   Leaf,
+  Sliders,
 } from 'lucide-react-native';
 import theme from '../../src/constants/theme';
-import { Logo } from '../../src/components';
+import { Logo, UnitsModal } from '../../src/components';
 import { useAuthStore } from '../../src/store/authStore';
 import { useProfile } from '../../src/features/profile/hooks/useProfile';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
+import {
+  useUnitStore,
+  formatWeight,
+  formatHeight,
+  formatEnergy,
+} from '../../src/store/unitStore';
 import {
   calculateClientNutritionPlan,
   FitnessGoalType,
   GenderType,
   ActivityLevelType,
+  kgToLb,
+  lbToKg,
 } from '../../src/utils/nutritionCalculator';
 
 export default function SettingsScreen() {
@@ -58,6 +67,8 @@ export default function SettingsScreen() {
   const { user, logout } = useAuthStore();
   const { profile, updateProfile, isUpdating } = useProfile();
   const onboarding = useOnboardingStore();
+  const { energyUnit, foodUnit, bodyUnit } = useUnitStore();
+  const [isUnitsModalOpen, setIsUnitsModalOpen] = useState(false);
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -156,8 +167,13 @@ export default function SettingsScreen() {
 
   const handleOpenEdit = (type: 'personal' | 'goals') => {
     setModalType(type);
-    setInputWeight(String(userWeight));
-    setInputHeight(String(userHeight));
+    if (bodyUnit === 'imperial') {
+      setInputWeight(kgToLb(userWeight).toFixed(1));
+      setInputHeight(String(Math.round(userHeight / 2.54)));
+    } else {
+      setInputWeight(String(userWeight));
+      setInputHeight(String(userHeight));
+    }
     setInputAge(String(userAge));
     setInputGender(userGender);
     setInputGoal(userFitnessGoal);
@@ -167,8 +183,12 @@ export default function SettingsScreen() {
 
   const handleSaveEdit = async () => {
     try {
-      const parsedWeight = parseFloat(inputWeight) || userWeight;
-      const parsedHeight = parseFloat(inputHeight) || userHeight;
+      let parsedWeight = parseFloat(inputWeight) || userWeight;
+      let parsedHeight = parseFloat(inputHeight) || userHeight;
+      if (bodyUnit === 'imperial') {
+        parsedWeight = lbToKg(parsedWeight);
+        parsedHeight = Math.round(parsedHeight * 2.54);
+      }
       const parsedAge = parseInt(inputAge, 10) || userAge;
 
       // Calculate approximate birth year from age
@@ -363,14 +383,14 @@ export default function SettingsScreen() {
                 <Ruler size={13} color="#7E8379" />
                 <Text style={styles.statLabel}>Height</Text>
               </View>
-              <Text style={styles.statValue}>{userHeight} cm</Text>
+              <Text style={styles.statValue}>{formatHeight(userHeight, bodyUnit).full}</Text>
             </View>
             <View style={styles.statCol}>
               <View style={styles.statLabelRow}>
                 <Scale size={13} color="#7E8379" />
                 <Text style={styles.statLabel}>Weight</Text>
               </View>
-              <Text style={styles.statValue}>{userWeight} kg</Text>
+              <Text style={styles.statValue}>{formatWeight(userWeight, bodyUnit).full}</Text>
             </View>
           </View>
         </View>
@@ -402,7 +422,7 @@ export default function SettingsScreen() {
               </View>
               <Text style={styles.itemValue}>{formatGoalLabel(userFitnessGoal)}</Text>
               <Text style={styles.itemSubValue}>
-                Target weight: {onboarding.targetWeightKg || userWeight} kg
+                Target weight: {formatWeight(onboarding.targetWeightKg || userWeight, bodyUnit).full}
               </Text>
             </View>
 
@@ -422,6 +442,26 @@ export default function SettingsScreen() {
         {/* ── 4. App Settings Section ──────────────────────────────── */}
         <Text style={styles.groupSectionHeader}>App Settings</Text>
         <View style={styles.sectionCard}>
+          {/* Units Setting */}
+          <TouchableOpacity
+            style={styles.listItemRow}
+            activeOpacity={0.7}
+            onPress={() => setIsUnitsModalOpen(true)}
+          >
+            <View style={styles.iconCircle}>
+              <Sliders size={17} color="#333" />
+            </View>
+            <View style={styles.cardHeaderTextCol}>
+              <Text style={styles.listItemTitle}>Units</Text>
+              <Text style={styles.listItemSubtitle}>
+                {energyUnit}, {foodUnit === 'metric' ? 'g/ml' : 'oz/fl oz'}, {bodyUnit === 'metric' ? 'cm/kg' : 'ft/lbs'}
+              </Text>
+            </View>
+            <ChevronRight size={17} color="#A0A096" />
+          </TouchableOpacity>
+
+          <View style={styles.divider} />
+
           <TouchableOpacity style={styles.listItemRow} activeOpacity={0.7}>
             <View style={styles.iconCircle}>
               <Bell size={17} color="#333" />
@@ -537,22 +577,26 @@ export default function SettingsScreen() {
             <ScrollView showsVerticalScrollIndicator={false}>
               {modalType === 'personal' ? (
                 <>
-                  <Text style={styles.inputLabel}>Weight (kg)</Text>
+                  <Text style={styles.inputLabel}>
+                    Weight ({bodyUnit === 'metric' ? 'kg' : 'lbs'})
+                  </Text>
                   <TextInput
                     style={styles.inputField}
                     keyboardType="numeric"
                     value={inputWeight}
                     onChangeText={setInputWeight}
-                    placeholder="e.g. 60"
+                    placeholder={bodyUnit === 'metric' ? 'e.g. 60' : 'e.g. 132'}
                   />
 
-                  <Text style={styles.inputLabel}>Height (cm)</Text>
+                  <Text style={styles.inputLabel}>
+                    Height ({bodyUnit === 'metric' ? 'cm' : 'inches'})
+                  </Text>
                   <TextInput
                     style={styles.inputField}
                     keyboardType="numeric"
                     value={inputHeight}
                     onChangeText={setInputHeight}
-                    placeholder="e.g. 174"
+                    placeholder={bodyUnit === 'metric' ? 'e.g. 174' : 'e.g. 69'}
                   />
 
                   <Text style={styles.inputLabel}>Age (years)</Text>
@@ -679,6 +723,12 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ── Units Configuration Modal ────────────────────────────── */}
+      <UnitsModal
+        visible={isUnitsModalOpen}
+        onClose={() => setIsUnitsModalOpen(false)}
+      />
     </SafeAreaView>
   );
 }
