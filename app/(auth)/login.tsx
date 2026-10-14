@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, ArrowRight, ShieldCheck, Check } from 'lucide-react-native';
+import { Mail, ArrowRight, ArrowLeft, ShieldCheck, Check } from 'lucide-react-native';
 import { theme } from '../../src/constants';
 import { Button, Input, Pill, Logo } from '../../src/components';
 import { useAuthStore } from '../../src/store/authStore';
@@ -79,8 +79,16 @@ export default function LoginScreen() {
           keyboardDismissMode="on-drag"
           removeClippedSubviews={false}
         >
-          {/* Top Brand Logo */}
+          {/* Top Row with Back Button & Brand Logo */}
           <View style={styles.topRow}>
+            <TouchableOpacity
+              onPress={() => router.replace('/(auth)/welcome')}
+              style={styles.backBtn}
+              activeOpacity={0.7}
+              accessibilityLabel="Back to welcome"
+            >
+              <ArrowLeft size={20} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
             <Logo variant="full" size="md" />
           </View>
 
@@ -197,12 +205,12 @@ export default function LoginScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Sign Up Navigation */}
+            {/* Sign Up Navigation -> Starts Onboarding flow */}
             <View style={styles.switchAuthRow}>
               <Text style={styles.switchAuthPrompt}>Don't have an account?</Text>
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={() => router.push('/(auth)/register')}
+                onPress={() => router.push('/(auth)/goals' as any)}
               >
                 <Text style={styles.switchAuthAction}>Sign Up</Text>
               </TouchableOpacity>
@@ -230,8 +238,20 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
     marginBottom: theme.spacing.md,
-    alignItems: 'flex-start',
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(19, 19, 19, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
     marginBottom: theme.spacing.xl,

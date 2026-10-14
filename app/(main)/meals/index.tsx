@@ -29,6 +29,7 @@ import { theme } from '../../../src/constants';
 import { Card, Button } from '../../../src/components';
 import { mealsApi } from '../../../src/features/meals/api/meals.api';
 import { Meal, MealType, DailyMealsResponse } from '../../../src/features/meals/types';
+import { useUnitStore, formatFoodWeight } from '../../../src/store/unitStore';
 
 const MEAL_SECTIONS: Array<{
   type: MealType;
@@ -63,6 +64,7 @@ export default function MealsListScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<DailyMealsResponse | null>(null);
+  const { energyUnit, foodUnit } = useUnitStore();
 
   // Sync selectedDate if route param changes
   useEffect(() => {
@@ -283,7 +285,7 @@ export default function MealsListScreen() {
                     <Text style={styles.sectionTitle}>{section.label}</Text>
                   </View>
                   <View style={styles.sectionHeaderRight}>
-                    <Text style={styles.sectionCals}>{sectionCalories} kcal</Text>
+                    <Text style={styles.sectionCals}>{sectionCalories} {energyUnit}</Text>
                     <TouchableOpacity
                       style={styles.addSmallBtn}
                       onPress={() =>
@@ -321,8 +323,8 @@ export default function MealsListScreen() {
                             {meal.name || `${section.label} Meal`}
                           </Text>
                           <Text style={styles.mealMacros}>
-                            {meal.totalCalories} kcal • P: {meal.totalProtein}g • C:{' '}
-                            {meal.totalCarbs}g • F: {meal.totalFat}g
+                            {meal.totalCalories} {energyUnit} • P: {formatFoodWeight(meal.totalProtein, foodUnit).full} • C:{' '}
+                            {formatFoodWeight(meal.totalCarbs, foodUnit).full} • F: {formatFoodWeight(meal.totalFat, foodUnit).full}
                           </Text>
                         </View>
                         <TouchableOpacity
@@ -341,7 +343,7 @@ export default function MealsListScreen() {
                               <Text style={styles.itemBullet}>•</Text>
                               <Text style={styles.itemTitle}>{it.foodName}</Text>
                               <Text style={styles.itemPortion}>
-                                {it.quantity || 1} {it.unit || 'serving'} ({it.calories} kcal)
+                                {it.quantity || 1} {it.unit || 'serving'} ({it.calories} {energyUnit})
                               </Text>
                             </View>
                           ))}

@@ -9,8 +9,7 @@ export * from './ui/Loading';
 export * from './ui/Logo';
 export * from './ui/CalculatingLoader';
 export * from './ui/OnboardingHeader';
+export * from './ui/UnitsModal';
 
 // Common & Feature Components
 export * from './common/Text';
-export * from './MacroBar';
-export * from './nutrition/CalorieRing';

@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Svg, { Circle, Line, Polyline, Rect } from 'react-native-svg';
+import Svg, { Circle, Line, Polyline } from 'react-native-svg';
 import { theme } from '../../src/constants';
 import { Button, OnboardingHeader } from '../../src/components';
 import { useOnboardingStore, GenderType } from '../../src/store/onboardingStore';
@@ -50,17 +50,6 @@ function VenusIcon({ color, size = 22 }: { color: string; size?: number }) {
   );
 }
 
-function NonBinaryIcon({ color, size = 22 }: { color: string; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Rect x={4} y={4} width={6.5} height={6.5} rx={2} />
-      <Rect x={13.5} y={4} width={6.5} height={6.5} rx={2} />
-      <Rect x={4} y={13.5} width={6.5} height={6.5} rx={2} />
-      <Rect x={13.5} y={13.5} width={6.5} height={6.5} rx={2} />
-    </Svg>
-  );
-}
-
 const GENDER_OPTIONS: {
   id: GenderType;
   label: string;
@@ -68,7 +57,6 @@ const GENDER_OPTIONS: {
 }[] = [
   { id: 'MALE', label: 'Male', icon: MarsIcon },
   { id: 'FEMALE', label: 'Female', icon: VenusIcon },
-  { id: 'OTHER', label: 'Non-binary', icon: NonBinaryIcon },
 ];
 
 export default function GenderScreen() {
@@ -77,7 +65,7 @@ export default function GenderScreen() {
   const setGender = useOnboardingStore((s) => s.setGender);
 
   const [selectedGender, setSelectedGender] = useState<GenderType>(
-    storedGender || 'MALE',
+    storedGender === 'FEMALE' ? 'FEMALE' : 'MALE',
   );
 
   const handleNext = () => {

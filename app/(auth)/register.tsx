@@ -14,16 +14,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User, Mail, ArrowRight, ShieldCheck, Check } from 'lucide-react-native';
+import { User, Mail, ArrowRight, ArrowLeft, ShieldCheck, Check } from 'lucide-react-native';
 import { theme } from '../../src/constants';
 import { Button, Input, Pill, Logo } from '../../src/components';
 import { useAuthStore } from '../../src/store/authStore';
+import { useOnboardingStore } from '../../src/store/onboardingStore';
 import { registerSchema, RegisterFormData } from '../../src/features/auth/validation';
 import { performGoogleAuth } from '../../src/features/auth/services/googleAuth';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { register: registerUser, isLoading, error, clearError } = useAuthStore();
+
+  // Guard: User must complete the 7-step Onboarding before creating account
+  React.useEffect(() => {
+    const calculatedPlan = useOnboardingStore.getState().calculatedPlan;
+    if (!calculatedPlan) {
+      router.replace('/(auth)/goals' as any);
+    }
+  }, []);
 
   const {
     control,
@@ -107,8 +116,16 @@ export default function RegisterScreen() {
           keyboardDismissMode="on-drag"
           removeClippedSubviews={false}
         >
-          {/* Top Brand Logo */}
+          {/* Top Row with Back Button & Brand Logo */}
           <View style={styles.topRow}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backBtn}
+              activeOpacity={0.7}
+              accessibilityLabel="Go back"
+            >
+              <ArrowLeft size={20} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
             <Logo variant="full" size="md" />
           </View>
 
@@ -273,8 +290,20 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
     marginBottom: theme.spacing.md,
-    alignItems: 'flex-start',
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(19, 19, 19, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
     marginBottom: theme.spacing.xl,

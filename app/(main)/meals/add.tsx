@@ -35,6 +35,7 @@ import {
   FoodSearchResult,
   Meal,
 } from '../../../src/features/meals/types';
+import { useUnitStore } from '../../../src/store/unitStore';
 
 interface PopularFood {
   name: string;
@@ -123,6 +124,7 @@ export default function AddFoodManuallyScreen() {
     date?: string;
     from?: 'log' | 'home' | string;
   }>();
+  const { energyUnit } = useUnitStore();
 
   const handleBack = () => {
     if (params.from === 'log') {
@@ -421,7 +423,7 @@ export default function AddFoodManuallyScreen() {
                       <Text style={styles.foodWeightCal}>
                         {f.defaultServingSize || 100}{f.servingUnit || 'g'} •{' '}
                         <Text style={styles.boldCal}>
-                          {Math.round(f.caloriesPer100g)} kcal
+                          {Math.round(f.caloriesPer100g)} {energyUnit}
                         </Text>
                       </Text>
                       <View style={styles.macroTagRow}>
@@ -501,7 +503,7 @@ export default function AddFoodManuallyScreen() {
                         </Text>
                         <View style={styles.macroDetailsRow}>
                           <Text style={styles.boldCal}>
-                            {Math.round(m.totalCalories)} kcal
+                            {Math.round(m.totalCalories)} {energyUnit}
                           </Text>
                           <View style={styles.macroTagRow}>
                             <Text style={[styles.macroTagText, { color: '#3865D6' }]}>
@@ -571,7 +573,7 @@ export default function AddFoodManuallyScreen() {
                     <View style={styles.macroDetailsRow}>
                       <Text style={styles.foodWeightCal}>
                         {food.portion} •{' '}
-                        <Text style={styles.boldCal}>{food.calories} kcal</Text>
+                        <Text style={styles.boldCal}>{food.calories} {energyUnit}</Text>
                       </Text>
                       <View style={styles.macroTagRow}>
                         <Text style={[styles.macroTagText, { color: '#3865D6' }]}>
@@ -642,7 +644,7 @@ export default function AddFoodManuallyScreen() {
               <Text style={styles.modalFoodHighlight}>
                 {successModal?.foodName}
               </Text>{' '}
-              ({successModal?.calories} kcal) added to your diary.
+              ({successModal?.calories} {energyUnit}) added to your diary.
             </Text>
 
             <View style={styles.modalButtonRow}>

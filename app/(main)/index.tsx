@@ -9,10 +9,13 @@ import {
   Platform,
   RefreshControl,
   ActivityIndicator,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import {
   Bell,
   Flame,
@@ -22,6 +25,12 @@ import {
   ChevronRight,
   Leaf,
   Plus,
+  X,
+  Droplet,
+  Droplets,
+  RotateCcw,
+  Minus,
+  Scale,
 } from 'lucide-react-native';
 import theme from '../../src/constants/theme';
 import { Logo } from '../../src/components';
@@ -33,15 +42,109 @@ import {
   FitnessGoalType,
   GenderType,
   ActivityLevelType,
+  kgToLb,
+  lbToKg,
 } from '../../src/utils/nutritionCalculator';
 import { mealsApi } from '../../src/features/meals/api/meals.api';
 import { Meal, DailyNutritionSummary } from '../../src/features/meals/types';
+import {
+  useUnitStore,
+  formatWeight,
+  formatHeight,
+  formatEnergy,
+  formatFoodWeight,
+  formatWater,
+} from '../../src/store/unitStore';
+import { useWaterStore } from '../../src/store/waterStore';
+
+// ── Tumbler Glass SVG Component (Matching Image 1) ───────────────────────────
+interface TumblerGlassProps {
+  status: 'filled' | 'next' | 'empty';
+  onPress: () => void;
+}
+
+const TumblerGlass: React.FC<TumblerGlassProps> = ({ status, onPress }) => {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={onPress}
+      style={styles.cupTouchable}
+    >
+      <Svg width={30} height={40} viewBox="0 0 30 40">
+        {status === 'filled' && (
+          <>
+            {/* Glass body background */}
+            <Path
+              d="M3 4 L27 4 L23.5 35 Q23.2 38 20 38 L10 38 Q6.8 38 6.5 35 L3 4 Z"
+              fill="#DBEAFE"
+              stroke="#60A5FA"
+              strokeWidth={1.5}
+            />
+            {/* Water liquid */}
+            <Path
+              d="M4.5 10 L25.5 10 L23 34.5 Q22.8 37 20 37 L10 37 Q7.2 37 7 34.5 L4.5 10 Z"
+              fill="#60A5FA"
+            />
+            {/* Water surface highlight */}
+            <Path
+              d="M5 10 L25 10"
+              stroke="#93C5FD"
+              strokeWidth={2}
+              strokeLinecap="round"
+            />
+            {/* Reflection shine */}
+            <Path
+              d="M7.5 13 L9 32"
+              stroke="rgba(255, 255, 255, 0.65)"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+            />
+          </>
+        )}
+
+        {status === 'next' && (
+          <>
+            {/* Dashed empty glass with + */}
+            <Path
+              d="M3 4 L27 4 L23.5 35 Q23.2 38 20 38 L10 38 Q6.8 38 6.5 35 L3 4 Z"
+              fill="#F0F7FF"
+              stroke="#60A5FA"
+              strokeWidth={1.5}
+              strokeDasharray="3 2.5"
+            />
+            {/* Plus sign in center */}
+            <Path
+              d="M15 15 L15 25 M10 20 L20 20"
+              stroke="#3B82F6"
+              strokeWidth={2}
+              strokeLinecap="round"
+            />
+          </>
+        )}
+
+        {status === 'empty' && (
+          <>
+            {/* Empty light glass */}
+            <Path
+              d="M3 4 L27 4 L23.5 35 Q23.2 38 20 38 L10 38 Q6.8 38 6.5 35 L3 4 Z"
+              fill="#FFFFFF"
+              stroke="rgba(27, 40, 27, 0.16)"
+              strokeWidth={1.2}
+            />
+          </>
+        )}
+      </Svg>
+    </TouchableOpacity>
+  );
+};
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { profile } = useProfile();
+  const { profile, updateProfile, isUpdating } = useProfile();
   const onboarding = useOnboardingStore();
+  const { energyUnit, foodUnit, bodyUnit } = useUnitStore();
+  const { intakeByDate, dailyGoalMl, addCup, removeCup, resetDate } = useWaterStore();
 
   // Vietnam local today
   const todayStr = useMemo(() => {
@@ -123,6 +226,88 @@ export default function HomeScreen() {
   const targetProtein = profile?.activeTarget?.dailyProtein || computedPlan.protein || 120;
   const targetCarbs = profile?.activeTarget?.dailyCarbs || computedPlan.carbs || 290;
   const targetFat = profile?.activeTarget?.dailyFat || computedPlan.fat || 70;
+
+  // Weight & Unit computations
+  const targetWeight =
+    onboarding.targetWeightKg ||
+    (userFitnessGoal === 'WEIGHT_LOSS'
+      ? Math.max(35, userWeight - 5)
+      : userFitnessGoal === 'MUSCLE_GAIN'
+      ? userWeight + 4
+      : userWeight);
+
+  const weightDisplay = formatWeight(userWeight, bodyUnit);
+  const goalWeightDisplay = formatWeight(targetWeight, bodyUnit);
+  const bmi =
+    userHeight > 0
+      ? (userWeight / ((userHeight / 100) * (userHeight / 100))).toFixed(1)
+      : '21.0';
+
+  const weightDiff = Math.abs(userWeight - targetWeight);
+  const deltaDisplay = formatWeight(weightDiff, bodyUnit);
+  const deltaLabel =
+    targetWeight > userWeight
+      ? 'Weight to Gain'
+      : targetWeight < userWeight
+      ? 'Weight to Lose'
+      : 'Weight Goal';
+
+  // Water calculations
+  const currentWaterMl = intakeByDate[selectedDate] || 0;
+  const filledCups = Math.min(8, Math.floor(currentWaterMl / 250));
+  const waterDisplay = formatWater(currentWaterMl, foodUnit);
+  const waterGoalDisplay = formatWater(dailyGoalMl, foodUnit);
+
+  // Update Weight Modal state
+  const [isUpdateWeightOpen, setIsUpdateWeightOpen] = useState(false);
+  const [newWeightInput, setNewWeightInput] = useState('');
+
+  const handleOpenUpdateWeight = () => {
+    setNewWeightInput(
+      bodyUnit === 'imperial'
+        ? kgToLb(userWeight).toFixed(1)
+        : String(userWeight)
+    );
+    setIsUpdateWeightOpen(true);
+  };
+
+  const handleSaveWeight = async () => {
+    let parsed = parseFloat(newWeightInput);
+    if (isNaN(parsed) || parsed <= 0) {
+      Alert.alert('Invalid Weight', 'Please enter a valid weight.');
+      return;
+    }
+    if (bodyUnit === 'imperial') {
+      parsed = lbToKg(parsed);
+    }
+    try {
+      await updateProfile({ weightKg: parsed });
+      onboarding.setMetrics({
+        gender: userGender,
+        age: userAge,
+        heightCm: userHeight,
+        weightKg: parsed,
+      });
+      setIsUpdateWeightOpen(false);
+    } catch (err: any) {
+      Alert.alert('Error', 'Failed to update weight. Please try again.');
+    }
+  };
+
+  // Water Action Modal state
+  const [isWaterModalOpen, setIsWaterModalOpen] = useState(false);
+
+  const handleCupPress = (cupIndex: number) => {
+    if (cupIndex < filledCups) {
+      setIsWaterModalOpen(true);
+    } else {
+      addCup(selectedDate, 250);
+    }
+  };
+
+  const handleWaterMore = () => {
+    setIsWaterModalOpen(true);
+  };
 
   // Real meal &    tate from backend
   const [dailyData, setDailyData] = useState<{
@@ -336,7 +521,7 @@ export default function HomeScreen() {
                 <Text style={styles.ringValText}>
                   {consumedCalories.toLocaleString()}
                 </Text>
-                <Text style={styles.ringSubText}>kcal</Text>
+                <Text style={styles.ringSubText}>{energyUnit}</Text>
               </View>
             </View>
 
@@ -350,7 +535,7 @@ export default function HomeScreen() {
                 <Text style={styles.bigCalorieNumber}>
                   {remainingCalories.toLocaleString()}
                 </Text>
-                <Text style={styles.bigCalorieUnit}>kcal</Text>
+                <Text style={styles.bigCalorieUnit}>{energyUnit}</Text>
               </View>
 
               <TouchableOpacity
@@ -359,7 +544,7 @@ export default function HomeScreen() {
                 onPress={() => router.push('/settings')}
               >
                 <Text style={styles.targetText}>
-                  Target {targetCalories.toLocaleString()} kcal
+                  Target {targetCalories.toLocaleString()} {energyUnit}
                 </Text>
                 <Pencil size={12} color="#797E74" style={{ marginLeft: 4 }} />
               </TouchableOpacity>
@@ -375,7 +560,7 @@ export default function HomeScreen() {
               <View style={[styles.macroDot, { backgroundColor: '#5D80E6' }]} />
               <Text style={styles.macroPillLabel}>Protein</Text>
               <Text style={styles.macroPillValue}>
-                {consumedProtein} / {targetProtein} g
+                {formatFoodWeight(consumedProtein, foodUnit).value} / {formatFoodWeight(targetProtein, foodUnit).full}
               </Text>
             </View>
 
@@ -384,7 +569,7 @@ export default function HomeScreen() {
               <View style={[styles.macroDot, { backgroundColor: '#7BC754' }]} />
               <Text style={styles.macroPillLabel}>Carbs</Text>
               <Text style={styles.macroPillValue}>
-                {consumedCarbs} / {targetCarbs} g
+                {formatFoodWeight(consumedCarbs, foodUnit).value} / {formatFoodWeight(targetCarbs, foodUnit).full}
               </Text>
             </View>
 
@@ -393,9 +578,91 @@ export default function HomeScreen() {
               <View style={[styles.macroDot, { backgroundColor: '#F5A623' }]} />
               <Text style={styles.macroPillLabel}>Fat</Text>
               <Text style={styles.macroPillValue}>
-                {consumedFat} / {targetFat} g
+                {formatFoodWeight(consumedFat, foodUnit).value} / {formatFoodWeight(targetFat, foodUnit).full}
               </Text>
             </View>
+          </View>
+        </View>
+
+        {/* ── 1. Water Tracker Section (Matching Image 1) ───────────── */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Water</Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={handleWaterMore}
+            style={styles.moreLinkBtn}
+          >
+            <Text style={styles.moreLinkText}>More</Text>
+            <ChevronRight size={14} color="#797E74" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.trackerCard}>
+          <Text style={styles.trackerSubLabel}>Today's Intake</Text>
+          <View style={styles.trackerValueRow}>
+            <Text style={styles.trackerBigNumber}>{waterDisplay.value}</Text>
+            <Text style={styles.trackerUnitText}>{waterDisplay.unit}</Text>
+          </View>
+
+          {/* 8 Tumbler glasses */}
+          <View style={styles.tumblerRow}>
+            {Array.from({ length: 8 }).map((_, idx) => {
+              let status: 'filled' | 'next' | 'empty' = 'empty';
+              if (idx < filledCups) {
+                status = 'filled';
+              } else if (idx === filledCups) {
+                status = 'next';
+              }
+              return (
+                <TumblerGlass
+                  key={idx}
+                  status={status}
+                  onPress={() => handleCupPress(idx)}
+                />
+              );
+            })}
+          </View>
+
+          <Text style={styles.trackerGoalText}>Goal: {waterGoalDisplay.full}</Text>
+        </View>
+
+        {/* ── 2. Weight Tracker Section (Matching Image 1) ──────────── */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Weight</Text>
+        </View>
+
+        <View style={styles.trackerCard}>
+          <Text style={styles.trackerSubLabel}>Current Weight</Text>
+          <View style={styles.weightContentRow}>
+            <View style={styles.weightValueCol}>
+              <View style={styles.trackerValueRow}>
+                <Text style={styles.trackerBigNumber}>{weightDisplay.value}</Text>
+                <Text style={styles.trackerUnitText}>{weightDisplay.unit}</Text>
+              </View>
+              <View style={styles.bmiPill}>
+                <Text style={styles.bmiPillText}>BMI: {bmi}</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.updateWeightBtn}
+              activeOpacity={0.8}
+              onPress={handleOpenUpdateWeight}
+            >
+              <Plus size={15} color="#2563EB" style={{ marginRight: 4 }} />
+              <Text style={styles.updateWeightBtnText}>Update Weight</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.weightFooterDivider} />
+
+          <View style={styles.weightFooterRow}>
+            <Text style={styles.weightFooterItem}>
+              Goal Weight: <Text style={styles.weightFooterBold}>{goalWeightDisplay.full}</Text>
+            </Text>
+            <Text style={styles.weightFooterItem}>
+              {deltaLabel}: <Text style={styles.weightFooterBold}>{deltaDisplay.full}</Text>
+            </Text>
           </View>
         </View>
 
@@ -468,7 +735,7 @@ export default function HomeScreen() {
                     {summaryTitle}
                   </Text>
                   <Text style={styles.mealMacros}>
-                    {Math.round(meal.totalCalories)} kcal  •  P {Math.round(meal.totalProtein)}g  •  C {Math.round(meal.totalCarbs)}g  •  F {Math.round(meal.totalFat)}g
+                    {Math.round(meal.totalCalories)} {energyUnit}  •  P {formatFoodWeight(meal.totalProtein, foodUnit).full}  •  C {formatFoodWeight(meal.totalCarbs, foodUnit).full}  •  F {formatFoodWeight(meal.totalFat, foodUnit).full}
                   </Text>
                   <Text style={styles.mealTime}>{timeStr}</Text>
                 </View>
@@ -501,6 +768,193 @@ export default function HomeScreen() {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* ── Update Weight Modal ────────────────────────────────────── */}
+      <Modal
+        visible={isUpdateWeightOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsUpdateWeightOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Update Weight</Text>
+              <TouchableOpacity
+                onPress={() => setIsUpdateWeightOpen(false)}
+                style={styles.modalCloseBtn}
+              >
+                <X size={20} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalLabel}>
+              Enter current weight ({bodyUnit === 'metric' ? 'kg' : 'lbs'})
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              keyboardType="numeric"
+              value={newWeightInput}
+              onChangeText={setNewWeightInput}
+              placeholder={bodyUnit === 'metric' ? 'e.g. 60.5' : 'e.g. 133.5'}
+              placeholderTextColor="#999"
+              autoFocus
+            />
+
+            <TouchableOpacity
+              style={styles.modalSaveBtn}
+              activeOpacity={0.8}
+              onPress={handleSaveWeight}
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.modalSaveBtnText}>Save Weight</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Water Action Modal (Synchronized NutraAI Custom Dialog) ── */}
+      <Modal
+        visible={isWaterModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsWaterModalOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderTitleRow}>
+                <View style={styles.waterIconCircle}>
+                  <Droplets size={18} color="#2563EB" />
+                </View>
+                <Text style={styles.modalTitle}>Water Intake</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setIsWaterModalOpen(false)}
+                style={styles.modalCloseBtn}
+                activeOpacity={0.7}
+              >
+                <X size={20} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Current Status Box */}
+            <View style={styles.waterStatusBox}>
+              <View style={styles.waterStatusRow}>
+                <Text style={styles.waterStatusLabel}>Today's Intake</Text>
+                <Text style={styles.waterStatusVal}>{waterDisplay.full}</Text>
+              </View>
+              <View style={styles.waterStatusRow}>
+                <Text style={styles.waterStatusLabel}>Daily Goal</Text>
+                <Text style={styles.waterStatusGoal}>{waterGoalDisplay.full}</Text>
+              </View>
+              <View style={styles.waterProgressBarTrack}>
+                <View
+                  style={[
+                    styles.waterProgressBarFill,
+                    {
+                      width: `${Math.min(
+                        100,
+                        Math.round(
+                          (currentWaterMl / (dailyGoalMl || 2000)) * 100
+                        )
+                      )}%`,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+
+            {/* Quick Actions List */}
+            <View style={styles.waterActionsCol}>
+              <TouchableOpacity
+                style={styles.waterActionItem}
+                activeOpacity={0.75}
+                onPress={() => {
+                  addCup(selectedDate, 250);
+                  setIsWaterModalOpen(false);
+                }}
+              >
+                <View style={styles.waterActionLeft}>
+                  <View style={[styles.waterActionIconWrap, { backgroundColor: '#EFF6FF' }]}>
+                    <Plus size={16} color="#2563EB" />
+                  </View>
+                  <Text style={styles.waterActionText}>
+                    {foodUnit === 'imperial' ? '+8 fl oz (1 cup)' : '+250 ml (1 cup)'}
+                  </Text>
+                </View>
+                <ChevronRight size={16} color="#A0A096" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.waterActionItem}
+                activeOpacity={0.75}
+                onPress={() => {
+                  addCup(selectedDate, 500);
+                  setIsWaterModalOpen(false);
+                }}
+              >
+                <View style={styles.waterActionLeft}>
+                  <View style={[styles.waterActionIconWrap, { backgroundColor: '#EFF6FF' }]}>
+                    <Plus size={16} color="#2563EB" />
+                  </View>
+                  <Text style={styles.waterActionText}>
+                    {foodUnit === 'imperial' ? '+16 fl oz (2 cups)' : '+500 ml (2 cups)'}
+                  </Text>
+                </View>
+                <ChevronRight size={16} color="#A0A096" />
+              </TouchableOpacity>
+
+              {currentWaterMl > 0 && (
+                <TouchableOpacity
+                  style={styles.waterActionItem}
+                  activeOpacity={0.75}
+                  onPress={() => {
+                    removeCup(selectedDate, 250);
+                    setIsWaterModalOpen(false);
+                  }}
+                >
+                  <View style={styles.waterActionLeft}>
+                    <View style={[styles.waterActionIconWrap, { backgroundColor: '#F4F4F0' }]}>
+                      <Minus size={16} color="#656A60" />
+                    </View>
+                    <Text style={styles.waterActionText}>
+                      {foodUnit === 'imperial' ? '-8 fl oz (Remove 1 cup)' : '-250 ml (Remove 1 cup)'}
+                    </Text>
+                  </View>
+                  <ChevronRight size={16} color="#A0A096" />
+                </TouchableOpacity>
+              )}
+
+              {currentWaterMl > 0 && (
+                <TouchableOpacity
+                  style={[styles.waterActionItem, styles.waterActionItemDanger]}
+                  activeOpacity={0.75}
+                  onPress={() => {
+                    resetDate(selectedDate);
+                    setIsWaterModalOpen(false);
+                  }}
+                >
+                  <View style={styles.waterActionLeft}>
+                    <View style={[styles.waterActionIconWrap, { backgroundColor: '#FEF2F2' }]}>
+                      <RotateCcw size={16} color="#DC2626" />
+                    </View>
+                    <Text style={[styles.waterActionText, { color: '#DC2626' }]}>
+                      Reset Today
+                    </Text>
+                  </View>
+                  <ChevronRight size={16} color="#DC2626" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -895,5 +1349,283 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
+  },
+  // ── Tracker Headers & Cards (Water & Weight)
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    marginTop: 4,
+  },
+  moreLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 4,
+  },
+  moreLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#797E74',
+  },
+  trackerCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#EFECE2',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  trackerSubLabel: {
+    fontSize: 13,
+    color: '#767B71',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  trackerValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  trackerBigNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1B281B',
+    letterSpacing: -0.5,
+  },
+  trackerUnitText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1B281B',
+  },
+  // ── Tumbler Row
+  tumblerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 14,
+    paddingHorizontal: 2,
+  },
+  cupTouchable: {
+    padding: 2,
+  },
+  trackerGoalText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#767B71',
+  },
+  // ── Weight Specific
+  weightContentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  weightValueCol: {
+    flex: 1,
+  },
+  bmiPill: {
+    backgroundColor: 'rgba(27, 40, 27, 0.06)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+  },
+  bmiPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#767B71',
+  },
+  updateWeightBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  updateWeightBtnText: {
+    color: '#2563EB',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  weightFooterDivider: {
+    height: 1,
+    backgroundColor: '#F3EFE8',
+    marginTop: 14,
+    marginBottom: 10,
+  },
+  weightFooterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  weightFooterItem: {
+    fontSize: 12,
+    color: '#767B71',
+    fontWeight: '600',
+  },
+  weightFooterBold: {
+    color: '#1B281B',
+    fontWeight: '700',
+  },
+  // ── Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 22,
+    width: '100%',
+    maxWidth: 380,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1B281B',
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#656A60',
+    marginBottom: 8,
+  },
+  modalInput: {
+    backgroundColor: '#F7F6F0',
+    borderWidth: 1,
+    borderColor: '#E6E3D8',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1B281B',
+    marginBottom: 18,
+  },
+  modalSaveBtn: {
+    backgroundColor: '#FF9114',
+    paddingVertical: 13,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalSaveBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  // ── Synchronized Water Modal Styles
+  modalHeaderTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  waterIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waterStatusBox: {
+    backgroundColor: '#F7F6F0',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
+  },
+  waterStatusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  waterStatusLabel: {
+    fontSize: 13,
+    color: '#656A60',
+    fontWeight: '600',
+  },
+  waterStatusVal: {
+    fontSize: 14,
+    color: '#1B281B',
+    fontWeight: '800',
+  },
+  waterStatusGoal: {
+    fontSize: 13,
+    color: '#767B71',
+    fontWeight: '700',
+  },
+  waterProgressBarTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#E6E3D8',
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  waterProgressBarFill: {
+    height: '100%',
+    backgroundColor: '#3B82F6',
+    borderRadius: 3,
+  },
+  waterActionsCol: {
+    gap: 8,
+  },
+  waterActionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EFECE2',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  waterActionItemDanger: {
+    borderColor: '#FEE2E2',
+    backgroundColor: '#FFFBFB',
+  },
+  waterActionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  waterActionIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waterActionText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1B281B',
   },
 });
