@@ -9,6 +9,7 @@ import {
   Image,
   ActivityIndicator,
   Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -27,6 +28,12 @@ import {
   UtensilsCrossed,
   Soup,
   Apple,
+  Scan,
+  Barcode,
+  Mic,
+  Zap,
+  Check,
+  Crown,
 } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
 import { mealsApi } from '../../../src/features/meals/api/meals.api';
@@ -181,6 +188,98 @@ export default function AddFoodManuallyScreen() {
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Meal Type Header Dropdown Modal State (Matching Image 3)
+  const [isMealTypeDropdownOpen, setIsMealTypeDropdownOpen] = useState(false);
+
+  // Quick Log Modal State (Matching Image 2)
+  const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
+  const [quickLogCalories, setQuickLogCalories] = useState('');
+  const [quickLogMealType, setQuickLogMealType] = useState<MealType>(selectedType);
+  const [isQuickLogMealDropdownOpen, setIsQuickLogMealDropdownOpen] = useState(false);
+  const [quickLogDescription, setQuickLogDescription] = useState('');
+  const [quickLogCarbs, setQuickLogCarbs] = useState('');
+  const [quickLogProtein, setQuickLogProtein] = useState('');
+  const [quickLogFat, setQuickLogFat] = useState('');
+  const [savingQuickLog, setSavingQuickLog] = useState(false);
+  const [quickLogError, setQuickLogError] = useState<string | null>(null);
+
+  const handleOpenQuickLog = () => {
+    setQuickLogMealType(selectedType);
+    setIsQuickLogMealDropdownOpen(false);
+    setQuickLogError(null);
+    setIsQuickLogOpen(true);
+  };
+
+  const handleSaveQuickLog = async () => {
+    const cals = parseFloat(quickLogCalories);
+    if (isNaN(cals) || cals <= 0) {
+      setQuickLogError('Calories are required and must be greater than 0.');
+      return;
+    }
+
+    setSavingQuickLog(true);
+    setQuickLogError(null);
+
+    try {
+      const mealTitle =
+        quickLogDescription.trim() ||
+        `${quickLogMealType.charAt(0) + quickLogMealType.slice(1).toLowerCase()} Quick Log`;
+      const carbs = parseFloat(quickLogCarbs) || 0;
+      const protein = parseFloat(quickLogProtein) || 0;
+      const fat = parseFloat(quickLogFat) || 0;
+
+      const todayStr =
+        params.date ||
+        new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Asia/Ho_Chi_Minh',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(new Date());
+
+      await mealsApi.createMeal({
+        mealType: quickLogMealType,
+        name: mealTitle,
+        totalCalories: Math.round(cals),
+        totalProtein: Math.round(protein),
+        totalCarbs: Math.round(carbs),
+        totalFat: Math.round(fat),
+        loggedDate: todayStr,
+        source: 'MANUAL',
+        items: [
+          {
+            foodName: mealTitle,
+            calories: Math.round(cals),
+            protein: Math.round(protein),
+            carbs: Math.round(carbs),
+            fat: Math.round(fat),
+            quantity: 1,
+            unit: 'serving',
+          },
+        ],
+      });
+
+      setIsQuickLogOpen(false);
+      setSuccessModal({
+        visible: true,
+        foodName: mealTitle,
+        calories: Math.round(cals),
+        mealType: quickLogMealType,
+      });
+
+      // Clear quick log form
+      setQuickLogCalories('');
+      setQuickLogDescription('');
+      setQuickLogCarbs('');
+      setQuickLogProtein('');
+      setQuickLogFat('');
+    } catch (err: any) {
+      setQuickLogError(err?.message || 'Failed to save meal. Please try again.');
+    } finally {
+      setSavingQuickLog(false);
+    }
+  };
+
   // Load recent meals for today
   useEffect(() => {
     async function loadRecent() {
@@ -291,12 +390,10 @@ export default function AddFoodManuallyScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Pull Indicator Handle */}
-      <View style={styles.pullHandleWrap}>
-        <View style={styles.pullHandle} />
-      </View>
+ 
 
       {/* Header Bar */}
+      {/* ── Top Header with Meal Type Dropdown (Matching Image 3) ──── */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={handleBack}
@@ -305,41 +402,80 @@ export default function AddFoodManuallyScreen() {
         >
           <ArrowLeft size={20} color="#1B281B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Food Manually</Text>
-        <View style={{ width: 32 }} />
+
+        {/* Meal Type Dropdown Trigger in Center of Header */}
+        <TouchableOpacity
+          style={styles.headerDropdownBtn}
+          activeOpacity={0.75}
+          onPress={() => setIsMealTypeDropdownOpen(true)}
+        >
+          <Text style={styles.headerMealTitle}>
+            {MEAL_TABS.find((t) => t.type === selectedType)?.label || 'Lunch'}
+          </Text>
+          <ChevronDown size={18} color="#1B281B" style={{ marginLeft: 4 }} />
+        </TouchableOpacity>
+
+        <View style={{ width: 36 }} />
       </View>
 
-      {/* Meal Type Pill Selector */}
-      <View style={styles.typeSelectorRow}>
-        {MEAL_TABS.map((tab) => {
-          const IconComp = tab.icon;
-          const isActive = selectedType === tab.type;
-          return (
-            <TouchableOpacity
-              key={tab.type}
-              style={[
-                styles.typeTab,
-                isActive && styles.typeTabActive,
-              ]}
-              onPress={() => setSelectedType(tab.type)}
-              activeOpacity={0.8}
-            >
-              <IconComp
-                size={14}
-                color={isActive ? '#FFFFFF' : '#656A60'}
-                style={{ marginRight: 4 }}
-              />
-              <Text
-                style={[
-                  styles.typeTabText,
-                  isActive && styles.typeTabTextActive,
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+      {/* ── Action Shortcuts Row (Scan food & Quick Log, Matching Image 1) ──── */}
+      <View style={styles.shortcutsRow}>
+        {/* 1. Scan food */}
+        <TouchableOpacity
+          style={styles.shortcutCard}
+          activeOpacity={0.8}
+          onPress={() => router.push('/(main)/meals/camera')}
+        >
+          <View style={[styles.shortcutIconWrap, { backgroundColor: '#F8F3EA' }]}>
+            <Scan size={20} color="#92672B" />
+          </View>
+          <Text style={styles.shortcutLabel}>Scan food</Text>
+        </TouchableOpacity>
+
+        {/* 2. Barcode (Temporarily commented out) */}
+        {/*
+        <TouchableOpacity
+          style={styles.shortcutCard}
+          activeOpacity={0.8}
+          onPress={() =>
+            router.push({
+              pathname: '/(main)/meals/camera',
+              params: { mode: 'BARCODE' },
+            })
+          }
+        >
+          <View style={[styles.shortcutIconWrap, { backgroundColor: '#EBF4ED' }]}>
+            <Barcode size={20} color="#2E7D32" />
+          </View>
+          <Text style={styles.shortcutLabel}>Barcode</Text>
+        </TouchableOpacity>
+        */}
+
+        {/* 3. Say Food (Temporarily commented out) */}
+        {/*
+        <TouchableOpacity
+          style={styles.shortcutCard}
+          activeOpacity={0.8}
+          onPress={() => router.push('/ai')}
+        >
+          <View style={[styles.shortcutIconWrap, { backgroundColor: '#EFF6FF' }]}>
+            <Mic size={20} color="#2563EB" />
+          </View>
+          <Text style={styles.shortcutLabel}>Say Food</Text>
+        </TouchableOpacity>
+        */}
+
+        {/* 4. Quick Log */}
+        <TouchableOpacity
+          style={styles.shortcutCard}
+          activeOpacity={0.8}
+          onPress={handleOpenQuickLog}
+        >
+          <View style={[styles.shortcutIconWrap, { backgroundColor: '#FDF2E9' }]}>
+            <Zap size={20} color="#D97706" />
+          </View>
+          <Text style={styles.shortcutLabel}>Quick Log</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Search Input Box */}
@@ -681,6 +817,296 @@ export default function AddFoodManuallyScreen() {
             </View>
           </View>
         </View>
+      </Modal>
+
+      {/* ── Meal Type Dropdown Modal ───────────────────────────────── */}
+      <Modal
+        visible={isMealTypeDropdownOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsMealTypeDropdownOpen(false)}
+      >
+        <TouchableOpacity
+          style={styles.dropdownModalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsMealTypeDropdownOpen(false)}
+        >
+          <View style={styles.dropdownModalCard}>
+            <Text style={styles.dropdownModalTitle}>Select Meal</Text>
+            {MEAL_TABS.map((tab) => {
+              const IconComp = tab.icon;
+              const isSelected = selectedType === tab.type;
+              return (
+                <TouchableOpacity
+                  key={tab.type}
+                  style={[
+                    styles.dropdownOptionRow,
+                    isSelected && styles.dropdownOptionRowActive,
+                  ]}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setSelectedType(tab.type);
+                    setIsMealTypeDropdownOpen(false);
+                  }}
+                >
+                  <View style={styles.dropdownOptionLeft}>
+                    <View
+                      style={[
+                        styles.dropdownIconWrap,
+                        {
+                          backgroundColor: isSelected
+                            ? 'rgba(255, 145, 20, 0.15)'
+                            : 'rgba(27, 40, 27, 0.05)',
+                        },
+                      ]}
+                    >
+                      <IconComp
+                        size={16}
+                        color={isSelected ? '#FF9114' : '#1B281B'}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.dropdownOptionText,
+                        isSelected && styles.dropdownOptionTextActive,
+                      ]}
+                    >
+                      {tab.label}
+                    </Text>
+                  </View>
+                  {isSelected && <Check size={18} color="#FF9114" />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ── Quick Log Modal (Matching Image 2) ────────────────────── */}
+      <Modal
+        visible={isQuickLogOpen}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setIsQuickLogOpen(false)}
+      >
+        <SafeAreaView style={styles.quickLogContainer} edges={['top', 'bottom', 'left', 'right']}>
+          {/* Header */}
+          <View style={styles.quickLogHeader}>
+            <TouchableOpacity
+              onPress={() => {
+                setIsQuickLogMealDropdownOpen(false);
+                setIsQuickLogOpen(false);
+              }}
+              style={styles.quickLogBackBtn}
+              activeOpacity={0.7}
+            >
+              <ArrowLeft size={20} color="#1B281B" />
+            </TouchableOpacity>
+            <Text style={styles.quickLogHeaderTitle}>Quick Log</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setIsQuickLogMealDropdownOpen(false);
+                handleSaveQuickLog();
+              }}
+              disabled={savingQuickLog}
+              activeOpacity={0.8}
+            >
+              {savingQuickLog ? (
+                <ActivityIndicator size="small" color="#2563EB" />
+              ) : (
+                <Text style={styles.quickLogSaveText}>Save</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={styles.quickLogScroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            onScrollBeginDrag={() => setIsQuickLogMealDropdownOpen(false)}
+          >
+            <TouchableWithoutFeedback
+              onPress={() => setIsQuickLogMealDropdownOpen(false)}
+              accessible={false}
+            >
+              <View>
+                {/* Inline Error if any */}
+                {quickLogError && (
+                  <View style={styles.quickLogErrorBanner}>
+                    <Text style={styles.quickLogErrorText}>{quickLogError}</Text>
+                  </View>
+                )}
+
+                {/* Block 1: Log Calories */}
+                <View
+                  style={[
+                    styles.quickLogCard,
+                    {
+                      zIndex: 50,
+                      elevation: isQuickLogMealDropdownOpen ? 15 : 2,
+                    },
+                  ]}
+                >
+                  <Text style={styles.quickLogCardHeader}>Log Calories</Text>
+
+                  {/* Row 1: Calories * */}
+                  <View style={styles.quickLogRow}>
+                    <Text style={styles.quickLogLabel}>
+                      Calories <Text style={{ color: '#E11D48' }}>*</Text>
+                    </Text>
+                    <TextInput
+                      style={styles.quickLogInput}
+                      placeholder="Required"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="numeric"
+                      value={quickLogCalories}
+                      onChangeText={setQuickLogCalories}
+                      onFocus={() => setIsQuickLogMealDropdownOpen(false)}
+                      autoFocus
+                    />
+                  </View>
+
+                  <View style={styles.quickLogDivider} />
+
+                  {/* Row 2: Meal * */}
+                  <View style={[styles.quickLogRow, { zIndex: 100 }]}>
+                    <Text style={styles.quickLogLabel}>
+                      Meal <Text style={{ color: '#E11D48' }}>*</Text>
+                    </Text>
+                    <View style={styles.quickLogMealSelectorContainer}>
+                      <TouchableOpacity
+                        style={styles.quickLogMealSelector}
+                        activeOpacity={0.7}
+                        onPress={() => setIsQuickLogMealDropdownOpen((prev) => !prev)}
+                      >
+                        <Text style={styles.quickLogMealValue}>
+                          {MEAL_TABS.find((t) => t.type === quickLogMealType)?.label || 'Lunch'}
+                        </Text>
+                        <ChevronDown
+                          size={14}
+                          color="#2563EB"
+                          style={{
+                            marginLeft: 4,
+                            transform: [
+                              { rotate: isQuickLogMealDropdownOpen ? '180deg' : '0deg' },
+                            ],
+                          }}
+                        />
+                      </TouchableOpacity>
+
+                      {/* Dropdown Menu Popover right below Meal label */}
+                      {isQuickLogMealDropdownOpen && (
+                        <View style={styles.quickLogDropdownMenu}>
+                          {MEAL_TABS.map((tab) => {
+                            const isSelected = quickLogMealType === tab.type;
+                            return (
+                              <TouchableOpacity
+                                key={tab.type}
+                                style={[
+                                  styles.quickLogDropdownItem,
+                                  isSelected && styles.quickLogDropdownItemActive,
+                                ]}
+                                activeOpacity={0.7}
+                                onPress={() => {
+                                  setQuickLogMealType(tab.type);
+                                  setIsQuickLogMealDropdownOpen(false);
+                                }}
+                              >
+                                <Text
+                                  style={[
+                                    styles.quickLogDropdownItemText,
+                                    isSelected && styles.quickLogDropdownItemTextActive,
+                                  ]}
+                                >
+                                  {tab.label}
+                                </Text>
+                                {isSelected && (
+                                  <Check size={14} color="#2563EB" strokeWidth={2.5} />
+                                )}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      )}
+                    </View>
+                  </View>
+
+                  <View style={styles.quickLogDivider} />
+
+                  {/* Row 3: Description */}
+                  <View style={styles.quickLogRow}>
+                    <Text style={styles.quickLogLabel}>Description</Text>
+                    <TextInput
+                      style={styles.quickLogInput}
+                      placeholder="What is it?"
+                      placeholderTextColor="#9CA3AF"
+                      value={quickLogDescription}
+                      onChangeText={setQuickLogDescription}
+                      onFocus={() => setIsQuickLogMealDropdownOpen(false)}
+                    />
+                  </View>
+                </View>
+
+                {/* Block 2: Nutrition Facts */}
+                <View style={[styles.quickLogCard, { zIndex: 1, elevation: 2 }]}>
+                  <Text style={styles.quickLogCardHeader}>Nutrition Facts</Text>
+
+                  {/* Row 1: Carb (g) */}
+                  <View style={styles.quickLogRow}>
+                    <View style={styles.quickLogLabelWithIcon}>
+                      <Text style={styles.quickLogLabel}>Carb (g)</Text>
+                    </View>
+                    <TextInput
+                      style={styles.quickLogInput}
+                      placeholder="0"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="numeric"
+                      value={quickLogCarbs}
+                      onChangeText={setQuickLogCarbs}
+                      onFocus={() => setIsQuickLogMealDropdownOpen(false)}
+                    />
+                  </View>
+
+                  <View style={styles.quickLogDivider} />
+
+                  {/* Row 2: Protein (g) */}
+                  <View style={styles.quickLogRow}>
+                    <View style={styles.quickLogLabelWithIcon}>
+                      <Text style={styles.quickLogLabel}>Protein (g)</Text>
+                    </View>
+                    <TextInput
+                      style={styles.quickLogInput}
+                      placeholder="0"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="numeric"
+                      value={quickLogProtein}
+                      onChangeText={setQuickLogProtein}
+                      onFocus={() => setIsQuickLogMealDropdownOpen(false)}
+                    />
+                  </View>
+
+                  <View style={styles.quickLogDivider} />
+
+                  {/* Row 3: Fat (g) */}
+                  <View style={styles.quickLogRow}>
+                    <View style={styles.quickLogLabelWithIcon}>
+                      <Text style={styles.quickLogLabel}>Fat (g)</Text>
+                    </View>
+                    <TextInput
+                      style={styles.quickLogInput}
+                      placeholder="0"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="numeric"
+                      value={quickLogFat}
+                      onChangeText={setQuickLogFat}
+                      onFocus={() => setIsQuickLogMealDropdownOpen(false)}
+                    />
+                  </View>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </ScrollView>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
@@ -1033,5 +1459,260 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.bold,
     fontSize: 14,
     color: '#FFFFFF',
+  },
+  // ── Header Dropdown Styles
+  headerDropdownBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: '#F6F5EE',
+  },
+  headerMealTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 18,
+    color: '#1B281B',
+  },
+  // ── Action Shortcuts Row (Matching Image 1)
+  shortcutsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    gap: 8,
+    marginTop: 6,
+    marginBottom: 12,
+  },
+  shortcutCard: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#F9F8F3',
+    borderRadius: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#ECEAE1',
+  },
+  shortcutIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  shortcutLabel: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 11,
+    color: '#1B281B',
+    textAlign: 'center',
+  },
+  // ── Meal Type Dropdown Modal Styles
+  dropdownModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  dropdownModalCard: {
+    width: '100%',
+    maxWidth: 320,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  dropdownModalTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 18,
+    color: '#1B281B',
+    marginBottom: 14,
+  },
+  dropdownOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    marginBottom: 4,
+  },
+  dropdownOptionRowActive: {
+    backgroundColor: 'rgba(255, 145, 20, 0.08)',
+  },
+  dropdownOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dropdownIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dropdownOptionText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 15,
+    color: '#1B281B',
+  },
+  dropdownOptionTextActive: {
+    fontFamily: theme.fonts.bold,
+    color: '#FF9114',
+  },
+  // ── Quick Log Screen Styles (Matching Image 2)
+  quickLogContainer: {
+    flex: 1,
+    backgroundColor: '#F6F5EE',
+  },
+  quickLogHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#F6F5EE',
+  },
+  quickLogBackBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(27, 40, 27, 0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickLogHeaderTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 18,
+    color: '#1B281B',
+  },
+  quickLogSaveText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 16,
+    color: '#2563EB',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  quickLogScroll: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 40,
+  },
+  quickLogErrorBanner: {
+    backgroundColor: '#FEE2E2',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+  },
+  quickLogErrorText: {
+    color: '#DC2626',
+    fontSize: 13,
+    fontFamily: theme.fonts.medium,
+  },
+  quickLogCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#EFECE2',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  quickLogCardHeader: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 16,
+    color: '#1B281B',
+    marginBottom: 12,
+  },
+  quickLogRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  quickLogLabel: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 15,
+    color: '#1B281B',
+  },
+  quickLogLabelWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quickLogInput: {
+    flex: 1,
+    textAlign: 'right',
+    fontFamily: theme.fonts.medium,
+    fontSize: 15,
+    color: '#1B281B',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  quickLogDivider: {
+    height: 1,
+    backgroundColor: '#F4F2E9',
+    marginVertical: 4,
+  },
+  quickLogMealSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  quickLogMealValue: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 15,
+    color: '#2563EB',
+  },
+  quickLogMealSelectorContainer: {
+    position: 'relative',
+    zIndex: 100,
+  },
+  quickLogDropdownMenu: {
+    position: 'absolute',
+    top: '100%',
+    right: 0,
+    marginTop: 6,
+    minWidth: 135,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#EFECE2',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 20,
+    zIndex: 1000,
+  },
+  quickLogDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    marginHorizontal: 4,
+    marginVertical: 1,
+  },
+  quickLogDropdownItemActive: {
+    backgroundColor: '#EFF6FF',
+  },
+  quickLogDropdownItemText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 14,
+    color: '#374151',
+  },
+  quickLogDropdownItemTextActive: {
+    fontFamily: theme.fonts.bold,
+    color: '#2563EB',
   },
 });

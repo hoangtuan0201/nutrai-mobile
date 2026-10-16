@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,11 +15,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import {
   Bell,
-  Flame,
-  Pencil,
   Sparkles,
   ArrowRight,
   ChevronRight,
@@ -33,7 +31,7 @@ import {
   Scale,
 } from 'lucide-react-native';
 import theme from '../../src/constants/theme';
-import { Logo } from '../../src/components';
+import { Logo, CalorieRemainingCard } from '../../src/components';
 import { useAuthStore } from '../../src/store/authStore';
 import { useProfile } from '../../src/features/profile/hooks/useProfile';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
@@ -309,7 +307,8 @@ export default function HomeScreen() {
     setIsWaterModalOpen(true);
   };
 
-  // Real meal &    tate from backend
+  // Real meal & data state from backend with client-side cache by date
+  const mealsCacheRef = useRef<Record<string, { summary: DailyNutritionSummary; meals: Meal[] }>>({});
   const [dailyData, setDailyData] = useState<{
     summary: DailyNutritionSummary;
     meals: Meal[];
@@ -318,12 +317,18 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchDateData = useCallback(async (targetDate: string) => {
+    // If already cached, show instantly
+    if (mealsCacheRef.current[targetDate]) {
+      setDailyData(mealsCacheRef.current[targetDate]);
+    }
     try {
       const res = await mealsApi.getDailyMeals(targetDate);
-      setDailyData({
+      const data = {
         summary: res.summary,
         meals: res.meals || [],
-      });
+      };
+      mealsCacheRef.current[targetDate] = data;
+      setDailyData(data);
     } catch (err: any) {
       console.warn('Failed to load meals for dashboard:', err?.message);
     }
@@ -343,23 +348,20 @@ export default function HomeScreen() {
 
   const handleSelectDay = (targetDate: string) => {
     setSelectedDate(targetDate);
+    // Instant update from cache if available, otherwise clear to avoid stale data flicker
+    if (mealsCacheRef.current[targetDate]) {
+      setDailyData(mealsCacheRef.current[targetDate]);
+    } else {
+      setDailyData(null);
+    }
     fetchDateData(targetDate);
   };
 
   // Consumed nutrition totals from backend (falls back to 0 if none logged)
   const consumedCalories = dailyData?.summary ? Math.round(dailyData.summary.totalCalories) : 0;
-  const remainingCalories = Math.max(0, targetCalories - consumedCalories);
   const consumedProtein = dailyData?.summary ? Math.round(dailyData.summary.totalProtein) : 0;
   const consumedCarbs = dailyData?.summary ? Math.round(dailyData.summary.totalCarbs) : 0;
   const consumedFat = dailyData?.summary ? Math.round(dailyData.summary.totalFat) : 0;
-
-  // Progress ring math
-  const ringSize = 96;
-  const strokeWidth = 9;
-  const radius = (ringSize - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progressRatio = Math.min(1, Math.max(0, consumedCalories / (targetCalories || 1)));
-  const strokeDashoffset = circumference * (1 - progressRatio);
 
   const getMealThumbnail = (meal: Meal): string => {
     if (meal.items && meal.items[0]?.foodName) {
@@ -487,102 +489,17 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Calorie Remaining Card ───────────────────────────────── */}
-        <View style={styles.calorieCard}>
-          <View style={styles.calorieMainRow}>
-            {/* Left Progress Ring */}
-            <View style={styles.ringContainer}>
-              <Svg width={ringSize} height={ringSize}>
-                {/* Track */}
-                <Circle
-                  cx={ringSize / 2}
-                  cy={ringSize / 2}
-                  r={radius}
-                  stroke="#F3EFE6"
-                  strokeWidth={strokeWidth}
-                  fill="transparent"
-                />
-                {/* Progress */}
-                <Circle
-                  cx={ringSize / 2}
-                  cy={ringSize / 2}
-                  r={radius}
-                  stroke="#FF9114"
-                  strokeWidth={strokeWidth}
-                  fill="transparent"
-                  strokeDasharray={`${circumference} ${circumference}`}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
-                />
-              </Svg>
-
-              <View style={styles.ringCenterContent}>
-                <Flame size={20} color="#FF9114" style={{ marginBottom: 2 }} />
-                <Text style={styles.ringValText}>
-                  {consumedCalories.toLocaleString()}
-                </Text>
-                <Text style={styles.ringSubText}>{energyUnit}</Text>
-              </View>
-            </View>
-
-            {/* Right Information */}
-            <View style={styles.calorieInfoCol}>
-              <View style={styles.timeframeRow}>
-                <Text style={styles.calorieRemainingLabel}>Calories remaining</Text>
-              </View>
-
-              <View style={styles.bigCalorieRow}>
-                <Text style={styles.bigCalorieNumber}>
-                  {remainingCalories.toLocaleString()}
-                </Text>
-                <Text style={styles.bigCalorieUnit}>{energyUnit}</Text>
-              </View>
-
-              <TouchableOpacity
-                style={styles.targetRow}
-                activeOpacity={0.7}
-                onPress={() => router.push('/settings')}
-              >
-                <Text style={styles.targetText}>
-                  Target {targetCalories.toLocaleString()} {energyUnit}
-                </Text>
-                <Pencil size={12} color="#797E74" style={{ marginLeft: 4 }} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.calorieCardDivider} />
-
-          {/* Bottom Macro Breakdown Pills */}
-          <View style={styles.macroPillsRow}>
-            {/* Protein */}
-            <View style={styles.macroPillItem}>
-              <View style={[styles.macroDot, { backgroundColor: '#5D80E6' }]} />
-              <Text style={styles.macroPillLabel}>Protein</Text>
-              <Text style={styles.macroPillValue}>
-                {formatFoodWeight(consumedProtein, foodUnit).value} / {formatFoodWeight(targetProtein, foodUnit).full}
-              </Text>
-            </View>
-
-            {/* Carbs */}
-            <View style={styles.macroPillItem}>
-              <View style={[styles.macroDot, { backgroundColor: '#7BC754' }]} />
-              <Text style={styles.macroPillLabel}>Carbs</Text>
-              <Text style={styles.macroPillValue}>
-                {formatFoodWeight(consumedCarbs, foodUnit).value} / {formatFoodWeight(targetCarbs, foodUnit).full}
-              </Text>
-            </View>
-
-            {/* Fat */}
-            <View style={styles.macroPillItem}>
-              <View style={[styles.macroDot, { backgroundColor: '#F5A623' }]} />
-              <Text style={styles.macroPillLabel}>Fat</Text>
-              <Text style={styles.macroPillValue}>
-                {formatFoodWeight(consumedFat, foodUnit).value} / {formatFoodWeight(targetFat, foodUnit).full}
-              </Text>
-            </View>
-          </View>
-        </View>
+        <CalorieRemainingCard
+          consumedCalories={consumedCalories}
+          targetCalories={targetCalories}
+          consumedProtein={consumedProtein}
+          targetProtein={targetProtein}
+          consumedCarbs={consumedCarbs}
+          targetCarbs={targetCarbs}
+          consumedFat={consumedFat}
+          targetFat={targetFat}
+          dateKey={selectedDate}
+        />
 
         {/* ── 1. Water Tracker Section (Matching Image 1) ───────────── */}
         <View style={styles.sectionHeaderRow}>
@@ -1094,117 +1011,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: '#FF9114',
   },
-  // ── Calorie Card
-  calorieCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#EFECE2',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  calorieMainRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ringContainer: {
-    position: 'relative',
-    width: 96,
-    height: 96,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  ringCenterContent: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ringValText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#1B281B',
-    lineHeight: 18,
-  },
-  ringSubText: {
-    fontSize: 11,
-    color: '#767B71',
-    fontWeight: '600',
-  },
-  calorieInfoCol: {
-    flex: 1,
-  },
-  timeframeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  calorieRemainingLabel: {
-    fontSize: 12,
-    color: '#767B71',
-    fontWeight: '600',
-  },
-  bigCalorieRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 4,
-  },
-  bigCalorieNumber: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1B281B',
-    letterSpacing: -0.5,
-  },
-  bigCalorieUnit: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1B281B',
-  },
-  targetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  targetText: {
-    fontSize: 12,
-    color: '#767B71',
-    fontWeight: '600',
-  },
-  calorieCardDivider: {
-    height: 1,
-    backgroundColor: '#F3EFE8',
-    marginVertical: 14,
-  },
-  macroPillsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  macroPillItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  macroDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  macroPillLabel: {
-    fontSize: 11,
-    color: '#656A60',
-    fontWeight: '600',
-  },
-  macroPillValue: {
-    fontSize: 11,
-    color: '#1B281B',
-    fontWeight: '700',
-  },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
