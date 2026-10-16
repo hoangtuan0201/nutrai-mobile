@@ -13,3 +13,4 @@ export * from './ui/UnitsModal';
 
 // Common & Feature Components
 export * from './common/Text';
+export * from './home/CalorieRemainingCard';
