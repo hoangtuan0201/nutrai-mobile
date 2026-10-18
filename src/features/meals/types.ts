@@ -85,3 +85,32 @@ export interface SearchFoodsResponse {
   usdaItems: FoodSearchResult[];
   total: number;
 }
+
+export interface AiScanFoodItem {
+  name: string;
+  caloriesPer100g: number;
+  estimatedGrams: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface AiScanFoodResponse {
+  mealName: string;
+  mealType: string;
+  estimatedTotalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  confidence: number;
+  advice?: string;
+  items: AiScanFoodItem[];
+}
+
+export interface ScanFoodPayload {
+  imageBase64: string;
+  mimeType?: string;
+  mealType?: MealType;
+  foodHint?: string;
+}

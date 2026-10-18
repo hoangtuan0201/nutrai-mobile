@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,145 +6,147 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  TextInput,
   ActivityIndicator,
   Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
-  X,
-  Plus,
-  Minus,
+  ArrowLeft,
   Trash2,
-  Edit2,
-  Search,
-  Check,
   CheckCircle2,
   ArrowRight,
+  Sparkles,
 } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
 import { mealsApi } from '../../../src/features/meals/api/meals.api';
-import { MealType, MealItem } from '../../../src/features/meals/types';
+import { MealItem } from '../../../src/features/meals/types';
 import { useUnitStore } from '../../../src/store/unitStore';
+import { useAiScanStore } from '../../../src/store/aiScanStore';
 
-interface DetectedFoodItem {
+interface EditableFoodItem {
   id: string;
   name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  servingCount: number;
-  servingUnitText: string;
-  imageUrl: string;
+  caloriesPer100g: number;
+  grams: number;
+  proteinPer100g: number;
+  carbsPer100g: number;
+  fatPer100g: number;
 }
 
-export default function ConfirmMealScreen() {
+export default function AIScanConfirmationScreen() {
   const router = useRouter();
   const { energyUnit } = useUnitStore();
+  const { imageUri, scanResult, mealType } = useAiScanStore();
+
   const [submitting, setSubmitting] = useState(false);
+  const [items, setItems] = useState<EditableFoodItem[]>([]);
   const [successModal, setSuccessModal] = useState<{
     visible: boolean;
     calories: number;
     mealName: string;
   } | null>(null);
-  const [errorNotice, setErrorNotice] = useState<string | null>(null);
 
-  // Initial recognized items from AI vision
-  const [items, setItems] = useState<DetectedFoodItem[]>([
-    {
-      id: 'item-1',
-      name: 'Hamburger',
-      calories: 295,
-      protein: 17,
-      carbs: 30,
-      fat: 12,
-      servingCount: 1,
-      servingUnitText: 'serving',
-      imageUrl:
-        'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'item-2',
-      name: 'Fries',
-      calories: 312,
-      protein: 4,
-      carbs: 41,
-      fat: 15,
-      servingCount: 1,
-      servingUnitText: 'serving',
-      imageUrl:
-        'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=300&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'item-3',
-      name: 'Water',
-      calories: 0,
-      protein: 0,
-      carbs: 0,
-      fat: 0,
-      servingCount: 1,
-      servingUnitText: 'bottle',
-      imageUrl:
-        'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=300&auto=format&fit=crop&q=80',
-    },
-  ]);
-
-  const updateServing = (id: string, delta: number) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const newCount = Math.max(item.servingCount + delta, 0.5);
+  // Initialize editable items from AI scan result
+  useEffect(() => {
+    if (scanResult?.items && scanResult.items.length > 0) {
+      setItems(
+        scanResult.items.map((item, idx) => {
+          const grams = item.estimatedGrams > 0 ? item.estimatedGrams : 100;
+          const cPer100 = item.caloriesPer100g > 0 ? item.caloriesPer100g : Math.round((item.calories / grams) * 100) || 120;
           return {
-            ...item,
-            servingCount: Math.round(newCount * 10) / 10,
+            id: `item-${idx}-${item.name}`,
+            name: item.name,
+            caloriesPer100g: cPer100,
+            grams,
+            proteinPer100g: Math.round(((item.protein || 0) / grams) * 100 * 10) / 10,
+            carbsPer100g: Math.round(((item.carbs || 0) / grams) * 100 * 10) / 10,
+            fatPer100g: Math.round(((item.fat || 0) / grams) * 100 * 10) / 10,
           };
-        }
-        return item;
-      }),
+        }),
+      );
+    } else {
+      // Default demo items if launched directly
+      setItems([
+        {
+          id: 'demo-1',
+          name: 'White Rice',
+          caloriesPer100g: 130,
+          grams: 200,
+          proteinPer100g: 2.7,
+          carbsPer100g: 28.2,
+          fatPer100g: 0.3,
+        },
+        {
+          id: 'demo-2',
+          name: 'Grilled Chicken',
+          caloriesPer100g: 165,
+          grams: 120,
+          proteinPer100g: 31,
+          carbsPer100g: 0,
+          fatPer100g: 3.6,
+        },
+      ]);
+    }
+  }, [scanResult]);
+
+  // Handle gram adjustment
+  const handleGramChange = (id: string, text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, '');
+    const val = cleaned === '' ? 0 : parseInt(cleaned, 10);
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, grams: val } : it)),
     );
   };
 
   const removeItem = (id: string) => {
+    if (items.length <= 1) {
+      Alert.alert('Notice', 'A meal requires at least one food item.');
+      return;
+    }
     setItems((prev) => prev.filter((it) => it.id !== id));
   };
 
-  // Calculate totals
+  // Real-time calculations
   const totalCalories = Math.round(
-    items.reduce((sum, it) => sum + it.calories * it.servingCount, 0),
+    items.reduce((sum, it) => sum + (it.caloriesPer100g * it.grams) / 100, 0),
   );
   const totalProtein =
     Math.round(
-      items.reduce((sum, it) => sum + it.protein * it.servingCount, 0) * 10,
+      items.reduce((sum, it) => sum + (it.proteinPer100g * it.grams) / 100, 0) * 10,
     ) / 10;
   const totalCarbs =
     Math.round(
-      items.reduce((sum, it) => sum + it.carbs * it.servingCount, 0) * 10,
+      items.reduce((sum, it) => sum + (it.carbsPer100g * it.grams) / 100, 0) * 10,
     ) / 10;
   const totalFat =
     Math.round(
-      items.reduce((sum, it) => sum + it.fat * it.servingCount, 0) * 10,
+      items.reduce((sum, it) => sum + (it.fatPer100g * it.grams) / 100, 0) * 10,
     ) / 10;
 
-  const handleConfirm = async () => {
+  const handleConfirmAndSave = async () => {
     if (items.length === 0) {
-      setErrorNotice('Please keep at least one food item.');
+      Alert.alert('Notice', 'Please keep at least one food item.');
       return;
     }
 
     setSubmitting(true);
-    setErrorNotice(null);
     try {
-      const mealItems: MealItem[] = items.map((it) => ({
-        foodName: it.name,
-        portionDescription: `${it.servingCount} ${it.servingUnitText}`,
-        quantity: it.servingCount * 100,
-        unit: it.servingUnitText,
-        calories: Math.round(it.calories * it.servingCount),
-        protein: Math.round(it.protein * it.servingCount * 10) / 10,
-        carbs: Math.round(it.carbs * it.servingCount * 10) / 10,
-        fat: Math.round(it.fat * it.servingCount * 10) / 10,
-      }));
+      const mealItems: MealItem[] = items.map((it) => {
+        const itemCal = Math.round((it.caloriesPer100g * it.grams) / 100);
+        return {
+          foodName: it.name,
+          portionDescription: `${it.grams}g`,
+          quantity: it.grams,
+          unit: 'g',
+          calories: itemCal,
+          protein: Math.round(((it.proteinPer100g * it.grams) / 100) * 10) / 10,
+          carbs: Math.round(((it.carbsPer100g * it.grams) / 100) * 10) / 10,
+          fat: Math.round(((it.fatPer100g * it.grams) / 100) * 10) / 10,
+        };
+      });
 
       const todayStr = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Ho_Chi_Minh',
@@ -153,10 +155,11 @@ export default function ConfirmMealScreen() {
         day: '2-digit',
       }).format(new Date());
 
-      const computedMealName = items.map((i) => i.name).slice(0, 2).join(' & ');
+      const computedMealName =
+        scanResult?.mealName || items.map((i) => i.name).slice(0, 2).join(' & ');
 
       await mealsApi.createMeal({
-        mealType: 'LUNCH',
+        mealType: mealType || 'LUNCH',
         name: computedMealName,
         totalCalories,
         totalProtein,
@@ -173,141 +176,175 @@ export default function ConfirmMealScreen() {
         mealName: computedMealName,
       });
     } catch (error: any) {
-      setErrorNotice(error?.message || 'Could not save meal. Please try again.');
+      const msg = error?.response?.data?.message || error?.message || 'Could not save meal. Please try again.';
+      Alert.alert('Error', msg);
     } finally {
       setSubmitting(false);
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Background Camera Snapshot */}
-      <Image
-        source={{
-          uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80',
-        }}
-        style={styles.backgroundImage}
-      />
+  const previewImage =
+    imageUri ||
+    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80';
 
-      <SafeAreaView style={styles.overlay} edges={['bottom']}>
-        {/* Bottom Sheet Modal */}
-        <View style={styles.sheetContainer}>
-          {/* Header */}
-          <View style={styles.sheetHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.sheetTitle}>Confirm Your Meal</Text>
-              <Text style={styles.sheetSubtitle}>
-                You can add missing meals manually.
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+      {/* Top Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => router.back()}
+          style={styles.backBtn}
+        >
+          <ArrowLeft size={20} color={theme.colors.textPrimary} />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>Review AI Scan</Text>
+
+        <View style={{ width: 60 }} />
+      </View>
+
+      <ScrollView
+        style={styles.scrollContent}
+        contentContainerStyle={styles.scrollInner}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Step Indicator Header (Step 4: User reviews before saving) */}
+        <View style={styles.stepHeader}>
+          <Text style={styles.stepTitle}>Review & Confirm Portion</Text>
+          <Text style={styles.stepSubtitle}>
+            Adjust portion weights (grams) below if needed before saving.
+          </Text>
+        </View>
+
+        {/* AI Scan Result Card (Matching Reference Design) */}
+        <View style={styles.scanCard}>
+          {/* Top Row: Thumbnail + Summary */}
+          <View style={styles.cardTopRow}>
+            <Image source={{ uri: previewImage }} style={styles.thumbnailImage} />
+
+            <View style={styles.cardTopDetails}>
+              <View style={styles.aiBadgeRow}>
+                <Sparkles size={14} color="#7CB342" />
+                <Text style={styles.cardTitle}>
+                  {scanResult?.mealName || 'AI Scan Result'}
+                </Text>
+              </View>
+
+              <Text style={styles.mealTypeSubtitle}>
+                {mealType === 'BREAKFAST'
+                  ? 'Breakfast'
+                  : mealType === 'DINNER'
+                  ? 'Dinner'
+                  : mealType === 'SNACK'
+                  ? 'Snack'
+                  : 'Lunch'}{' '}
+                • Visual Estimate
+              </Text>
+
+              {useAiScanStore.getState().foodHint ? (
+                <View style={styles.hintBadge}>
+                  <Text style={styles.hintBadgeText} numberOfLines={1}>
+                    Hint: {useAiScanStore.getState().foodHint}
+                  </Text>
+                </View>
+              ) : null}
+
+              <Text style={styles.calorieHighlight}>
+                ~ {totalCalories} {energyUnit}
+              </Text>
+
+              <Text style={styles.disclaimerNote}>
+                {scanResult?.advice || 'Estimated visually. You can adjust grams for exact accuracy.'}
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={styles.closeBtn}
-              activeOpacity={0.7}
-            >
-              <X size={20} color={theme.colors.textPrimary} />
-            </TouchableOpacity>
           </View>
 
-          {/* Items List */}
-          <ScrollView
-            style={styles.itemsScroll}
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={styles.divider} />
+
+          {/* Section: Detected Foods */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Detected Foods</Text>
+            <Text style={styles.sectionGramsHint}>Portion (g)</Text>
+          </View>
+
+          {/* Food List */}
+          <View style={styles.foodList}>
             {items.map((item) => (
-              <View key={item.id} style={styles.itemRow}>
-                {/* Thumbnail */}
-                <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
-
-                {/* Details */}
-                <View style={styles.itemDetails}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemCalories}>
-                    {Math.round(item.calories * item.servingCount)} {energyUnit}
+              <View key={item.id} style={styles.foodRow}>
+                <View style={styles.foodInfo}>
+                  <Text style={styles.foodName}>{item.name}</Text>
+                  <Text style={styles.foodUnitCal}>
+                    {item.caloriesPer100g} {energyUnit} / 100 g
                   </Text>
-                  <Text style={styles.itemServingDesc}>
-                    {item.servingCount} {item.servingUnitText}
-                  </Text>
-
-                  {/* Quantity Counter */}
-                  <View style={styles.counterRow}>
-                    <TouchableOpacity
-                      onPress={() => updateServing(item.id, -0.5)}
-                      style={styles.counterBtn}
-                      activeOpacity={0.7}
-                    >
-                      <Minus size={14} color="#555" />
-                    </TouchableOpacity>
-                    <Text style={styles.counterText}>{item.servingCount}</Text>
-                    <TouchableOpacity
-                      onPress={() => updateServing(item.id, 0.5)}
-                      style={styles.counterBtn}
-                      activeOpacity={0.7}
-                    >
-                      <Plus size={14} color="#555" />
-                    </TouchableOpacity>
-                  </View>
                 </View>
 
-                {/* Actions (Edit / Delete) */}
-                <View style={styles.itemActions}>
-                  <TouchableOpacity
-                    style={styles.actionIconBtn}
-                    onPress={() =>
-                      router.push({
-                        pathname: '/(main)/meals/add',
-                        params: { mealType: 'LUNCH', from: 'log' },
-                      })
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <Edit2 size={16} color="#777777" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.actionIconBtn}
-                    onPress={() => removeItem(item.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Trash2 size={16} color="#F04B37" />
-                  </TouchableOpacity>
+                {/* Gram Input Pill */}
+                <View style={styles.gramInputWrap}>
+                  <TextInput
+                    style={styles.gramInput}
+                    value={item.grams === 0 ? '' : item.grams.toString()}
+                    onChangeText={(text) => handleGramChange(item.id, text)}
+                    keyboardType="numeric"
+                    maxLength={4}
+                    placeholder="0"
+                    placeholderTextColor="#999"
+                  />
+                  <Text style={styles.gramUnitLabel}>g</Text>
                 </View>
+
+                {/* Remove item button */}
+                <TouchableOpacity
+                  onPress={() => removeItem(item.id)}
+                  style={styles.deleteBtn}
+                  activeOpacity={0.7}
+                >
+                  <Trash2 size={16} color="#E53935" />
+                </TouchableOpacity>
               </View>
             ))}
-          </ScrollView>
-
-          {/* Action Buttons */}
-          <View style={styles.sheetFooter}>
-            <TouchableOpacity
-              style={styles.addManuallyBtn}
-              onPress={() =>
-                router.push({
-                  pathname: '/(main)/meals/add',
-                  params: { from: 'log' },
-                })
-              }
-              activeOpacity={0.8}
-            >
-              <Search size={16} color={theme.colors.textPrimary} />
-              <Text style={styles.addManuallyText}>Add Manually</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.confirmBtn, submitting && styles.btnDisabled]}
-              onPress={handleConfirm}
-              disabled={submitting}
-              activeOpacity={0.85}
-            >
-              {submitting ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.confirmBtnText}>Confirm ({totalCalories} {energyUnit})</Text>
-              )}
-            </TouchableOpacity>
           </View>
-        </View>
-      </SafeAreaView>
 
-      {/* Sleek Confirmation Modal */}
+          <View style={styles.divider} />
+
+          {/* Bottom Total Calorie Summary */}
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total Estimated Calories</Text>
+            <Text style={styles.totalValue}>
+              {totalCalories} {energyUnit}
+            </Text>
+          </View>
+
+          <Text style={styles.macroSubtext}>
+            Protein: {totalProtein}g • Carbs: {totalCarbs}g • Fat: {totalFat}g
+          </Text>
+
+          <Text style={styles.liveCalculationNote}>
+            Calculated with standard nutritional values. Changing grams will instantly update totals.
+          </Text>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.actionButtonsWrap}>
+          <TouchableOpacity
+            style={[styles.saveBtn, submitting && styles.btnDisabled]}
+            onPress={handleConfirmAndSave}
+            disabled={submitting}
+            activeOpacity={0.85}
+          >
+            {submitting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveBtnText}>
+                Confirm & Save Meal ({totalCalories} {energyUnit})
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* Success Modal */}
       <Modal
         visible={!!successModal?.visible}
         transparent
@@ -317,14 +354,14 @@ export default function ConfirmMealScreen() {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
             <View style={styles.modalIconWrap}>
-              <CheckCircle2 size={32} color="#2E7D32" />
+              <CheckCircle2 size={36} color="#2E7D32" />
             </View>
-            <Text style={styles.modalTitle}>Meal Logged!</Text>
+            <Text style={styles.modalTitle}>Meal Logged Successfully!</Text>
             <Text style={styles.modalSubtitle}>
               <Text style={{ fontWeight: '700', color: '#1B281B' }}>
                 {successModal?.mealName}
               </Text>{' '}
-              ({successModal?.calories} {energyUnit}) added to your nutrition diary.
+              ({successModal?.calories} {energyUnit}) has been recorded to your nutrition diary.
             </Text>
             <TouchableOpacity
               style={styles.modalPrimaryBtn}
@@ -334,170 +371,263 @@ export default function ConfirmMealScreen() {
               }}
               activeOpacity={0.85}
             >
-              <Text style={styles.modalPrimaryText}>View Diary</Text>
+              <Text style={styles.modalPrimaryText}>View Meal Diary</Text>
               <ArrowRight size={16} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#F8F9FA',
   },
-  backgroundImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    resizeMode: 'cover',
-    opacity: 0.85,
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    maxHeight: '75%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 20,
-  },
-  sheetHeader: {
+  header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
-  sheetTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 20,
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minWidth: 60,
+  },
+  backText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 15,
     color: theme.colors.textPrimary,
   },
-  sheetSubtitle: {
+  headerTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 16,
+    color: theme.colors.textPrimary,
+  },
+  scrollContent: {
+    flex: 1,
+  },
+  scrollInner: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  stepHeader: {
+    marginBottom: 16,
+  },
+  stepTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 18,
+    color: theme.colors.textPrimary,
+  },
+  stepSubtitle: {
     fontFamily: theme.fonts.regular,
     fontSize: 13,
     color: theme.colors.textSecondary,
-    marginTop: 2,
+    marginTop: 4,
   },
-  closeBtn: {
-    width: 32,
-    height: 32,
+  scanCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 20,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+  },
+  thumbnailImage: {
+    width: 95,
+    height: 95,
     borderRadius: 16,
-    backgroundColor: 'rgba(19, 19, 19, 0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#EEE',
+    resizeMode: 'cover',
   },
-  itemsScroll: {
-    maxHeight: 280,
+  cardTopDetails: {
+    flex: 1,
   },
-  itemRow: {
+  aiBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(19, 19, 19, 0.06)',
+    gap: 5,
   },
-  itemImage: {
-    width: 58,
-    height: 58,
-    borderRadius: 14,
-    backgroundColor: '#F0EFEA',
+  cardTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 17,
+    color: theme.colors.textPrimary,
   },
-  itemDetails: {
-    flex: 1,
-    marginLeft: 14,
+  mealTypeSubtitle: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
   },
-  itemName: {
+  hintBadge: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+  },
+  hintBadgeText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 11,
+    color: '#2E7D32',
+  },
+  calorieHighlight: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 22,
+    color: theme.colors.textPrimary,
+    marginTop: 4,
+  },
+  disclaimerNote: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    marginTop: 3,
+    lineHeight: 15,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginVertical: 14,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  sectionTitle: {
     fontFamily: theme.fonts.bold,
     fontSize: 15,
     color: theme.colors.textPrimary,
   },
-  itemCalories: {
-    fontFamily: theme.fonts.semiBold,
-    fontSize: 13,
-    color: theme.colors.textSecondary,
-    marginTop: 1,
-  },
-  itemServingDesc: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 11,
-    color: theme.colors.textMuted,
-  },
-  counterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F0',
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-    marginTop: 6,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  counterBtn: {
-    padding: 4,
-  },
-  counterText: {
-    fontFamily: theme.fonts.bold,
+  sectionGramsHint: {
+    fontFamily: theme.fonts.medium,
     fontSize: 12,
-    color: theme.colors.textPrimary,
-    minWidth: 22,
-    textAlign: 'center',
+    color: theme.colors.textMuted,
+    marginRight: 32,
   },
-  itemActions: {
-    alignItems: 'center',
-    gap: 12,
-    paddingLeft: 10,
-  },
-  actionIconBtn: {
-    padding: 4,
-  },
-  sheetFooter: {
-    marginTop: 16,
+  foodList: {
     gap: 10,
   },
-  addManuallyBtn: {
+  foodRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(19, 19, 19, 0.15)',
-    backgroundColor: '#FFFFFF',
-    gap: 6,
+    paddingVertical: 6,
   },
-  addManuallyText: {
+  foodInfo: {
+    flex: 1,
+  },
+  foodName: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 15,
+    color: theme.colors.textPrimary,
+  },
+  foodUnitCal: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  gramInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F7F7F7',
+    borderWidth: 1,
+    borderColor: '#E2E2E2',
+    borderRadius: 22,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    minWidth: 80,
+    justifyContent: 'center',
+  },
+  gramInput: {
     fontFamily: theme.fonts.bold,
     fontSize: 14,
     color: theme.colors.textPrimary,
+    textAlign: 'center',
+    minWidth: 38,
+    paddingVertical: 2,
   },
-  confirmBtn: {
-    backgroundColor: '#7CB342', // Clean nature green as shown in the reference image
-    paddingVertical: 14,
+  gramUnitLabel: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginLeft: 2,
+  },
+  deleteBtn: {
+    padding: 8,
+    marginLeft: 4,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  totalLabel: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 15,
+    color: theme.colors.textPrimary,
+  },
+  totalValue: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 18,
+    color: '#2E7D32', // Clean nature green
+  },
+  macroSubtext: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 4,
+  },
+  liveCalculationNote: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    marginTop: 6,
+    lineHeight: 16,
+  },
+  actionButtonsWrap: {
+    gap: 12,
+  },
+  saveBtn: {
+    backgroundColor: '#2E7D32', // Clean nature green matching the design
+    paddingVertical: 15,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#2E7D32',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   btnDisabled: {
     opacity: 0.6,
   },
-  confirmBtnText: {
+  saveBtnText: {
     fontFamily: theme.fonts.bold,
-    fontSize: 16,
+    fontSize: 15,
     color: '#FFFFFF',
   },
   modalBackdrop: {
@@ -520,9 +650,9 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   modalIconWrap: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#E8F5E9',
     alignItems: 'center',
     justifyContent: 'center',
@@ -533,6 +663,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#1B281B',
     marginBottom: 6,
+    textAlign: 'center',
   },
   modalSubtitle: {
     fontFamily: theme.fonts.medium,
