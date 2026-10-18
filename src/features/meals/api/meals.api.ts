@@ -5,9 +5,19 @@ import {
   Meal,
   SearchFoodsResponse,
   FoodSearchResult,
+  ScanFoodPayload,
+  AiScanFoodResponse,
 } from '../types';
 
 export const mealsApi = {
+  /**
+   * Scan food using Gemini Multimodal Vision API
+   */
+  async scanFoodWithAi(payload: ScanFoodPayload): Promise<AiScanFoodResponse> {
+    const response = await apiClient.post<AiScanFoodResponse>('/ai/scan-food', payload);
+    return response.data;
+  },
+
   /**
    * Get meals and nutrition summary for today
    */

@@ -5,34 +5,200 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Alert,
+  ActivityIndicator,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import {
   ArrowLeft,
   Zap,
   ZapOff,
   Image as ImageIcon,
   Camera,
-  Share2,
   Sparkles,
+  HelpCircle,
+  X,
+  Send,
 } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
+import { mealsApi } from '../../../src/features/meals/api/meals.api';
+import { useAiScanStore } from '../../../src/store/aiScanStore';
 
-type ScanMode = 'SCAN_FOOD' | 'BARCODE' | 'FOOD_LABEL';
+interface CapturedPhotoData {
+  uri: string;
+  base64?: string | null;
+  mimeType?: string;
+}
 
 export default function AICameraScanScreen() {
   const router = useRouter();
   const [isScanning, setIsScanning] = useState(false);
   const [flashOn, setFlashOn] = useState(false);
-  const [scanMode, setScanMode] = useState<ScanMode>('SCAN_FOOD');
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
 
-  const handleCapture = () => {
-    setIsScanning(true);
-    setTimeout(() => {
+  // Modal prompt for optional food hint
+  const [pendingPhoto, setPendingPhoto] = useState<CapturedPhotoData | null>(null);
+  const [foodHint, setFoodHint] = useState('');
+  const [showHintModal, setShowHintModal] = useState(false);
+
+  const { setScanData } = useAiScanStore();
+
+  const executeAiScan = async (photo: CapturedPhotoData, hint?: string) => {
+    try {
+      setShowHintModal(false);
+      setIsScanning(true);
+      setPreviewUri(photo.uri);
+
+      if (!photo.base64) {
+        throw new Error('Image data could not be captured. Please try again.');
+      }
+
+      const scanResult = await mealsApi.scanFoodWithAi({
+        imageBase64: photo.base64,
+        mimeType: photo.mimeType || 'image/jpeg',
+        mealType: 'LUNCH',
+        foodHint: hint?.trim() || undefined,
+      });
+
+      setScanData({
+        imageUri: photo.uri,
+        scanResult,
+        mealType: 'LUNCH',
+        foodHint: hint?.trim() || undefined,
+      });
+
       setIsScanning(false);
+      setFoodHint('');
+      setPendingPhoto(null);
       router.push('/(main)/meals/ai-breakdown');
-    }, 1000);
+    } catch (err: any) {
+      setIsScanning(false);
+      const msg = err?.response?.data?.message || err?.message || 'Failed to scan food with AI.';
+      Alert.alert('Scan Failed', msg, [
+        { text: 'Try Again', style: 'default' },
+        {
+          text: 'Use Demo Result',
+          onPress: () => {
+            const demoTitle = hint?.trim() ? hint.trim() : 'Grilled Chicken with Rice';
+            setScanData({
+              imageUri: photo.uri,
+              scanResult: {
+                mealName: demoTitle,
+                mealType: 'LUNCH',
+                estimatedTotalCalories: 458,
+                totalProtein: 38,
+                totalCarbs: 52,
+                totalFat: 9,
+                confidence: 0.95,
+                advice: 'High-protein dish with balanced carbohydrates.',
+                items: [
+                  {
+                    name: 'White Rice',
+                    caloriesPer100g: 130,
+                    estimatedGrams: 200,
+                    calories: 260,
+                    protein: 5.4,
+                    carbs: 56.4,
+                    fat: 0.6,
+                  },
+                  {
+                    name: 'Grilled Chicken',
+                    caloriesPer100g: 165,
+                    estimatedGrams: 120,
+                    calories: 198,
+                    protein: 37.2,
+                    carbs: 0,
+                    fat: 4.3,
+                  },
+                ],
+              },
+              mealType: 'LUNCH',
+              foodHint: hint?.trim() || undefined,
+            });
+            setFoodHint('');
+            setPendingPhoto(null);
+            router.push('/(main)/meals/ai-breakdown');
+          },
+        },
+      ]);
+    }
+  };
+
+  const onPhotoCaptured = (photo: CapturedPhotoData) => {
+    setPendingPhoto(photo);
+    setPreviewUri(photo.uri);
+    setFoodHint('');
+    setShowHintModal(true);
+  };
+
+  const handleCapture = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Needed',
+          'Camera access is required to take food photos for AI nutrition scanning.',
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        onPhotoCaptured({
+          uri: asset.uri,
+          base64: asset.base64,
+          mimeType: asset.mimeType,
+        });
+      }
+    } catch (error: any) {
+      Alert.alert('Camera Error', error?.message || 'Could not launch camera.');
+    }
+  };
+
+  const handlePickFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Needed',
+          'Photo library access is required to select food images.',
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        onPhotoCaptured({
+          uri: asset.uri,
+          base64: asset.base64,
+          mimeType: asset.mimeType,
+        });
+      }
+    } catch (error: any) {
+      Alert.alert('Gallery Error', error?.message || 'Could not pick image.');
+    }
   };
 
   return (
@@ -48,75 +214,41 @@ export default function AICameraScanScreen() {
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>
-          {scanMode === 'SCAN_FOOD'
-            ? 'Scan Food'
-            : scanMode === 'BARCODE'
-            ? 'Scan Barcode'
-            : 'Scan Food Label'}
-        </Text>
+        <Text style={styles.headerTitle}>Scan Food</Text>
 
-        <TouchableOpacity activeOpacity={0.7} style={styles.iconBtn}>
-          <Share2 size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={styles.headerSpacer} />
       </View>
 
-      {/* Mode Switcher Segmented Pills */}
+      {/* Mode Switcher - Barcode commented out, Food Label removed */}
       <View style={styles.modeSwitcherWrap}>
         <View style={styles.modeSwitcher}>
           <TouchableOpacity
-            style={[styles.modeTab, scanMode === 'SCAN_FOOD' && styles.modeTabActive]}
-            onPress={() => setScanMode('SCAN_FOOD')}
+            style={[styles.modeTab, styles.modeTabActive]}
             activeOpacity={0.8}
           >
-            <Text
-              style={[
-                styles.modeTabText,
-                scanMode === 'SCAN_FOOD' && styles.modeTabTextActive,
-              ]}
-            >
+            <Text style={[styles.modeTabText, styles.modeTabTextActive]}>
               Scan Food
             </Text>
           </TouchableOpacity>
 
+          {/* Barcode scanner mode - commented out as requested
           <TouchableOpacity
-            style={[styles.modeTab, scanMode === 'BARCODE' && styles.modeTabActive]}
-            onPress={() => setScanMode('BARCODE')}
+            style={styles.modeTab}
             activeOpacity={0.8}
           >
-            <Text
-              style={[
-                styles.modeTabText,
-                scanMode === 'BARCODE' && styles.modeTabTextActive,
-              ]}
-            >
-              Barcode
-            </Text>
+            <Text style={styles.modeTabText}>Barcode</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.modeTab, scanMode === 'FOOD_LABEL' && styles.modeTabActive]}
-            onPress={() => setScanMode('FOOD_LABEL')}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.modeTabText,
-                scanMode === 'FOOD_LABEL' && styles.modeTabTextActive,
-              ]}
-            >
-              Food Label
-            </Text>
-          </TouchableOpacity>
+          */}
         </View>
       </View>
 
       {/* Camera Viewfinder */}
       <View style={styles.viewfinder}>
-        {/* Placeholder food table image preview */}
         <Image
           source={{
-            uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80',
+            uri:
+              previewUri ||
+              'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80',
           }}
           style={styles.cameraBackground}
         />
@@ -130,18 +262,20 @@ export default function AICameraScanScreen() {
 
           {isScanning ? (
             <View style={styles.analyzingOverlay}>
-              <Sparkles size={32} color={theme.colors.saffron} />
-              <Text style={styles.analyzingText}>AI analyzing food items...</Text>
+              <ActivityIndicator size="large" color={theme.colors.saffron} />
+              <View style={styles.analyzingRow}>
+                <Sparkles size={18} color={theme.colors.saffron} />
+                <Text style={styles.analyzingText}>Gemini AI analyzing food...</Text>
+              </View>
+              {foodHint ? (
+                <Text style={styles.analyzingSubtext} numberOfLines={1}>
+                  "{foodHint}"
+                </Text>
+              ) : null}
             </View>
           ) : (
             <View style={styles.targetHint}>
-              <Text style={styles.targetHintText}>
-                {scanMode === 'SCAN_FOOD'
-                  ? 'Center your meal in the frame'
-                  : scanMode === 'BARCODE'
-                  ? 'Align barcode inside frame'
-                  : 'Point at nutrition facts label'}
-              </Text>
+              <Text style={styles.targetHintText}>Center your meal in the frame</Text>
             </View>
           )}
         </View>
@@ -162,7 +296,8 @@ export default function AICameraScanScreen() {
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleCapture}
-          style={styles.shutterOuter}
+          disabled={isScanning}
+          style={[styles.shutterOuter, isScanning && styles.btnDisabled]}
         >
           <View style={styles.shutterInner}>
             <Camera size={26} color="#131313" />
@@ -172,17 +307,118 @@ export default function AICameraScanScreen() {
         {/* Gallery Pick Button */}
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() =>
-            router.push({
-              pathname: '/(main)/meals/add',
-              params: { from: 'log' },
-            })
-          }
+          onPress={handlePickFromGallery}
+          disabled={isScanning}
           style={styles.sideBtn}
         >
           <ImageIcon size={22} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
+
+      {/* Optional Food Info / Hint Modal */}
+      <Modal
+        visible={showHintModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          if (!isScanning) setShowHintModal(false);
+        }}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalBackdrop}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              style={styles.keyboardWrap}
+            >
+              <View style={styles.hintModalCard}>
+                {/* Modal Header */}
+                <View style={styles.hintModalHeader}>
+                  <View style={styles.hintTitleRow}>
+                    <View style={styles.sparkleIconWrap}>
+                      <Sparkles size={18} color="#2E7D32" />
+                    </View>
+                    <View>
+                      <Text style={styles.hintModalTitle}>Food Details (Optional)</Text>
+                      <Text style={styles.hintModalSubtitle}>
+                        Add extra details to boost AI recognition accuracy
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setShowHintModal(false)}
+                    style={styles.hintCloseBtn}
+                    activeOpacity={0.7}
+                  >
+                    <X size={18} color="#777" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Photo Preview Thumbnail & Hint Input */}
+                <View style={styles.hintBodyRow}>
+                  {pendingPhoto?.uri ? (
+                    <Image
+                      source={{ uri: pendingPhoto.uri }}
+                      style={styles.hintPhotoPreview}
+                    />
+                  ) : null}
+
+                  <View style={styles.hintInputWrap}>
+                    <TextInput
+                      style={styles.hintTextInput}
+                      placeholder="e.g. Pho bo tai nam, Extra egg, Less oil..."
+                      placeholderTextColor="#999"
+                      value={foodHint}
+                      onChangeText={setFoodHint}
+                      autoFocus
+                      returnKeyType="done"
+                      multiline
+                      numberOfLines={3}
+                    />
+                  </View>
+                </View>
+
+                {/* Helpful Examples / Chips */}
+                <View style={styles.chipsWrap}>
+                  {['Beef Pho (Tai Nam)', 'Broken Rice with Pork', 'Chicken Salad'].map((preset) => (
+                    <TouchableOpacity
+                      key={preset}
+                      onPress={() => setFoodHint(preset)}
+                      style={styles.presetChip}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.presetChipText}>+ {preset}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Actions: Skip vs Analyze */}
+                <View style={styles.hintActionsRow}>
+                  <TouchableOpacity
+                    style={styles.skipBtn}
+                    onPress={() => {
+                      if (pendingPhoto) executeAiScan(pendingPhoto, '');
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.skipBtnText}>Skip (Image Only)</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.analyzeBtn}
+                    onPress={() => {
+                      if (pendingPhoto) executeAiScan(pendingPhoto, foodHint);
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.analyzeBtnText}>Analyze with AI</Text>
+                    <Send size={15} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -203,6 +439,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    minWidth: 60,
   },
   backText: {
     fontFamily: theme.fonts.medium,
@@ -214,8 +451,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
   },
-  iconBtn: {
-    padding: 6,
+  headerSpacer: {
+    minWidth: 60,
   },
   modeSwitcherWrap: {
     alignItems: 'center',
@@ -228,7 +465,7 @@ const styles = StyleSheet.create({
     padding: 3,
   },
   modeTab: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 16,
   },
@@ -301,17 +538,29 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 16,
   },
   analyzingOverlay: {
-    backgroundColor: 'rgba(19, 19, 19, 0.8)',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 16,
+    backgroundColor: 'rgba(19, 19, 19, 0.85)',
+    paddingHorizontal: 22,
+    paddingVertical: 18,
+    borderRadius: 20,
     alignItems: 'center',
     gap: 8,
+  },
+  analyzingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   analyzingText: {
     fontFamily: theme.fonts.bold,
     fontSize: 14,
     color: '#FFFFFF',
+  },
+  analyzingSubtext: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.saffron,
+    maxWidth: 220,
+    textAlign: 'center',
   },
   targetHint: {
     backgroundColor: 'rgba(19, 19, 19, 0.55)',
@@ -357,5 +606,152 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  btnDisabled: {
+    opacity: 0.5,
+  },
+  // Modal styles for optional food hint
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'flex-end',
+  },
+  keyboardWrap: {
+    width: '100%',
+  },
+  hintModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  hintModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  hintTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  sparkleIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E8F5E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hintModalTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 16,
+    color: theme.colors.textPrimary,
+  },
+  hintModalSubtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  hintCloseBtn: {
+    padding: 6,
+    borderRadius: 14,
+    backgroundColor: '#F5F5F5',
+  },
+  hintBodyRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 12,
+  },
+  hintPhotoPreview: {
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: '#EAEAEA',
+  },
+  hintInputWrap: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minHeight: 72,
+    justifyContent: 'center',
+  },
+  hintTextInput: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 14,
+    color: theme.colors.textPrimary,
+    textAlignVertical: 'top',
+  },
+  chipsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 18,
+  },
+  presetChip: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  presetChipText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 11,
+    color: '#475569',
+  },
+  hintActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  skipBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  skipBtnText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 13,
+    color: '#475569',
+  },
+  analyzeBtn: {
+    flex: 1.5,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#2E7D32',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#2E7D32',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  analyzeBtnText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 14,
+    color: '#FFFFFF',
   },
 });
