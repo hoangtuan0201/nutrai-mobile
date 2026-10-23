@@ -19,6 +19,8 @@ import {
   CheckCircle2,
   ArrowRight,
   Sparkles,
+  RotateCcw,
+  Plus,
 } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
 import { mealsApi } from '../../../src/features/meals/api/meals.api';
@@ -68,27 +70,7 @@ export default function AIScanConfirmationScreen() {
         }),
       );
     } else {
-      // Default demo items if launched directly
-      setItems([
-        {
-          id: 'demo-1',
-          name: 'White Rice',
-          caloriesPer100g: 130,
-          grams: 200,
-          proteinPer100g: 2.7,
-          carbsPer100g: 28.2,
-          fatPer100g: 0.3,
-        },
-        {
-          id: 'demo-2',
-          name: 'Grilled Chicken',
-          caloriesPer100g: 165,
-          grams: 120,
-          proteinPer100g: 31,
-          carbsPer100g: 0,
-          fatPer100g: 3.6,
-        },
-      ]);
+      setItems([]);
     }
   }, [scanResult]);
 
@@ -271,76 +253,144 @@ export default function AIScanConfirmationScreen() {
 
           {/* Food List */}
           <View style={styles.foodList}>
-            {items.map((item) => (
-              <View key={item.id} style={styles.foodRow}>
-                <View style={styles.foodInfo}>
-                  <Text style={styles.foodName}>{item.name}</Text>
-                  <Text style={styles.foodUnitCal}>
-                    {item.caloriesPer100g} {energyUnit} / 100 g
-                  </Text>
-                </View>
-
-                {/* Gram Input Pill */}
-                <View style={styles.gramInputWrap}>
-                  <TextInput
-                    style={styles.gramInput}
-                    value={item.grams === 0 ? '' : item.grams.toString()}
-                    onChangeText={(text) => handleGramChange(item.id, text)}
-                    keyboardType="numeric"
-                    maxLength={4}
-                    placeholder="0"
-                    placeholderTextColor="#999"
-                  />
-                  <Text style={styles.gramUnitLabel}>g</Text>
-                </View>
-
-                {/* Remove item button */}
-                <TouchableOpacity
-                  onPress={() => removeItem(item.id)}
-                  style={styles.deleteBtn}
-                  activeOpacity={0.7}
+            {items.length === 0 ? (
+              <View style={{ alignItems: 'center', paddingVertical: 24, gap: 6 }}>
+                <Text style={{ fontFamily: theme.fonts.bold, fontSize: 16, color: '#D32F2F' }}>
+                  No Food Items Detected
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: theme.fonts.medium,
+                    fontSize: 13,
+                    color: '#666',
+                    textAlign: 'center',
+                    maxWidth: 260,
+                    lineHeight: 18,
+                  }}
                 >
-                  <Trash2 size={16} color="#E53935" />
-                </TouchableOpacity>
+                  AI could not identify food in this photo. Please retake the photo clearly or enter your meal manually.
+                </Text>
               </View>
-            ))}
+            ) : (
+              items.map((item) => (
+                <View key={item.id} style={styles.foodRow}>
+                  <View style={styles.foodInfo}>
+                    <Text style={styles.foodName}>{item.name}</Text>
+                    <Text style={styles.foodUnitCal}>
+                      {item.caloriesPer100g} {energyUnit} / 100 g
+                    </Text>
+                  </View>
+
+                  {/* Gram Input Pill */}
+                  <View style={styles.gramInputWrap}>
+                    <TextInput
+                      style={styles.gramInput}
+                      value={item.grams === 0 ? '' : item.grams.toString()}
+                      onChangeText={(text) => handleGramChange(item.id, text)}
+                      keyboardType="numeric"
+                      maxLength={4}
+                      placeholder="0"
+                      placeholderTextColor="#999"
+                    />
+                    <Text style={styles.gramUnitLabel}>g</Text>
+                  </View>
+
+                  {/* Remove item button */}
+                  <TouchableOpacity
+                    onPress={() => removeItem(item.id)}
+                    style={styles.deleteBtn}
+                    activeOpacity={0.7}
+                  >
+                    <Trash2 size={16} color="#E53935" />
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
           </View>
 
-          <View style={styles.divider} />
+          {items.length > 0 ? (
+            <>
+              <View style={styles.divider} />
 
-          {/* Bottom Total Calorie Summary */}
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Estimated Calories</Text>
-            <Text style={styles.totalValue}>
-              {totalCalories} {energyUnit}
-            </Text>
-          </View>
+              {/* Bottom Total Calorie Summary */}
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total Estimated Calories</Text>
+                <Text style={styles.totalValue}>
+                  {totalCalories} {energyUnit}
+                </Text>
+              </View>
 
-          <Text style={styles.macroSubtext}>
-            Protein: {totalProtein}g • Carbs: {totalCarbs}g • Fat: {totalFat}g
-          </Text>
+              <Text style={styles.macroSubtext}>
+                Protein: {totalProtein}g • Carbs: {totalCarbs}g • Fat: {totalFat}g
+              </Text>
 
-          <Text style={styles.liveCalculationNote}>
-            Calculated with standard nutritional values. Changing grams will instantly update totals.
-          </Text>
+              <Text style={styles.liveCalculationNote}>
+                Calculated with standard nutritional values. Changing grams will instantly update totals.
+              </Text>
+            </>
+          ) : null}
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actionButtonsWrap}>
-          <TouchableOpacity
-            style={[styles.saveBtn, submitting && styles.btnDisabled]}
-            onPress={handleConfirmAndSave}
-            disabled={submitting}
-            activeOpacity={0.85}
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.saveBtnText}>
-                Confirm & Save Meal ({totalCalories} {energyUnit})
-              </Text>
-            )}
-          </TouchableOpacity>
+          {items.length === 0 ? (
+            <View style={{ flexDirection: 'row', gap: 10, width: '100%' }}>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 14,
+                  backgroundColor: '#F1F5F9',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                }}
+                onPress={() => router.back()}
+                activeOpacity={0.8}
+              >
+                <RotateCcw size={16} color="#475569" />
+                <Text style={{ fontFamily: theme.fonts.bold, fontSize: 14, color: '#475569' }}>
+                  Retake Photo
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
+                  flex: 1.2,
+                  height: 48,
+                  borderRadius: 14,
+                  backgroundColor: '#2E7D32',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                }}
+                onPress={() => router.replace('/(main)/meals/add')}
+                activeOpacity={0.85}
+              >
+                <Plus size={16} color="#FFFFFF" />
+                <Text style={{ fontFamily: theme.fonts.bold, fontSize: 14, color: '#FFFFFF' }}>
+                  Add Manually
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.saveBtn, submitting && styles.btnDisabled]}
+              onPress={handleConfirmAndSave}
+              disabled={submitting}
+              activeOpacity={0.85}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.saveBtnText}>
+                  Confirm & Save Meal ({totalCalories} {energyUnit})
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
 
