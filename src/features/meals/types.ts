@@ -68,7 +68,7 @@ export interface CreateMealPayload {
 export interface FoodSearchResult {
   id?: string;
   name: string;
-  source: 'LOCAL' | 'USDA';
+  source: 'LOCAL' | 'USDA' | 'BARCODE';
   brand?: string;
   categoryName?: string;
   caloriesPer100g: number;
@@ -78,6 +78,13 @@ export interface FoodSearchResult {
   servingUnit: string;
   defaultServingSize: number;
   isVerified?: boolean;
+  barcode?: string;
+  imageUrl?: string;
+  servingSizeDescription?: string;
+  servingCalories?: number;
+  servingProtein?: number;
+  servingCarbs?: number;
+  servingFat?: number;
 }
 
 export interface SearchFoodsResponse {

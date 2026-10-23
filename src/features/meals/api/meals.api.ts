@@ -72,6 +72,14 @@ export const mealsApi = {
   },
 
   /**
+   * Lookup packaged food nutrition by barcode without saving to local database
+   */
+  async getFoodByBarcode(barcode: string): Promise<FoodSearchResult> {
+    const response = await apiClient.get<FoodSearchResult>(`/foods/barcode/${encodeURIComponent(barcode)}`);
+    return response.data;
+  },
+
+  /**
    * Import or cache a USDA food item into internal database
    */
   async importUsdaFood(food: FoodSearchResult): Promise<any> {
