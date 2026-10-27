@@ -34,6 +34,7 @@ import {
   Zap,
   Check,
   Crown,
+  Minus,
 } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
 import { mealsApi } from '../../../src/features/meals/api/meals.api';
@@ -190,6 +191,119 @@ export default function AddFoodManuallyScreen() {
 
   // Meal Type Header Dropdown Modal State (Matching Image 3)
   const [isMealTypeDropdownOpen, setIsMealTypeDropdownOpen] = useState(false);
+
+  // Portion Customizer Modal State (Allows customizing servings / amount before adding)
+  const [portionModal, setPortionModal] = useState<{
+    visible: boolean;
+    name: string;
+    imageUrl?: string;
+    servingDescription: string;
+    servingUnit: string;
+    baseServingSize: number;
+    baseCalories: number;
+    baseProtein: number;
+    baseCarbs: number;
+    baseFat: number;
+    quantity: number;
+    mealType: MealType;
+  } | null>(null);
+  const [savingPortion, setSavingPortion] = useState(false);
+
+  const openPortionModal = (food: {
+    name: string;
+    imageUrl?: string;
+    portionDescription?: string;
+    servingUnit?: string;
+    servingSize?: number;
+    calories: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+  }) => {
+    setPortionModal({
+      visible: true,
+      name: food.name,
+      imageUrl: food.imageUrl,
+      servingDescription: food.portionDescription || '1 serving',
+      servingUnit: food.servingUnit || 'serving',
+      baseServingSize: food.servingSize || 100,
+      baseCalories: food.calories,
+      baseProtein: food.protein || 0,
+      baseCarbs: food.carbs || 0,
+      baseFat: food.fat || 0,
+      quantity: 1,
+      mealType: selectedType,
+    });
+  };
+
+  const handleSavePortionFood = async () => {
+    if (!portionModal) return;
+    const qty = portionModal.quantity > 0 ? portionModal.quantity : 1;
+    setSavingPortion(true);
+    setErrorMessage(null);
+
+    try {
+      const todayStr =
+        params.date ||
+        new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Asia/Ho_Chi_Minh',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(new Date());
+
+      const computedCalories = Math.round(portionModal.baseCalories * qty);
+      const computedProtein = Math.round(portionModal.baseProtein * qty * 10) / 10;
+      const computedCarbs = Math.round(portionModal.baseCarbs * qty * 10) / 10;
+      const computedFat = Math.round(portionModal.baseFat * qty * 10) / 10;
+
+      await mealsApi.createMeal({
+        mealType: portionModal.mealType,
+        name: portionModal.name,
+        totalCalories: computedCalories,
+        totalProtein: computedProtein,
+        totalCarbs: computedCarbs,
+        totalFat: computedFat,
+        imageUrl: portionModal.imageUrl,
+        loggedDate: todayStr,
+        source: 'MANUAL',
+        items: [
+          {
+            foodName: portionModal.name,
+            portionDescription: `${qty} x ${portionModal.servingDescription}`,
+            quantity: Math.round(portionModal.baseServingSize * qty),
+            unit: portionModal.servingUnit,
+            calories: computedCalories,
+            protein: computedProtein,
+            carbs: computedCarbs,
+            fat: computedFat,
+          },
+        ],
+      });
+
+      const modalInfo = {
+        name: portionModal.name,
+        calories: computedCalories,
+        mealType: portionModal.mealType,
+      };
+
+      setPortionModal(null);
+
+      // Show success feedback
+      const mealTypeName =
+        modalInfo.mealType.charAt(0) + modalInfo.mealType.slice(1).toLowerCase();
+      setSuccessModal({
+        visible: true,
+        foodName: modalInfo.name,
+        calories: modalInfo.calories,
+        mealType: mealTypeName,
+      });
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to log food. Please try again.');
+    } finally {
+      setSavingPortion(false);
+    }
+  };
 
   // Quick Log Modal State (Matching Image 2)
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
@@ -534,10 +648,31 @@ export default function AddFoodManuallyScreen() {
               </View>
             ) : (
               searchResults.map((f, idx) => (
-                <View key={`sr-${f.id || f.name}-${idx}`} style={styles.foodRow}>
-                  <View style={styles.foodIconPlaceholder}>
-                    <Utensils size={20} color="#656A60" />
-                  </View>
+                <TouchableOpacity
+                  key={`sr-${f.id || f.name}-${idx}`}
+                  style={styles.foodRow}
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    openPortionModal({
+                      name: f.name,
+                      imageUrl: f.imageUrl,
+                      portionDescription: `${f.defaultServingSize || 100}${f.servingUnit || 'g'}`,
+                      servingUnit: f.servingUnit || 'g',
+                      servingSize: f.defaultServingSize || 100,
+                      calories: f.caloriesPer100g,
+                      protein: f.proteinPer100g,
+                      carbs: f.carbsPer100g,
+                      fat: f.fatPer100g,
+                    })
+                  }
+                >
+                  {f.imageUrl ? (
+                    <Image source={{ uri: f.imageUrl }} style={styles.foodThumb} />
+                  ) : (
+                    <View style={styles.foodIconPlaceholder}>
+                      <Utensils size={20} color="#656A60" />
+                    </View>
+                  )}
                   <View style={styles.foodInfo}>
                     <View style={styles.badgeRow}>
                       {f.source === 'USDA' ? (
@@ -581,28 +716,24 @@ export default function AddFoodManuallyScreen() {
                   <TouchableOpacity
                     style={styles.addBtn}
                     onPress={() =>
-                      quickLogFood({
+                      openPortionModal({
                         name: f.name,
+                        imageUrl: f.imageUrl,
+                        portionDescription: `${f.defaultServingSize || 100}${f.servingUnit || 'g'}`,
+                        servingUnit: f.servingUnit || 'g',
+                        servingSize: f.defaultServingSize || 100,
                         calories: f.caloriesPer100g,
-                        portion: `${f.defaultServingSize || 100}${f.servingUnit || 'g'}`,
                         protein: f.proteinPer100g,
                         carbs: f.carbsPer100g,
                         fat: f.fatPer100g,
                       })
                     }
-                    disabled={addingFoodName === f.name}
                     activeOpacity={0.7}
                   >
-                    {addingFoodName === f.name ? (
-                      <ActivityIndicator size="small" color="#2E7D32" />
-                    ) : (
-                      <>
-                        <Plus size={14} color="#2E7D32" />
-                        <Text style={styles.addBtnText}>Add</Text>
-                      </>
-                    )}
+                    <Plus size={14} color="#2E7D32" />
+                    <Text style={styles.addBtnText}>Add</Text>
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               ))
             )}
           </View>
@@ -615,15 +746,34 @@ export default function AddFoodManuallyScreen() {
                 {recentMeals
                   .slice(0, showAllRecentMeals ? undefined : 2)
                   .map((m) => (
-                    <View key={m.id} style={styles.foodRow}>
-                      <Image
-                        source={{
-                          uri:
-                            m.imageUrl ||
-                            'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=80',
-                        }}
-                        style={styles.foodThumb}
-                      />
+                    <TouchableOpacity
+                      key={m.id}
+                      style={styles.foodRow}
+                      activeOpacity={0.8}
+                      onPress={() =>
+                        openPortionModal({
+                          name: m.name || `${m.mealType} Meal`,
+                          imageUrl: m.imageUrl,
+                          portionDescription: '1 serving',
+                          servingUnit: 'serving',
+                          servingSize: 1,
+                          calories: m.totalCalories,
+                          protein: m.totalProtein,
+                          carbs: m.totalCarbs,
+                          fat: m.totalFat,
+                        })
+                      }
+                    >
+                      {m.imageUrl ? (
+                        <Image
+                          source={{ uri: m.imageUrl }}
+                          style={styles.foodThumb}
+                        />
+                      ) : (
+                        <View style={styles.foodIconPlaceholder}>
+                          <Utensils size={20} color="#656A60" />
+                        </View>
+                      )}
                       <View style={styles.foodInfo}>
                         <Text style={styles.foodRecentTime}>
                           {m.loggedAt
@@ -660,27 +810,24 @@ export default function AddFoodManuallyScreen() {
                       <TouchableOpacity
                         style={styles.addBtn}
                         onPress={() =>
-                          quickLogFood({
+                          openPortionModal({
                             name: m.name || `${m.mealType} Meal`,
+                            imageUrl: m.imageUrl,
+                            portionDescription: '1 serving',
+                            servingUnit: 'serving',
+                            servingSize: 1,
                             calories: m.totalCalories,
                             protein: m.totalProtein,
                             carbs: m.totalCarbs,
                             fat: m.totalFat,
                           })
                         }
-                        disabled={addingFoodName === (m.name || `${m.mealType} Meal`)}
                         activeOpacity={0.7}
                       >
-                        {addingFoodName === (m.name || `${m.mealType} Meal`) ? (
-                          <ActivityIndicator size="small" color="#2E7D32" />
-                        ) : (
-                          <>
-                            <Plus size={14} color="#2E7D32" />
-                            <Text style={styles.addBtnText}>Add</Text>
-                          </>
-                        )}
+                        <Plus size={14} color="#2E7D32" />
+                        <Text style={styles.addBtnText}>Add</Text>
                       </TouchableOpacity>
-                    </View>
+                    </TouchableOpacity>
                   ))}
 
                 {recentMeals.length > 2 && (
@@ -702,7 +849,24 @@ export default function AddFoodManuallyScreen() {
             <View style={styles.sectionWrap}>
               <Text style={styles.sectionTitle}>Recent Foods</Text>
               {POPULAR_DEFAULT_FOODS.map((food, idx) => (
-                <View key={idx} style={styles.foodRow}>
+                <TouchableOpacity
+                  key={idx}
+                  style={styles.foodRow}
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    openPortionModal({
+                      name: food.name,
+                      imageUrl: food.imageUrl,
+                      portionDescription: food.portion,
+                      servingUnit: 'serving',
+                      servingSize: 1,
+                      calories: food.calories,
+                      protein: food.p,
+                      carbs: food.c,
+                      fat: food.f,
+                    })
+                  }
+                >
                   <Image source={{ uri: food.imageUrl }} style={styles.foodThumb} />
                   <View style={styles.foodInfo}>
                     <Text style={styles.foodName}>{food.name}</Text>
@@ -730,28 +894,24 @@ export default function AddFoodManuallyScreen() {
                   <TouchableOpacity
                     style={styles.addBtn}
                     onPress={() =>
-                      quickLogFood({
+                      openPortionModal({
                         name: food.name,
+                        imageUrl: food.imageUrl,
+                        portionDescription: food.portion,
+                        servingUnit: 'serving',
+                        servingSize: 1,
                         calories: food.calories,
-                        portion: food.portion,
                         protein: food.p,
                         carbs: food.c,
                         fat: food.f,
                       })
                     }
-                    disabled={addingFoodName === food.name}
                     activeOpacity={0.7}
                   >
-                    {addingFoodName === food.name ? (
-                      <ActivityIndicator size="small" color="#2E7D32" />
-                    ) : (
-                      <>
-                        <Plus size={14} color="#2E7D32" />
-                        <Text style={styles.addBtnText}>Add</Text>
-                      </>
-                    )}
+                    <Plus size={14} color="#2E7D32" />
+                    <Text style={styles.addBtnText}>Add</Text>
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           </>
@@ -759,6 +919,214 @@ export default function AddFoodManuallyScreen() {
 
         <View style={{ height: 60 }} />
       </ScrollView>
+
+      {/* ── Portion Customizer Modal ───────────────────────────────── */}
+      <Modal
+        visible={!!portionModal?.visible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPortionModal(null)}
+      >
+        <View style={styles.portionModalOverlay}>
+          <View style={styles.portionModalSheet}>
+            {/* Header */}
+            <View style={styles.portionModalHeader}>
+              <Text style={styles.portionModalTitle}>Customize Portion</Text>
+              <TouchableOpacity
+                onPress={() => setPortionModal(null)}
+                style={styles.portionCloseBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <X size={20} color="#1B281B" />
+              </TouchableOpacity>
+            </View>
+
+            {portionModal && (
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 24 }}
+              >
+                {/* Food summary card */}
+                <View style={styles.portionFoodCard}>
+                  {portionModal.imageUrl ? (
+                    <Image
+                      source={{ uri: portionModal.imageUrl }}
+                      style={styles.portionFoodThumb}
+                    />
+                  ) : (
+                    <View style={styles.portionIconPlaceholder}>
+                      <Utensils size={24} color="#656A60" />
+                    </View>
+                  )}
+                  <View style={styles.portionFoodInfo}>
+                    <Text style={styles.portionFoodName} numberOfLines={2}>
+                      {portionModal.name}
+                    </Text>
+                    <Text style={styles.portionFoodServing}>
+                      Standard: {portionModal.servingDescription}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Serving stepper / quantity control */}
+                <View style={styles.portionQuantityCard}>
+                  <Text style={styles.portionQuantityLabel}>Number of Servings</Text>
+                  <View style={styles.stepperContainer}>
+                    <TouchableOpacity
+                      style={styles.stepperBtn}
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        const newQ = Math.max(0.5, Math.round((portionModal.quantity - 0.5) * 10) / 10);
+                        setPortionModal({ ...portionModal, quantity: newQ });
+                      }}
+                    >
+                      <Minus size={18} color="#1B281B" />
+                    </TouchableOpacity>
+
+                    <TextInput
+                      style={styles.stepperInput}
+                      keyboardType="numeric"
+                      value={String(portionModal.quantity)}
+                      onChangeText={(txt) => {
+                        const parsed = parseFloat(txt.replace(',', '.'));
+                        if (!isNaN(parsed) && parsed > 0) {
+                          setPortionModal({ ...portionModal, quantity: parsed });
+                        } else if (txt === '') {
+                          setPortionModal({ ...portionModal, quantity: 0 });
+                        }
+                      }}
+                    />
+
+                    <TouchableOpacity
+                      style={styles.stepperBtn}
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        const newQ = Math.round((portionModal.quantity + 0.5) * 10) / 10;
+                        setPortionModal({ ...portionModal, quantity: newQ });
+                      }}
+                    >
+                      <Plus size={18} color="#1B281B" />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Quick quantity chips */}
+                  <View style={styles.portionChipsRow}>
+                    {[0.5, 1, 1.5, 2, 3].map((val) => (
+                      <TouchableOpacity
+                        key={val}
+                        style={[
+                          styles.portionChip,
+                          portionModal.quantity === val && styles.portionChipActive,
+                        ]}
+                        activeOpacity={0.7}
+                        onPress={() => setPortionModal({ ...portionModal, quantity: val })}
+                      >
+                        <Text
+                          style={[
+                            styles.portionChipText,
+                            portionModal.quantity === val && styles.portionChipTextActive,
+                          ]}
+                        >
+                          {val}x
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Meal Type selection */}
+                <View style={styles.portionSection}>
+                  <Text style={styles.portionSectionLabel}>Meal</Text>
+                  <View style={styles.portionMealTypeRow}>
+                    {MEAL_TABS.map((tab) => {
+                      const isSelected = portionModal.mealType === tab.type;
+                      return (
+                        <TouchableOpacity
+                          key={tab.type}
+                          style={[
+                            styles.portionMealTypeChip,
+                            isSelected && styles.portionMealTypeChipActive,
+                          ]}
+                          activeOpacity={0.7}
+                          onPress={() =>
+                            setPortionModal({ ...portionModal, mealType: tab.type })
+                          }
+                        >
+                          <Text
+                            style={[
+                              styles.portionMealTypeChipText,
+                              isSelected && styles.portionMealTypeChipTextActive,
+                            ]}
+                          >
+                            {tab.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* Nutrition summary for this quantity */}
+                <View style={styles.portionMacroCard}>
+                  <Text style={styles.portionMacroTitle}>Nutritional Content</Text>
+                  <View style={styles.portionMacroGrid}>
+                    <View style={styles.portionMacroCol}>
+                      <Text style={styles.portionMacroCalVal}>
+                        {Math.round(portionModal.baseCalories * (portionModal.quantity || 1))}
+                      </Text>
+                      <Text style={styles.portionMacroCalLabel}>{energyUnit}</Text>
+                    </View>
+                    <View style={styles.portionMacroDivider} />
+                    <View style={styles.portionMacroCol}>
+                      <Text style={[styles.portionMacroVal, { color: '#3865D6' }]}>
+                        {Math.round(portionModal.baseProtein * (portionModal.quantity || 1) * 10) / 10}g
+                      </Text>
+                      <Text style={styles.portionMacroLabel}>Protein</Text>
+                    </View>
+                    <View style={styles.portionMacroDivider} />
+                    <View style={styles.portionMacroCol}>
+                      <Text style={[styles.portionMacroVal, { color: '#4D8A27' }]}>
+                        {Math.round(portionModal.baseCarbs * (portionModal.quantity || 1) * 10) / 10}g
+                      </Text>
+                      <Text style={styles.portionMacroLabel}>Carbs</Text>
+                    </View>
+                    <View style={styles.portionMacroDivider} />
+                    <View style={styles.portionMacroCol}>
+                      <Text style={[styles.portionMacroVal, { color: '#B39100' }]}>
+                        {Math.round(portionModal.baseFat * (portionModal.quantity || 1) * 10) / 10}g
+                      </Text>
+                      <Text style={styles.portionMacroLabel}>Fat</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Submit button */}
+                <TouchableOpacity
+                  style={styles.portionSubmitBtn}
+                  activeOpacity={0.8}
+                  disabled={savingPortion}
+                  onPress={handleSavePortionFood}
+                >
+                  {savingPortion ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Plus size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                      <Text style={styles.portionSubmitText}>
+                        Log Food (
+                        {Math.round(
+                          portionModal.baseCalories * (portionModal.quantity || 1),
+                        )}{' '}
+                        {energyUnit})
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Modern Sleek In-App Success Modal (Replaces Native Alert) ──── */}
       <Modal
@@ -1714,5 +2082,239 @@ const styles = StyleSheet.create({
   quickLogDropdownItemTextActive: {
     fontFamily: theme.fonts.bold,
     color: '#2563EB',
+  },
+  // ── Portion Customizer Modal Styles ─────────────────────────
+  portionModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  portionModalSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    maxHeight: '85%',
+  },
+  portionModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0EFEA',
+  },
+  portionModalTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 18,
+    color: '#1B281B',
+  },
+  portionCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(27, 40, 27, 0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  portionFoodCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FAF9F5',
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  portionFoodThumb: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+  },
+  portionIconPlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    backgroundColor: '#EAE8DE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  portionFoodInfo: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  portionFoodName: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 16,
+    color: '#1B281B',
+    marginBottom: 4,
+  },
+  portionFoodServing: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 13,
+    color: '#656A60',
+  },
+  portionQuantityCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#ECEAE1',
+    padding: 16,
+    marginBottom: 16,
+  },
+  portionQuantityLabel: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 14,
+    color: '#1B281B',
+    marginBottom: 12,
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  stepperBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F3F2EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperInput: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 22,
+    color: '#1B281B',
+    textAlign: 'center',
+    minWidth: 80,
+    marginHorizontal: 16,
+    paddingVertical: 4,
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#2E7D32',
+  },
+  portionChipsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  portionChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#F6F5EE',
+  },
+  portionChipActive: {
+    backgroundColor: '#2E7D32',
+  },
+  portionChipText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 13,
+    color: '#656A60',
+  },
+  portionChipTextActive: {
+    fontFamily: theme.fonts.bold,
+    color: '#FFFFFF',
+  },
+  portionSection: {
+    marginBottom: 16,
+  },
+  portionSectionLabel: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 14,
+    color: '#1B281B',
+    marginBottom: 10,
+  },
+  portionMealTypeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  portionMealTypeChip: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#F6F5EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  portionMealTypeChipActive: {
+    backgroundColor: '#1B281B',
+  },
+  portionMealTypeChipText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: '#656A60',
+  },
+  portionMealTypeChipTextActive: {
+    fontFamily: theme.fonts.bold,
+    color: '#FFFFFF',
+  },
+  portionMacroCard: {
+    backgroundColor: '#F8F7F2',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 20,
+  },
+  portionMacroTitle: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 13,
+    color: '#656A60',
+    marginBottom: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  portionMacroGrid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  portionMacroCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  portionMacroDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: '#E8E5DA',
+  },
+  portionMacroCalVal: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 18,
+    color: '#1B281B',
+  },
+  portionMacroCalLabel: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 11,
+    color: '#8E9388',
+    marginTop: 2,
+  },
+  portionMacroVal: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 15,
+  },
+  portionMacroLabel: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 11,
+    color: '#8E9388',
+    marginTop: 2,
+  },
+  portionSubmitBtn: {
+    backgroundColor: '#2E7D32',
+    borderRadius: 18,
+    paddingVertical: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2E7D32',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  portionSubmitText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 16,
+    color: '#FFFFFF',
   },
 });
