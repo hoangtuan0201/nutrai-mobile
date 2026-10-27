@@ -29,6 +29,7 @@ import {
   RotateCcw,
   Minus,
   Scale,
+  Utensils,
 } from 'lucide-react-native';
 import theme from '../../src/constants/theme';
 import { Logo, CalorieRemainingCard } from '../../src/components';
@@ -641,12 +642,18 @@ export default function HomeScreen() {
                 activeOpacity={0.8}
                 onPress={() => router.push('/(main)/meals')}
               >
-                <Image
-                  source={{
-                    uri: getMealThumbnail(meal),
-                  }}
-                  style={styles.mealThumb}
-                />
+                {meal.imageUrl ? (
+                  <Image
+                    source={{
+                      uri: meal.imageUrl,
+                    }}
+                    style={styles.mealThumb}
+                  />
+                ) : (
+                  <View style={styles.mealThumbFallback}>
+                    <Utensils size={20} color="#656A60" />
+                  </View>
+                )}
                 <View style={styles.mealInfoCol}>
                   <Text style={styles.mealName} numberOfLines={1}>
                     {summaryTitle}
@@ -1098,6 +1105,17 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginRight: 12,
     backgroundColor: '#EFECE2',
+  },
+  mealThumbFallback: {
+    width: 54,
+    height: 54,
+    borderRadius: 14,
+    marginRight: 12,
+    backgroundColor: '#F3F1E7',
+    borderWidth: 1,
+    borderColor: '#E7E4D8',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mealInfoCol: {
     flex: 1,

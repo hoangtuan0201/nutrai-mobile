@@ -41,7 +41,7 @@ interface EditableFoodItem {
 export default function AIScanConfirmationScreen() {
   const router = useRouter();
   const { energyUnit } = useUnitStore();
-  const { imageUri, scanResult, mealType } = useAiScanStore();
+  const { imageUri, imageBase64, scanResult, mealType } = useAiScanStore();
 
   const [submitting, setSubmitting] = useState(false);
   const [items, setItems] = useState<EditableFoodItem[]>([]);
@@ -140,6 +140,11 @@ export default function AIScanConfirmationScreen() {
       const computedMealName =
         scanResult?.mealName || items.map((i) => i.name).slice(0, 2).join(' & ');
 
+      // Use base64 data URI if available so backend uploads it to Cloudinary
+      const capturedImageUrl = imageBase64
+        ? `data:image/jpeg;base64,${imageBase64}`
+        : imageUri || undefined;
+
       await mealsApi.createMeal({
         mealType: mealType || 'LUNCH',
         name: computedMealName,
@@ -147,6 +152,7 @@ export default function AIScanConfirmationScreen() {
         totalProtein,
         totalCarbs,
         totalFat,
+        imageUrl: capturedImageUrl,
         source: 'AI_IMAGE',
         loggedDate: todayStr,
         items: mealItems,

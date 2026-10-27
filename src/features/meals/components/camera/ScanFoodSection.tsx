@@ -193,6 +193,7 @@ export const ScanFoodSection: React.FC<ScanFoodSectionProps> = ({
 
       setScanData({
         imageUri: photo.uri,
+        imageBase64: photo.base64,
         scanResult,
         mealType: 'LUNCH',
         foodHint: hint?.trim() || undefined,
@@ -384,15 +385,7 @@ export const ScanFoodSection: React.FC<ScanFoodSectionProps> = ({
                 </View>
 
                 <View style={styles.hintActionsRow}>
-                  <TouchableOpacity
-                    style={styles.skipBtn}
-                    onPress={() => {
-                      if (pendingPhoto) executeAiScan(pendingPhoto, '');
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.skipBtnText}>Skip (Image Only)</Text>
-                  </TouchableOpacity>
+        
 
                   <TouchableOpacity
                     style={styles.analyzeBtn}
