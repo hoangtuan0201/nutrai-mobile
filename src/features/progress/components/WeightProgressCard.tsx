@@ -1,9 +1,18 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import Svg, { Line, Circle, Polyline, Text as SvgText } from 'react-native-svg';
+import Svg, {
+  Line,
+  Circle,
+  Polyline,
+  Rect,
+  G,
+  Path,
+  Text as SvgText,
+} from 'react-native-svg';
 import { ChevronRight } from 'lucide-react-native';
 import theme from '../../../constants/theme';
 import { WeightProgress, WeightDataPoint } from '../types';
+import { useUnitStore, formatWeight } from '../../../store/unitStore';
 
 interface WeightProgressCardProps {
   weight: WeightProgress;
@@ -16,19 +25,34 @@ export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
   onGoalPress,
   onPressCard,
 }) => {
+  const { bodyUnit } = useUnitStore();
   const screenWidth = Dimensions.get('window').width;
   const chartWidth = Math.max(260, screenWidth - 76);
-  const chartHeight = 150;
-  const paddingLeft = 32;
+  const chartHeight = 175;
+  const paddingLeft = 34;
   const paddingRight = 16;
-  const paddingTop = 16;
+  const paddingTop = 32; // headroom for centered floating tooltip
   const paddingBottom = 26;
 
   // Chronological order for chart plotting (left to right)
   const rawHistory = weight.history || [];
-  const history = [...rawHistory].reverse();
+  const history = useMemo(() => [...rawHistory].reverse(), [rawHistory]);
   const currentKg = weight.currentKg || 0;
   const targetKg = weight.targetKg || 0;
+
+  // Selected point tracking (defaults to latest point)
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const activeIndex = useMemo(() => {
+    if (history.length === 0) return -1;
+    if (selectedId) {
+      const foundIdx = history.findIndex(
+        (item, idx) => (item.id || `${item.date}_${idx}`) === selectedId,
+      );
+      if (foundIdx !== -1) return foundIdx;
+    }
+    return history.length - 1;
+  }, [history, selectedId]);
 
   // Calculate min and max for chart Y scale
   const allValues = [
@@ -53,7 +77,8 @@ export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
   const getXCoord = (index: number, total: number) => {
     const usableWidth = chartWidth - paddingLeft - paddingRight;
     if (total <= 1) return paddingLeft + usableWidth / 2;
-    return paddingLeft + (index / (total - 1)) * usableWidth;
+    const gap = usableWidth / total;
+    return paddingLeft + index * gap + gap / 2;
   };
 
   // Generate Y axis ticks (e.g. 4 equidistant ticks)
@@ -70,40 +95,53 @@ export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
   const points = history.map((item: WeightDataPoint, index: number) => {
     const x = getXCoord(index, history.length);
     const y = getYCoord(item.weightKg);
-    return { x, y, ...item };
+    const pointKey = item.id || `${item.date}_${index}`;
+    return { x, y, pointKey, ...item };
   });
 
   const polylinePoints = points.map((p: { x: number; y: number }) => `${p.x},${p.y}`).join(' ');
+  const hitWidth = points.length > 0
+    ? (chartWidth - paddingLeft - paddingRight) / points.length
+    : 60;
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={onPressCard ? 0.9 : 1}
-      onPress={onPressCard || onGoalPress}
-    >
+    <View style={styles.card}>
       {/* Top Header Row matching Appediet reference */}
       <View style={styles.topHeader}>
-        <Text style={styles.title}>Weight</Text>
+        <TouchableOpacity
+          style={styles.headerTitleWrap}
+          activeOpacity={onPressCard ? 0.7 : 1}
+          onPress={onPressCard || onGoalPress}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text style={styles.title}>Weight</Text>
+            {onPressCard && <ChevronRight size={16} color="#8E9388" />}
+          </View>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.goalBtn}
           activeOpacity={0.7}
-          onPress={onGoalPress}
+          onPress={onGoalPress || onPressCard}
         >
           <Text style={styles.goalText}>
-            Goal:{targetKg > 0 ? `${targetKg} kg` : 'Set Goal'}
+            Goal:{targetKg > 0 ? formatWeight(targetKg, bodyUnit).full : 'Set Goal'}
           </Text>
           <ChevronRight size={14} color="#8E9388" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
 
       {/* Current Weight Display */}
-      <View style={styles.weightRow}>
+      <TouchableOpacity
+        style={styles.weightRow}
+        activeOpacity={onPressCard ? 0.7 : 1}
+        onPress={onPressCard}
+      >
         <Text style={styles.currentWeight}>
-          {currentKg > 0 ? currentKg : '--'}
+          {currentKg > 0 ? formatWeight(currentKg, bodyUnit).value : '--'}
         </Text>
-        <Text style={styles.unit}>kg</Text>
-      </View>
+        <Text style={styles.unit}>{formatWeight(currentKg, bodyUnit).unit}</Text>
+      </TouchableOpacity>
 
       {/* SVG Chart */}
       <View style={styles.chartWrapper}>
@@ -167,35 +205,110 @@ export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
             />
           )}
 
-          {/* Points */}
-          {points.map((p: any, idx: number) => (
-            <React.Fragment key={idx}>
-              <Circle
-                cx={p.x}
-                cy={p.y}
-                r={5}
-                fill="#FFFFFF"
-                stroke={theme.colors.blue}
-                strokeWidth={2.5}
-              />
-              {/* Date label at bottom (e.g. 10/14) */}
-              <SvgText
-                x={p.x}
-                y={chartHeight - 6}
-                fontSize={10}
-                fill="#8E9388"
-                textAnchor="middle"
-                fontFamily={theme.fonts.regular}
+          {/* Points & Interactive Hit Areas */}
+          {points.map((p, idx: number) => {
+            const isSelected = idx === activeIndex;
+
+            return (
+              <G key={p.pointKey}>
+                {/* Wide transparent hit area for easy tapping */}
+                <Rect
+                  x={p.x - Math.max(22, hitWidth / 2)}
+                  y={0}
+                  width={Math.max(44, hitWidth)}
+                  height={chartHeight}
+                  fill="transparent"
+                  onPress={() => setSelectedId(p.pointKey)}
+                />
+
+                <Circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={isSelected ? 6 : 5}
+                  fill={isSelected ? theme.colors.blue : '#FFFFFF'}
+                  stroke={isSelected ? '#FFFFFF' : theme.colors.blue}
+                  strokeWidth={2.5}
+                  onPress={() => setSelectedId(p.pointKey)}
+                />
+
+                {/* Date label at bottom (e.g. 10/14) */}
+                <SvgText
+                  x={p.x}
+                  y={chartHeight - 6}
+                  fontSize={10}
+                  fill={isSelected ? '#131313' : '#8E9388'}
+                  textAnchor="middle"
+                  fontFamily={isSelected ? theme.fonts.bold : theme.fonts.regular}
+                  onPress={() => setSelectedId(p.pointKey)}
+                >
+                  {p.date.slice(5).replace('-', '/')}
+                </SvgText>
+              </G>
+            );
+          })}
+
+          {/* Centered Floating Tooltip for Selected Point */}
+          {activeIndex >= 0 && points[activeIndex] && (() => {
+            const p = points[activeIndex];
+            const tooltipWidth = 72;
+            const tooltipHeight = 24;
+            const arrowHeight = 5;
+            const tooltipY = Math.max(2, p.y - tooltipHeight - arrowHeight - 6);
+
+            const minLeft = paddingLeft + 2;
+            const maxRight = chartWidth - paddingRight - 2;
+            const boxLeft = p.x - tooltipWidth / 2;
+            const boxRight = p.x + tooltipWidth / 2;
+
+            let boxOffset = 0;
+            if (boxLeft < minLeft) {
+              boxOffset = minLeft - boxLeft;
+            } else if (boxRight > maxRight) {
+              boxOffset = maxRight - boxRight;
+            }
+
+            // Keep the arrow (-5..5) well inside the rounded corners (rx=8) of the pill
+            const maxShift = tooltipWidth / 2 - 12;
+            boxOffset = Math.max(-maxShift, Math.min(maxShift, boxOffset));
+
+            const tooltipLabel = formatWeight(p.weightKg, bodyUnit).full;
+
+            return (
+              <G
+                key={`tooltip_${p.pointKey}`}
+                transform={`translate(${p.x}, ${tooltipY})`}
               >
-                {p.date.slice(5).replace('-', '/')}
-              </SvgText>
-            </React.Fragment>
-          ))}
+                <Rect
+                  x={-tooltipWidth / 2 + boxOffset}
+                  y={0}
+                  width={tooltipWidth}
+                  height={tooltipHeight}
+                  rx={8}
+                  fill="#1E293B"
+                />
+                <Path
+                  d={`M -5 ${tooltipHeight - 1}
+                     L 0 ${tooltipHeight + arrowHeight}
+                     L 5 ${tooltipHeight - 1}
+                     Z`}
+                  fill="#1E293B"
+                />
+                <SvgText
+                  x={boxOffset}
+                  y={tooltipHeight / 2 + 3.5}
+                  fontSize={10.5}
+                  fill="#FFFFFF"
+                  textAnchor="middle"
+                  fontFamily={theme.fonts.bold}
+                >
+                  {tooltipLabel}
+                </SvgText>
+              </G>
+            );
+          })()}
         </Svg>
       </View>
-
-      <Text style={styles.footerHint}>Swipe right for more</Text>
-    </TouchableOpacity>
+    </View>
   );
 };
 
@@ -218,6 +331,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 6,
+  },
+  headerTitleWrap: {
+    flex: 1,
   },
   title: {
     fontFamily: theme.fonts.bold,

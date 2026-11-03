@@ -432,7 +432,7 @@ export default function SettingsScreen() {
               </View>
               <Text style={styles.itemValue}>{formatGoalLabel(userFitnessGoal)}</Text>
               <Text style={styles.itemSubValue}>
-                Target weight: {formatWeight(onboarding.targetWeightKg || userWeight, bodyUnit).full}
+                Target weight: {formatWeight(profile?.targetWeightKg || onboarding.targetWeightKg || userWeight, bodyUnit).full}
               </Text>
             </View>
 
