@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Camera, RotateCcw, Plus } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
 import { useAuthStore } from '../../../src/store/authStore';
 import { progressApi } from '../../../src/features/progress/api/progress.api';
+import { PROFILE_QUERY_KEY } from '../../../src/features/profile/hooks/useProfile';
 import { ProgressOverviewResponse } from '../../../src/features/progress/types';
 import {
   BmiGaugeCard,
@@ -30,6 +32,7 @@ type TabType = 'All' | 'Weight' | 'Calorie Intake';
 
 export default function ProgressScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
   const [overview, setOverview] = useState<ProgressOverviewResponse | null>(null);
@@ -78,6 +81,7 @@ export default function ProgressScreen() {
 
   const handleLogWeightSubmit = async (weightKg: number, note?: string, loggedDate?: string) => {
     await progressApi.logWeight({ weightKg, note, loggedDate });
+    await queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
     await fetchOverview(true);
   };
 
@@ -141,23 +145,7 @@ export default function ProgressScreen() {
             />
           }
         >
-          {/* Action / Insight Banner */}
-          <View style={styles.insightBanner}>
-            <View style={styles.insightLeft}>
-              <Text style={styles.insightTitle}>Weekly Health Report</Text>
-              <Text style={styles.insightSub}>
-                Track consistency for personalized AI insights
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.scanBtn}
-              activeOpacity={0.85}
-              onPress={() => router.push('/(main)/meals/camera')}
-            >
-              <Camera size={16} color="#FFFFFF" />
-              <Text style={styles.scanBtnText}>Scan & Log</Text>
-            </TouchableOpacity>
-          </View>
+    
 
           {/* BMI Gauge Card */}
           {overview?.bmi && <BmiGaugeCard bmi={overview.bmi} />}

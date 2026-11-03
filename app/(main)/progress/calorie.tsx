@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ChevronLeft,
   ChevronRight,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react-native';
 import theme from '../../../src/constants/theme';
 import { progressApi } from '../../../src/features/progress/api/progress.api';
+import { PROFILE_QUERY_KEY } from '../../../src/features/profile/hooks/useProfile';
 import {
   ProgressOverviewResponse,
   DailyMacroSummary,
@@ -36,6 +38,7 @@ import {
 
 export default function CalorieIntakeScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -208,6 +211,8 @@ export default function CalorieIntakeScreen() {
     try {
       setIsSavingGoal(true);
       await progressApi.updateCalorieTarget(val);
+      // Invalidate profile query so Homepage & Settings immediately sync the new Calorie & Macro targets
+      await queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
       setIsEditModalVisible(false);
       // Refresh overview
       await fetchData(true);

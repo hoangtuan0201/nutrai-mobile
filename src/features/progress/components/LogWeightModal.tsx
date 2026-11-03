@@ -30,11 +30,18 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
   onSubmit,
 }) => {
   const getTodayStr = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+  };
+
+  const getYesterdayStr = () => {
+    const [y, m, d] = getTodayStr().split('-').map(Number);
+    const utcDate = new Date(Date.UTC(y, m - 1, d - 1));
+    return utcDate.toISOString().split('T')[0];
   };
 
   const [weight, setWeight] = useState<string>(
@@ -63,20 +70,16 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
   };
 
   const shiftDate = (days: number) => {
-    const current = new Date(selectedDate);
-    if (isNaN(current.getTime())) return;
-    current.setDate(current.getDate() + days);
-    const year = current.getFullYear();
-    const month = String(current.getMonth() + 1).padStart(2, '0');
-    const day = String(current.getDate()).padStart(2, '0');
-    setSelectedDate(`${year}-${month}-${day}`);
+    const parts = selectedDate.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return;
+    const [y, m, d] = parts;
+    const utcDate = new Date(Date.UTC(y, m - 1, d + days));
+    setSelectedDate(utcDate.toISOString().split('T')[0]);
   };
 
   const formatDateLabel = (dateStr: string) => {
     const today = getTodayStr();
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+    const yesterdayStr = getYesterdayStr();
 
     if (dateStr === today) return 'Today';
     if (dateStr === yesterdayStr) return 'Yesterday';
@@ -205,27 +208,17 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
                   <TouchableOpacity
                     style={[
                       styles.quickChip,
-                      (() => {
-                        const y = new Date();
-                        y.setDate(y.getDate() - 1);
-                        return selectedDate === y.toISOString().split('T')[0];
-                      })() && styles.quickChipActive,
+                      selectedDate === getYesterdayStr() && styles.quickChipActive,
                     ]}
                     onPress={() => {
-                      const y = new Date();
-                      y.setDate(y.getDate() - 1);
-                      setSelectedDate(y.toISOString().split('T')[0]);
+                      setSelectedDate(getYesterdayStr());
                       setIsEditingCustomDate(false);
                     }}
                   >
                     <Text
                       style={[
                         styles.quickChipText,
-                        (() => {
-                          const y = new Date();
-                          y.setDate(y.getDate() - 1);
-                          return selectedDate === y.toISOString().split('T')[0];
-                        })() && styles.quickChipTextActive,
+                        selectedDate === getYesterdayStr() && styles.quickChipTextActive,
                       ]}
                     >
                       Yesterday

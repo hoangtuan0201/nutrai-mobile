@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ChevronLeft,
   Calendar,
@@ -31,9 +32,13 @@ import Svg, {
   LinearGradient,
   Stop,
   Text as SvgText,
+  Rect,
+  G,
+  Path,
 } from 'react-native-svg';
 import theme from '../../../src/constants/theme';
 import { progressApi } from '../../../src/features/progress/api/progress.api';
+import { PROFILE_QUERY_KEY } from '../../../src/features/profile/hooks/useProfile';
 import { ProgressOverviewResponse, WeightDataPoint } from '../../../src/features/progress/types';
 import { LogWeightModal } from '../../../src/features/progress/components/LogWeightModal';
 import { EditGoalsModal } from '../../../src/features/profile/components/EditGoalsModal';
@@ -41,12 +46,13 @@ import { useUnitStore, formatWeight } from '../../../src/store/unitStore';
 
 export default function WeightDetailScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const screenWidth = Dimensions.get('window').width;
   const chartWidth = Math.max(260, screenWidth - 76);
-  const chartHeight = 160;
+  const chartHeight = 175;
   const paddingLeft = 34;
   const paddingRight = 16;
-  const paddingTop = 16;
+  const paddingTop = 32;
   const paddingBottom = 26;
 
   const { bodyUnit, setUnits } = useUnitStore();
@@ -57,6 +63,7 @@ export default function WeightDetailScreen() {
   const [isLogModalVisible, setIsLogModalVisible] = useState<boolean>(false);
   const [selectedDateForLog, setSelectedDateForLog] = useState<string | undefined>(undefined);
   const [isGoalModalVisible, setIsGoalModalVisible] = useState<boolean>(false);
+  const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
 
   const fetchOverview = useCallback(async (isRefresh = false) => {
     try {
@@ -78,6 +85,7 @@ export default function WeightDetailScreen() {
 
   const handleLogSubmit = async (weightKg: number, note?: string, loggedDate?: string) => {
     await progressApi.logWeight({ weightKg, note, loggedDate });
+    await queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
     await fetchOverview(true);
   };
 
@@ -202,7 +210,8 @@ export default function WeightDetailScreen() {
   const getXCoord = (index: number, total: number) => {
     const usableWidth = chartWidth - paddingLeft - paddingRight;
     if (total <= 1) return paddingLeft + usableWidth / 2;
-    return paddingLeft + (index / (total - 1)) * usableWidth;
+    const gap = usableWidth / total;
+    return paddingLeft + index * gap + gap / 2;
   };
 
   const tickCount = 4;
@@ -218,6 +227,18 @@ export default function WeightDetailScreen() {
     const y = getYCoord(item.weightKg);
     return { x, y, ...item };
   });
+
+  const activePointIndex = useMemo(() => {
+    if (chartHistory.length === 0) return -1;
+    if (selectedPointId) {
+      const idx = chartHistory.findIndex((item) => (item.id || item.date) === selectedPointId);
+      if (idx !== -1) return idx;
+    }
+    return chartHistory.length - 1;
+  }, [chartHistory, selectedPointId]);
+
+  const usableWidth = chartWidth - paddingLeft - paddingRight;
+  const hitWidth = chartHistory.length > 0 ? usableWidth / chartHistory.length : 48;
 
   const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(' ');
 
@@ -316,7 +337,13 @@ export default function WeightDetailScreen() {
                 style={styles.calendarBtn}
                 activeOpacity={0.7}
                 onPress={() => {
-                  setSelectedDateForLog(new Date().toISOString().split('T')[0]);
+                  const todayStr = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'Asia/Ho_Chi_Minh',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                  }).format(new Date());
+                  setSelectedDateForLog(todayStr);
                   setIsLogModalVisible(true);
                 }}
               >
@@ -582,32 +609,100 @@ export default function WeightDetailScreen() {
                 )}
 
                 {/* Points */}
-                {points.map((p: any, idx: number) => (
-                  <React.Fragment key={idx}>
-                    <Circle
-                      cx={p.x}
-                      cy={p.y}
-                      r={5}
-                      fill="#FFFFFF"
-                      stroke={theme.colors.blue}
-                      strokeWidth={2.5}
-                    />
-                    <SvgText
-                      x={p.x}
-                      y={chartHeight - 6}
-                      fontSize={10}
-                      fill="#8E9388"
-                      textAnchor="middle"
-                      fontFamily={theme.fonts.regular}
-                    >
-                      {p.date.slice(5).replace('-', '/')}
-                    </SvgText>
-                  </React.Fragment>
-                ))}
+                {points.map((p: any, idx: number) => {
+                  const isSelected = idx === activePointIndex;
+                  const pointKey = p.id || p.date || String(idx);
+                  return (
+                    <React.Fragment key={pointKey}>
+                      {/* Wide transparent hit area for tapping the point */}
+                      <Rect
+                        x={p.x - Math.max(22, hitWidth / 2)}
+                        y={0}
+                        width={Math.max(44, hitWidth)}
+                        height={chartHeight}
+                        fill="transparent"
+                        onPress={() => setSelectedPointId(pointKey)}
+                      />
+
+                      <Circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={isSelected ? 6 : 5}
+                        fill={isSelected ? theme.colors.blue : '#FFFFFF'}
+                        stroke={isSelected ? '#FFFFFF' : theme.colors.blue}
+                        strokeWidth={2.5}
+                        onPress={() => setSelectedPointId(pointKey)}
+                      />
+                      <SvgText
+                        x={p.x}
+                        y={chartHeight - 6}
+                        fontSize={10}
+                        fill={isSelected ? '#131313' : '#8E9388'}
+                        textAnchor="middle"
+                        fontFamily={isSelected ? theme.fonts.bold : theme.fonts.regular}
+                        onPress={() => setSelectedPointId(pointKey)}
+                      >
+                        {p.date.slice(5).replace('-', '/')}
+                      </SvgText>
+                    </React.Fragment>
+                  );
+                })}
+
+                {/* Floating Tooltip for Selected Point */}
+                {activePointIndex >= 0 && points[activePointIndex] && (() => {
+                  const p = points[activePointIndex];
+                  const tooltipWidth = 72;
+                  const tooltipHeight = 24;
+                  const arrowHeight = 5;
+                  const tooltipY = Math.max(2, p.y - tooltipHeight - arrowHeight - 6);
+
+                  const minLeft = paddingLeft + 2;
+                  const maxRight = chartWidth - paddingRight - 2;
+                  const boxLeft = p.x - tooltipWidth / 2;
+                  const boxRight = p.x + tooltipWidth / 2;
+
+                  let boxOffset = 0;
+                  if (boxLeft < minLeft) {
+                    boxOffset = minLeft - boxLeft;
+                  } else if (boxRight > maxRight) {
+                    boxOffset = maxRight - boxRight;
+                  }
+
+                  const maxShift = tooltipWidth / 2 - 12;
+                  boxOffset = Math.max(-maxShift, Math.min(maxShift, boxOffset));
+
+                  const labelText = formatWeight(p.weightKg, bodyUnit).full;
+
+                  return (
+                    <G transform={`translate(${p.x}, ${tooltipY})`}>
+                      <Rect
+                        x={-tooltipWidth / 2 + boxOffset}
+                        y={0}
+                        width={tooltipWidth}
+                        height={tooltipHeight}
+                        rx={8}
+                        fill="#1E293B"
+                      />
+                      <Path
+                        d={`M -5 ${tooltipHeight - 1} L 0 ${tooltipHeight + arrowHeight} L 5 ${tooltipHeight - 1} Z`}
+                        fill="#1E293B"
+                      />
+                      <SvgText
+                        x={boxOffset}
+                        y={tooltipHeight / 2 + 3.5}
+                        fontSize={10.5}
+                        fill="#FFFFFF"
+                        textAnchor="middle"
+                        fontFamily={theme.fonts.bold}
+                      >
+                        {labelText}
+                      </SvgText>
+                    </G>
+                  );
+                })()}
               </Svg>
             </View>
 
-            <Text style={styles.chartFooterHint}>Swipe right for more</Text>
           </View>
 
           {/* Card 5: History Card at the bottom (Tap any item to edit/update) */}

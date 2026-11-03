@@ -140,7 +140,7 @@ const TumblerGlass: React.FC<TumblerGlassProps> = ({ status, onPress }) => {
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { profile, updateProfile, isUpdating } = useProfile();
+  const { profile, updateProfile, isUpdating, refetch: refetchProfile } = useProfile();
   const onboarding = useOnboardingStore();
   const { energyUnit, foodUnit, bodyUnit } = useUnitStore();
   const { intakeByDate, dailyGoalMl, addCup, removeCup, resetDate } = useWaterStore();
@@ -199,7 +199,19 @@ export default function HomeScreen() {
   const userWeight = profile?.weightKg || onboarding.weightKg || 60;
   const userHeight = profile?.heightCm || onboarding.heightCm || 174;
   const userGender = (profile?.gender || onboarding.gender || 'MALE') as GenderType;
-  const userAge = onboarding.age || 21;
+  const userAge = useMemo(() => {
+    if (profile?.dateOfBirth) {
+      const dob = new Date(profile.dateOfBirth);
+      if (!isNaN(dob.getTime())) {
+        const today = new Date();
+        let age = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+        if (age > 0) return age;
+      }
+    }
+    return onboarding.age || 21;
+  }, [profile?.dateOfBirth, onboarding.age]);
   const userActivity = (profile?.activityLevel || onboarding.activityLevel || 'MODERATE') as ActivityLevelType;
   const userFitnessGoal = profile?.fitnessGoal ||
     (onboarding.fitnessGoal === 'LOSE_WEIGHT' ? 'WEIGHT_LOSS' : onboarding.fitnessGoal === 'BUILD_MUSCLE' ? 'MUSCLE_GAIN' : 'MAINTENANCE');
@@ -228,6 +240,7 @@ export default function HomeScreen() {
 
   // Weight & Unit computations
   const targetWeight =
+    profile?.targetWeightKg ||
     onboarding.targetWeightKg ||
     (userFitnessGoal === 'WEIGHT_LOSS'
       ? Math.max(35, userWeight - 5)
@@ -338,14 +351,15 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchDateData(selectedDate);
-    }, [fetchDateData, selectedDate])
+      refetchProfile();
+    }, [fetchDateData, selectedDate, refetchProfile])
   );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchDateData(selectedDate);
+    await Promise.all([fetchDateData(selectedDate), refetchProfile()]);
     setRefreshing(false);
-  }, [fetchDateData, selectedDate]);
+  }, [fetchDateData, selectedDate, refetchProfile]);
 
   const handleSelectDay = (targetDate: string) => {
     setSelectedDate(targetDate);
@@ -500,6 +514,7 @@ export default function HomeScreen() {
           consumedFat={consumedFat}
           targetFat={targetFat}
           dateKey={selectedDate}
+          onTargetPress={() => router.push('/(main)/progress/calorie')}
         />
 
         {/* ── 1. Water Tracker Section (Matching Image 1) ───────────── */}

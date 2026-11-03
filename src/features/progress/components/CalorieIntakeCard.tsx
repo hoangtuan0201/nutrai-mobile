@@ -607,7 +607,7 @@ export const CalorieIntakeCard: React.FC<CalorieIntakeCardProps> = ({
         })}
       </View>
 
-      <Text style={styles.swipeHint}>Swipe right for more • Tap bar to inspect</Text>
+      <Text style={styles.swipeHint}>Tap bar to inspect</Text>
     </View>
   );
 };
