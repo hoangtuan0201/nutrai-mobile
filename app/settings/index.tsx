@@ -98,6 +98,9 @@ export default function SettingsScreen() {
   const [inputActivity, setInputActivity] = useState<ActivityLevelType>(
     (profile?.activityLevel || onboarding.activityLevel || 'MODERATE') as ActivityLevelType,
   );
+  const [inputTargetWeight, setInputTargetWeight] = useState(
+    String(profile?.targetWeightKg || onboarding.targetWeightKg || 65),
+  );
 
   // Calculate age helper
   const calculateAge = (dobString?: string): number => {
@@ -167,12 +170,15 @@ export default function SettingsScreen() {
 
   const handleOpenEdit = (type: 'personal' | 'goals') => {
     setModalType(type);
+    const tw = profile?.targetWeightKg || onboarding.targetWeightKg || userWeight || 65;
     if (bodyUnit === 'imperial') {
       setInputWeight(kgToLb(userWeight).toFixed(1));
       setInputHeight(String(Math.round(userHeight / 2.54)));
+      setInputTargetWeight(kgToLb(tw).toFixed(1));
     } else {
       setInputWeight(String(userWeight));
       setInputHeight(String(userHeight));
+      setInputTargetWeight(String(tw));
     }
     setInputAge(String(userAge));
     setInputGender(userGender);
@@ -185,9 +191,11 @@ export default function SettingsScreen() {
     try {
       let parsedWeight = parseFloat(inputWeight) || userWeight;
       let parsedHeight = parseFloat(inputHeight) || userHeight;
+      let parsedTargetWeight = parseFloat(inputTargetWeight) || userWeight;
       if (bodyUnit === 'imperial') {
         parsedWeight = lbToKg(parsedWeight);
         parsedHeight = Math.round(parsedHeight * 2.54);
+        parsedTargetWeight = lbToKg(parsedTargetWeight);
       }
       const parsedAge = parseInt(inputAge, 10) || userAge;
 
@@ -198,6 +206,7 @@ export default function SettingsScreen() {
       await updateProfile({
         weightKg: parsedWeight,
         heightCm: parsedHeight,
+        targetWeightKg: parsedTargetWeight,
         gender: inputGender,
         activityLevel: inputActivity,
         fitnessGoal: inputGoal,
@@ -211,6 +220,7 @@ export default function SettingsScreen() {
         gender: inputGender,
         age: parsedAge,
       });
+      onboarding.setTargetWeightKg(parsedTargetWeight);
       onboarding.setActivityLevel(inputActivity);
       onboarding.setGoal(
         inputGoal === 'WEIGHT_LOSS'
@@ -646,7 +656,21 @@ export default function SettingsScreen() {
                 </>
               ) : (
                 <>
-                  <Text style={styles.inputLabel}>Fitness Goal</Text>
+                  <Text style={styles.inputLabel}>
+                    Goal Weight ({bodyUnit === 'imperial' ? 'lb' : 'kg'})
+                  </Text>
+                  <TextInput
+                    style={styles.inputField}
+                    value={inputTargetWeight}
+                    onChangeText={setInputTargetWeight}
+                    keyboardType="decimal-pad"
+                    placeholder="Enter goal weight"
+                    placeholderTextColor="#9EA398"
+                  />
+
+                  <Text style={[styles.inputLabel, { marginTop: 14 }]}>
+                    Fitness Goal
+                  </Text>
                   {(
                     [
                       { id: 'WEIGHT_LOSS', label: 'Lose fat' },
