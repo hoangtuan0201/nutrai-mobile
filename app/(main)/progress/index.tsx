@@ -16,7 +16,7 @@ import { Camera, RotateCcw, Plus } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
 import { useAuthStore } from '../../../src/store/authStore';
 import { progressApi } from '../../../src/features/progress/api/progress.api';
-import { PROFILE_QUERY_KEY } from '../../../src/features/profile/hooks/useProfile';
+import { useProfile, PROFILE_QUERY_KEY } from '../../../src/features/profile/hooks/useProfile';
 import { ProgressOverviewResponse } from '../../../src/features/progress/types';
 import {
   BmiGaugeCard,
@@ -34,6 +34,7 @@ export default function ProgressScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const { profile } = useProfile();
 
   const [overview, setOverview] = useState<ProgressOverviewResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -78,6 +79,18 @@ export default function ProgressScreen() {
       fetchOverview(true);
     }, [fetchOverview]),
   );
+
+  // Also refresh immediately if profile weight/goal/calorie target changes (e.g. from Settings or Weight Detail)
+  useEffect(() => {
+    if (profile) {
+      fetchOverview(true);
+    }
+  }, [
+    profile?.weightKg,
+    profile?.targetWeightKg,
+    profile?.activeTarget?.dailyCalories,
+    fetchOverview,
+  ]);
 
   const handleLogWeightSubmit = async (weightKg: number, note?: string, loggedDate?: string) => {
     await progressApi.logWeight({ weightKg, note, loggedDate });

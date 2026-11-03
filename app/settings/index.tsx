@@ -199,19 +199,27 @@ export default function SettingsScreen() {
       }
       const parsedAge = parseInt(inputAge, 10) || userAge;
 
-      // Calculate approximate birth year from age
+      // Preserve exact dateOfBirth if age wasn't changed; otherwise compute approximate birth year
       const birthYear = new Date().getFullYear() - parsedAge;
-      const approxDob = `${birthYear}-01-01`;
+      const effectiveDob =
+        parsedAge === userAge && profile?.dateOfBirth
+          ? profile.dateOfBirth.split('T')[0]
+          : `${birthYear}-01-01`;
 
-      await updateProfile({
-        weightKg: parsedWeight,
-        heightCm: parsedHeight,
-        targetWeightKg: parsedTargetWeight,
-        gender: inputGender,
-        activityLevel: inputActivity,
-        fitnessGoal: inputGoal,
-        dateOfBirth: approxDob,
-      });
+      if (modalType === 'personal') {
+        await updateProfile({
+          weightKg: parsedWeight,
+          heightCm: parsedHeight,
+          gender: inputGender,
+          dateOfBirth: effectiveDob,
+        });
+      } else {
+        await updateProfile({
+          targetWeightKg: parsedTargetWeight,
+          activityLevel: inputActivity,
+          fitnessGoal: inputGoal,
+        });
+      }
 
       // Also sync to onboarding store
       onboarding.setMetrics({
