@@ -95,7 +95,7 @@ export default function MainLayout() {
 
       {/* 4. Progress Tab */}
       <Tabs.Screen
-        name="progress"
+        name="progress/index"
         options={{
           title: 'Progress',
           tabBarIcon: ({ color }) => (
@@ -106,11 +106,11 @@ export default function MainLayout() {
 
       {/* 5. AI Tab (navigates to /ai) */}
       <Tabs.Screen
-        name="chat"
+        name="ai/chat"
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
-            router.push('/ai');
+            router.push('/(main)/ai/chat');
           },
         }}
         options={{
@@ -122,6 +122,18 @@ export default function MainLayout() {
       />
 
       {/* ── Sub-screens hidden from bottom tabs ── */}
+      <Tabs.Screen
+        name="progress/weight"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="progress/calorie"
+        options={{
+          href: null,
+        }}
+      />
       <Tabs.Screen
         name="meals/[id]"
         options={{

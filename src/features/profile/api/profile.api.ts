@@ -21,6 +21,7 @@ export interface ProfileResponseDto {
   gender?: 'MALE' | 'FEMALE' | 'OTHER';
   heightCm?: number;
   weightKg?: number;
+  targetWeightKg?: number;
   activityLevel?:
     | 'SEDENTARY'
     | 'LIGHT'
@@ -39,6 +40,7 @@ export interface UpdateProfileDto {
   gender?: 'MALE' | 'FEMALE' | 'OTHER';
   heightCm?: number;
   weightKg?: number;
+  targetWeightKg?: number;
   activityLevel?:
     | 'SEDENTARY'
     | 'LIGHT'

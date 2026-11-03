@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Loading } from '../../src/components/ui/Loading';
+import { Loading } from '../../../src/components/ui/Loading';
 
 export default function ChatTabRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/ai');
+    router.replace('/(main)/ai/chat');
   }, []);
 
   return (
