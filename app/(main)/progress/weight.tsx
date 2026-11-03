@@ -11,7 +11,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ChevronLeft,
@@ -38,7 +38,7 @@ import Svg, {
 } from 'react-native-svg';
 import theme from '../../../src/constants/theme';
 import { progressApi } from '../../../src/features/progress/api/progress.api';
-import { PROFILE_QUERY_KEY } from '../../../src/features/profile/hooks/useProfile';
+import { useProfile, PROFILE_QUERY_KEY } from '../../../src/features/profile/hooks/useProfile';
 import { ProgressOverviewResponse, WeightDataPoint } from '../../../src/features/progress/types';
 import { LogWeightModal } from '../../../src/features/progress/components/LogWeightModal';
 import { EditGoalsModal } from '../../../src/features/profile/components/EditGoalsModal';
@@ -47,6 +47,7 @@ import { useUnitStore, formatWeight } from '../../../src/store/unitStore';
 export default function WeightDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { profile } = useProfile();
   const screenWidth = Dimensions.get('window').width;
   const chartWidth = Math.max(260, screenWidth - 76);
   const chartHeight = 175;
@@ -82,6 +83,20 @@ export default function WeightDetailScreen() {
   useEffect(() => {
     fetchOverview();
   }, [fetchOverview]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setSelectedPointId(null);
+      fetchOverview(true);
+    }, [fetchOverview]),
+  );
+
+  useEffect(() => {
+    if (profile) {
+      setSelectedPointId(null);
+      fetchOverview(true);
+    }
+  }, [profile?.weightKg, profile?.targetWeightKg, fetchOverview]);
 
   const handleLogSubmit = async (weightKg: number, note?: string, loggedDate?: string) => {
     await progressApi.logWeight({ weightKg, note, loggedDate });

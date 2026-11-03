@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import Svg, {
   Line,
@@ -40,8 +40,12 @@ export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
   const currentKg = weight.currentKg || 0;
   const targetKg = weight.targetKg || 0;
 
-  // Selected point tracking (defaults to latest point)
+  // Selected point tracking (defaults to latest point, resets when latest weight updates)
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedId(null);
+  }, [currentKg, rawHistory[0]?.weightKg, rawHistory.length]);
 
   const activeIndex = useMemo(() => {
     if (history.length === 0) return -1;
