@@ -19,10 +19,10 @@ export const PALETTE = {
   onyx: '#131313',    // Primary text, dark surfaces, bottom nav
   ivory: '#F4F2E7',   // App base background (warm minimalism)
 
-  // Macro Semantic Colors
-  green: '#8EDC5E',   // Macro: Carbs, success state
-  yellow: '#FDD922',  // Macro: Fat, points/rewards
-  blue: '#88A8F7',    // Macro: Protein, water intake
+  // Macro Semantic Colors (Synchronized across Home, Log, and Progress)
+  green: '#7BC754',   // Macro: Carbs, success state
+  yellow: '#F5A623',  // Macro: Fat, points/rewards
+  blue: '#5D80E6',    // Macro: Protein, water intake
 
   // Neutral & Surfaces
   surfaceBase: '#F4F2E7',
@@ -43,9 +43,10 @@ export const PALETTE = {
 } as const;
 
 export const MACRO_COLORS = {
-  carbs: PALETTE.green,
-  protein: PALETTE.blue,
-  fat: PALETTE.yellow,
+  protein: '#5D80E6',
+  carbs: '#7BC754',
+  fat: '#F5A623',
+  quickLog: '#9CA3AF',
   calories: PALETTE.saffron,
 } as const;
 

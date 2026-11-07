@@ -1058,38 +1058,6 @@ export default function AddFoodManuallyScreen() {
                   </View>
                 </View>
 
-                {/* Meal Type selection */}
-                <View style={styles.portionSection}>
-                  <Text style={styles.portionSectionLabel}>Meal</Text>
-                  <View style={styles.portionMealTypeRow}>
-                    {MEAL_TABS.map((tab) => {
-                      const isSelected = portionModal.mealType === tab.type;
-                      return (
-                        <TouchableOpacity
-                          key={tab.type}
-                          style={[
-                            styles.portionMealTypeChip,
-                            isSelected && styles.portionMealTypeChipActive,
-                          ]}
-                          activeOpacity={0.7}
-                          onPress={() =>
-                            setPortionModal({ ...portionModal, mealType: tab.type })
-                          }
-                        >
-                          <Text
-                            style={[
-                              styles.portionMealTypeChipText,
-                              isSelected && styles.portionMealTypeChipTextActive,
-                            ]}
-                          >
-                            {tab.label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
                 {/* Nutrition summary for this quantity */}
                 <View style={styles.portionMacroCard}>
                   <Text style={styles.portionMacroTitle}>Nutritional Content</Text>

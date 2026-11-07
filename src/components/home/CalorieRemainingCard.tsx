@@ -1,9 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
-import { Flame, Pencil } from 'lucide-react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Easing,
+} from 'react-native';
+import { Flame } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useUnitStore, formatFoodWeight } from '../../store/unitStore';
+import { theme } from '../../constants/theme';
+import { useUnitStore } from '../../store/unitStore';
 
 export interface CalorieRemainingCardProps {
   consumedCalories: number;
@@ -15,315 +22,490 @@ export interface CalorieRemainingCardProps {
   consumedFat: number;
   targetFat: number;
   dateKey?: string;
+  focusKey?: number;
   onTargetPress?: () => void;
 }
 
-export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = ({
-  consumedCalories,
-  targetCalories,
-  consumedProtein,
-  targetProtein,
-  consumedCarbs,
-  targetCarbs,
-  consumedFat,
-  targetFat,
-  dateKey,
-  onTargetPress,
-}) => {
-  const router = useRouter();
-  const { energyUnit, foodUnit } = useUnitStore();
+export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.memo(
+  ({
+    consumedCalories,
+    targetCalories,
+    consumedProtein,
+    targetProtein,
+    consumedCarbs,
+    targetCarbs,
+    consumedFat,
+    targetFat,
+    dateKey = '',
+    focusKey = 0,
+    onTargetPress,
+  }) => {
+    const router = useRouter();
+    const { energyUnit } = useUnitStore();
 
-  const handleTargetPress = onTargetPress || (() => router.push('/settings'));
+    const handleTargetPress =
+      onTargetPress || (() => router.push('/(main)/progress/calorie'));
 
-  // Target values
-  const endConsumed = Math.max(0, Math.round(consumedCalories));
-  const endRemaining = Math.max(0, Math.round(targetCalories - consumedCalories));
-  const targetRatio =
-    targetCalories > 0
-      ? Math.min(1, Math.max(0, consumedCalories / targetCalories))
-      : 0;
+    const isOverCalories = consumedCalories > targetCalories;
+    const endCal = Math.max(0, Math.round(consumedCalories));
+    const endBadgeCal = isOverCalories
+      ? Math.max(0, Math.round(consumedCalories - targetCalories))
+      : Math.max(0, Math.round(targetCalories - consumedCalories));
+    const endP = Math.max(0, Math.round(consumedProtein));
+    const endC = Math.max(0, Math.round(consumedCarbs));
+    const endF = Math.max(0, Math.round(consumedFat));
 
-  // Animation states
-  const [displayedConsumed, setDisplayedConsumed] = useState(endConsumed);
-  const [displayedRemaining, setDisplayedRemaining] = useState(endRemaining);
-  const [animatedRatio, setAnimatedRatio] = useState(targetRatio);
+    const endCalPct = Math.min(
+      100,
+      targetCalories > 0 ? (consumedCalories / targetCalories) * 100 : 0,
+    );
+    const endPPct = Math.min(
+      100,
+      targetProtein > 0 ? (consumedProtein / targetProtein) * 100 : 0,
+    );
+    const endCPct = Math.min(
+      100,
+      targetCarbs > 0 ? (consumedCarbs / targetCarbs) * 100 : 0,
+    );
+    const endFPct = Math.min(
+      100,
+      targetFat > 0 ? (consumedFat / targetFat) * 100 : 0,
+    );
 
-  const prevDateKeyRef = useRef(dateKey);
-  const prevConsumedRef = useRef(endConsumed);
+    // Animated.Value (0 -> 1) drives all 4 progress bars smoothly via interpolation
+    const barProgress = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    const isDateChanged = prevDateKeyRef.current !== dateKey;
-    prevDateKeyRef.current = dateKey;
+    // Number counter state (throttled so React only re-renders ~20 times during sweep)
+    const [counters, setCounters] = useState({
+      cal: 0,
+      badgeCal: 0,
+      p: 0,
+      c: 0,
+      f: 0,
+    });
 
-    // When switching dates: always sweep forward from 0 to target (never go backwards)
-    // When on the same date (e.g. food logged): animate from previous value to new value
-    const startConsumed = isDateChanged ? 0 : prevConsumedRef.current;
-    const startRemaining = isDateChanged ? 0 : displayedRemaining;
-    const startRatio = isDateChanged ? 0 : animatedRatio;
+    const prevTriggerRef = useRef(`${dateKey}-${focusKey}`);
+    const currentCountersRef = useRef(counters);
 
-    // If day has 0 kcal and starting from 0, settle immediately without animation loop
-    if (endConsumed === 0 && startConsumed === 0) {
-      setDisplayedConsumed(0);
-      setDisplayedRemaining(endRemaining);
-      setAnimatedRatio(0);
-      prevConsumedRef.current = 0;
-      return;
-    }
+    useEffect(() => {
+      const nextTrigger = `${dateKey}-${focusKey}`;
+      const isFreshSweep = prevTriggerRef.current !== nextTrigger;
+      prevTriggerRef.current = nextTrigger;
 
-    let startTime: number | null = null;
-    let animId: number;
-    const duration = 850; // Snappy 850ms for responsive speedometer sweep
+      const startCounters = isFreshSweep
+        ? { cal: 0, badgeCal: 0, p: 0, c: 0, f: 0 }
+        : currentCountersRef.current;
 
-    // Smooth ease-out cubic curve (fast rev, graceful deceleration)
-    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
-
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      const eased = easeOutCubic(progress);
-
-      setDisplayedConsumed(
-        Math.round(startConsumed + (endConsumed - startConsumed) * eased)
-      );
-      setDisplayedRemaining(
-        Math.round(startRemaining + (endRemaining - startRemaining) * eased)
-      );
-      setAnimatedRatio(startRatio + (targetRatio - startRatio) * eased);
-
-      if (progress < 1) {
-        animId = requestAnimationFrame(animate);
-      } else {
-        prevConsumedRef.current = endConsumed;
+      if (isFreshSweep) {
+        barProgress.setValue(0);
+        setCounters({ cal: 0, badgeCal: 0, p: 0, c: 0, f: 0 });
       }
-    };
 
-    animId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animId);
-  }, [endConsumed, endRemaining, targetRatio, dateKey]);
+      let animId: number;
+      let timerId: ReturnType<typeof setTimeout>;
+      const duration = 520;
+      const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
-  // Speedometer progress ring math
-  const ringSize = 96;
-  const strokeWidth = 9;
-  const radius = (ringSize - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - animatedRatio);
+      // Delay 45ms on tab/date switch so screen transition finishes painting before animation starts
+      const startDelay = isFreshSweep ? 45 : 0;
 
-  return (
-    <View style={styles.calorieCard}>
-      <View style={styles.calorieMainRow}>
-        {/* Left Progress Ring (Speedometer style animated sweep) */}
-        <View style={styles.ringContainer}>
-          <Svg width={ringSize} height={ringSize}>
-            {/* Background Track */}
-            <Circle
-              cx={ringSize / 2}
-              cy={ringSize / 2}
-              r={radius}
-              stroke="#F3EFE6"
-              strokeWidth={strokeWidth}
-              fill="transparent"
-            />
-            {/* Animated Gauge Arc (only rendered when ratio > 0.005 to avoid stray round dot on empty ring) */}
-            {animatedRatio > 0.005 && (
-              <Circle
-                cx={ringSize / 2}
-                cy={ringSize / 2}
-                r={radius}
-                stroke="#FF9114"
-                strokeWidth={strokeWidth}
-                fill="transparent"
-                strokeDasharray={`${circumference} ${circumference}`}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
-              />
-            )}
-          </Svg>
+      timerId = setTimeout(() => {
+        Animated.timing(barProgress, {
+          toValue: 1,
+          duration,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }).start();
 
-          {/* Center Content with Increasing Number */}
-          <View style={styles.ringCenterContent}>
-            <Flame size={20} color="#FF9114" style={{ marginBottom: 2 }} />
-            <Text style={styles.ringValText}>
-              {displayedConsumed.toLocaleString()}
-            </Text>
-            <Text style={styles.ringSubText}>{energyUnit}</Text>
-          </View>
-        </View>
+        let startTime: number | null = null;
+        let lastEmitTime = 0;
 
-        {/* Right Information with Increasing Remaining Calories */}
-        <View style={styles.calorieInfoCol}>
-          <View style={styles.timeframeRow}>
-            <Text style={styles.calorieRemainingLabel}>Calories remaining</Text>
-          </View>
+        const step = (timestamp: number) => {
+          if (!startTime) startTime = timestamp;
+          const elapsed = timestamp - startTime;
+          const progress = Math.min(1, elapsed / duration);
+          const eased = easeOutCubic(progress);
 
-          <View style={styles.bigCalorieRow}>
-            <Text style={styles.bigCalorieNumber}>
-              {displayedRemaining.toLocaleString()}
-            </Text>
-            <Text style={styles.bigCalorieUnit}>{energyUnit}</Text>
-          </View>
+          // Throttle React text state updates to every ~28ms (or final frame) to keep UI thread at 60 FPS
+          if (timestamp - lastEmitTime >= 28 || progress === 1) {
+            lastEmitTime = timestamp;
+            const nextState = {
+              cal: Math.round(
+                startCounters.cal + (endCal - startCounters.cal) * eased,
+              ),
+              badgeCal: Math.round(
+                startCounters.badgeCal +
+                  (endBadgeCal - startCounters.badgeCal) * eased,
+              ),
+              p: Math.round(startCounters.p + (endP - startCounters.p) * eased),
+              c: Math.round(startCounters.c + (endC - startCounters.c) * eased),
+              f: Math.round(startCounters.f + (endF - startCounters.f) * eased),
+            };
+            currentCountersRef.current = nextState;
+            setCounters(nextState);
+          }
 
+          if (progress < 1) {
+            animId = requestAnimationFrame(step);
+          }
+        };
+
+        animId = requestAnimationFrame(step);
+      }, startDelay);
+
+      return () => {
+        clearTimeout(timerId);
+        if (animId) cancelAnimationFrame(animId);
+        barProgress.stopAnimation();
+      };
+    }, [
+      endCal,
+      endBadgeCal,
+      endP,
+      endC,
+      endF,
+      endCalPct,
+      endPPct,
+      endCPct,
+      endFPct,
+      dateKey,
+      focusKey,
+      barProgress,
+    ]);
+
+    const mainBarWidth = barProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', `${endCalPct}%`],
+    });
+    const proteinBarWidth = barProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', `${endPPct}%`],
+    });
+    const carbsBarWidth = barProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', `${endCPct}%`],
+    });
+    const fatBarWidth = barProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', `${endFPct}%`],
+    });
+
+    return (
+      <View style={styles.summaryCard}>
+        <View style={styles.summaryTopRow}>
           <TouchableOpacity
-            style={styles.targetRow}
-            activeOpacity={0.7}
+            style={styles.summaryCalLeft}
+            activeOpacity={0.75}
             onPress={handleTargetPress}
           >
-            <Text style={styles.targetText}>
-              Target {targetCalories.toLocaleString()} {energyUnit}
+            <View style={styles.summaryFlameWrap}>
+              <Flame size={20} color={theme.colors.saffron} />
+            </View>
+            <View>
+              <Text style={styles.summaryLabel}>Calories Consumed</Text>
+              <View style={styles.summaryValueBaseline}>
+                <Text style={styles.summaryCaloriesValue}>
+                  {counters.cal.toLocaleString('en-US')}
+                </Text>
+                <Text style={styles.summaryTargetText}>
+                  / {targetCalories.toLocaleString('en-US')} {energyUnit}
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.remainingBadge,
+              isOverCalories && styles.remainingBadgeOver,
+            ]}
+            activeOpacity={0.75}
+            onPress={handleTargetPress}
+          >
+            <Text
+              style={[
+                styles.remainingBadgeValue,
+                isOverCalories && styles.remainingBadgeValueOver,
+              ]}
+            >
+              {isOverCalories
+                ? `+${counters.badgeCal.toLocaleString('en-US')}`
+                : counters.badgeCal.toLocaleString('en-US')}{' '}
+              {energyUnit}
             </Text>
-            <Pencil size={12} color="#797E74" style={{ marginLeft: 4 }} />
+            <Text
+              style={[
+                styles.remainingBadgeSub,
+                isOverCalories && styles.remainingBadgeValueOver,
+              ]}
+            >
+              {isOverCalories ? 'over target' : 'remaining'}
+            </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Main Calorie Animated Progress Bar */}
+        <View style={styles.mainProgressTrack}>
+          <Animated.View
+            style={[
+              styles.mainProgressFill,
+              {
+                width: mainBarWidth,
+                backgroundColor: isOverCalories
+                  ? '#F04B37'
+                  : theme.colors.saffron,
+              },
+            ]}
+          />
+        </View>
+
+        <View style={styles.summaryDivider} />
+
+        {/* 3 Macro Progress Columns with Animated Counters & Progress Bars */}
+        <View style={styles.macroGrid}>
+          {/* Protein */}
+          <View style={styles.macroColumn}>
+            <View style={styles.macroHeaderRow}>
+              <View
+                style={[
+                  styles.macroDot,
+                  { backgroundColor: theme.macros.protein },
+                ]}
+              />
+              <Text style={styles.macroName}>Protein</Text>
+            </View>
+            <Text style={styles.macroValText}>
+              <Text
+                style={[
+                  styles.macroConsumedStrong,
+                  { color: theme.macros.protein },
+                ]}
+              >
+                {counters.p}
+              </Text>
+              /{targetProtein}g
+            </Text>
+            <View style={styles.macroMiniTrack}>
+              <Animated.View
+                style={[
+                  styles.macroMiniFill,
+                  {
+                    width: proteinBarWidth,
+                    backgroundColor: theme.macros.protein,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* Carbs */}
+          <View style={styles.macroColumn}>
+            <View style={styles.macroHeaderRow}>
+              <View
+                style={[
+                  styles.macroDot,
+                  { backgroundColor: theme.macros.carbs },
+                ]}
+              />
+              <Text style={styles.macroName}>Carbs</Text>
+            </View>
+            <Text style={styles.macroValText}>
+              <Text
+                style={[
+                  styles.macroConsumedStrong,
+                  { color: theme.macros.carbs },
+                ]}
+              >
+                {counters.c}
+              </Text>
+              /{targetCarbs}g
+            </Text>
+            <View style={styles.macroMiniTrack}>
+              <Animated.View
+                style={[
+                  styles.macroMiniFill,
+                  {
+                    width: carbsBarWidth,
+                    backgroundColor: theme.macros.carbs,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* Fat */}
+          <View style={styles.macroColumn}>
+            <View style={styles.macroHeaderRow}>
+              <View
+                style={[styles.macroDot, { backgroundColor: theme.macros.fat }]}
+              />
+              <Text style={styles.macroName}>Fat</Text>
+            </View>
+            <Text style={styles.macroValText}>
+              <Text
+                style={[
+                  styles.macroConsumedStrong,
+                  { color: theme.macros.fat },
+                ]}
+              >
+                {counters.f}
+              </Text>
+              /{targetFat}g
+            </Text>
+            <View style={styles.macroMiniTrack}>
+              <Animated.View
+                style={[
+                  styles.macroMiniFill,
+                  {
+                    width: fatBarWidth,
+                    backgroundColor: theme.macros.fat,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+        </View>
       </View>
-
-      <View style={styles.calorieCardDivider} />
-
-      {/* Bottom Macro Breakdown Pills */}
-      <View style={styles.macroPillsRow}>
-        {/* Protein */}
-        <View style={styles.macroPillItem}>
-          <View style={[styles.macroDot, { backgroundColor: '#5D80E6' }]} />
-          <Text style={styles.macroPillLabel}>Protein</Text>
-          <Text style={styles.macroPillValue}>
-            {formatFoodWeight(consumedProtein, foodUnit).value} /{' '}
-            {formatFoodWeight(targetProtein, foodUnit).full}
-          </Text>
-        </View>
-
-        {/* Carbs */}
-        <View style={styles.macroPillItem}>
-          <View style={[styles.macroDot, { backgroundColor: '#7BC754' }]} />
-          <Text style={styles.macroPillLabel}>Carbs</Text>
-          <Text style={styles.macroPillValue}>
-            {formatFoodWeight(consumedCarbs, foodUnit).value} /{' '}
-            {formatFoodWeight(targetCarbs, foodUnit).full}
-          </Text>
-        </View>
-
-        {/* Fat */}
-        <View style={styles.macroPillItem}>
-          <View style={[styles.macroDot, { backgroundColor: '#F5A623' }]} />
-          <Text style={styles.macroPillLabel}>Fat</Text>
-          <Text style={styles.macroPillValue}>
-            {formatFoodWeight(consumedFat, foodUnit).value} /{' '}
-            {formatFoodWeight(targetFat, foodUnit).full}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-};
+    );
+  },
+);
 
 const styles = StyleSheet.create({
-  calorieCard: {
+  summaryCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 18,
-    marginBottom: 20,
     borderWidth: 1,
     borderColor: '#EFECE2',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: 16,
+    ...theme.shadows.elevation1,
   },
-  calorieMainRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ringContainer: {
-    position: 'relative',
-    width: 96,
-    height: 96,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  ringCenterContent: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ringValText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#1B281B',
-    lineHeight: 18,
-  },
-  ringSubText: {
-    fontSize: 11,
-    color: '#767B71',
-    fontWeight: '600',
-  },
-  calorieInfoCol: {
-    flex: 1,
-  },
-  timeframeRow: {
+  summaryTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  summaryCalLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  summaryFlameWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#FFF3E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  summaryLabel: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
     marginBottom: 2,
   },
-  calorieRemainingLabel: {
-    fontSize: 12,
-    color: '#767B71',
-    fontWeight: '600',
-  },
-  bigCalorieRow: {
+  summaryValueBaseline: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
   },
-  bigCalorieNumber: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1B281B',
+  summaryCaloriesValue: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 24,
+    color: theme.colors.textPrimary,
     letterSpacing: -0.5,
   },
-  bigCalorieUnit: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1B281B',
+  summaryTargetText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 13,
+    color: theme.colors.textSecondary,
   },
-  targetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
+  remainingBadge: {
+    backgroundColor: '#FAF8F1',
+    borderWidth: 1,
+    borderColor: '#ECE9DF',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 14,
+    alignItems: 'flex-end',
   },
-  targetText: {
-    fontSize: 12,
-    color: '#767B71',
-    fontWeight: '600',
+  remainingBadgeOver: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
   },
-  calorieCardDivider: {
-    height: 1,
-    backgroundColor: '#F3EFE8',
-    marginVertical: 14,
+  remainingBadgeValue: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 13,
+    color: theme.colors.textPrimary,
   },
-  macroPillsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  remainingBadgeSub: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 10,
+    color: theme.colors.textSecondary,
   },
-  macroPillItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  remainingBadgeValueOver: {
+    color: '#DC2626',
   },
-  macroDot: {
-    width: 7,
-    height: 7,
+  mainProgressTrack: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#F0EFE7',
+    marginTop: 14,
+    overflow: 'hidden',
+  },
+  mainProgressFill: {
+    height: '100%',
     borderRadius: 4,
   },
-  macroPillLabel: {
-    fontSize: 11,
-    color: '#656A60',
-    fontWeight: '600',
+  summaryDivider: {
+    height: 1,
+    backgroundColor: '#F2F0E8',
+    marginVertical: 14,
   },
-  macroPillValue: {
-    fontSize: 11,
-    color: '#1B281B',
-    fontWeight: '700',
+  macroGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  macroColumn: {
+    flex: 1,
+    backgroundColor: '#FAF9F4',
+    borderRadius: 14,
+    padding: 10,
+  },
+  macroHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  macroDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  macroName: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+  },
+  macroValText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginBottom: 6,
+  },
+  macroConsumedStrong: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 14,
+  },
+  macroMiniTrack: {
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#EAE8DF',
+    overflow: 'hidden',
+  },
+  macroMiniFill: {
+    height: '100%',
+    borderRadius: 3,
   },
 });
