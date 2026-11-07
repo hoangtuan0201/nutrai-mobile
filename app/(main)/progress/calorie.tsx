@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -230,6 +231,27 @@ export default function CalorieIntakeScreen() {
     }
   };
 
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(main)/progress');
+    }
+  }, [router]);
+
+  // Handle Android hardware back
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleBack();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [handleBack])
+  );
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#F4F2E7" />
@@ -239,7 +261,7 @@ export default function CalorieIntakeScreen() {
         <TouchableOpacity
           style={styles.backBtn}
           activeOpacity={0.7}
-          onPress={() => router.navigate('/(main)/progress')}
+          onPress={handleBack}
         >
           <ChevronLeft size={22} color="#131313" strokeWidth={2.5} />
         </TouchableOpacity>
