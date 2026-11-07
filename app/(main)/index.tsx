@@ -65,7 +65,7 @@ interface TumblerGlassProps {
   onPress: () => void;
 }
 
-const TumblerGlass: React.FC<TumblerGlassProps> = ({ status, onPress }) => {
+const TumblerGlass: React.FC<TumblerGlassProps> = React.memo(({ status, onPress }) => {
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -138,7 +138,7 @@ const TumblerGlass: React.FC<TumblerGlassProps> = ({ status, onPress }) => {
       </Svg>
     </TouchableOpacity>
   );
-};
+});
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -303,11 +303,12 @@ export default function HomeScreen() {
   } | null>(null);
   const [loadingMeals, setLoadingMeals] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [focusKey, setFocusKey] = useState(0);
 
   const fetchDateData = useCallback(async (targetDate: string) => {
-    // If already cached, show instantly
-    if (mealsCacheRef.current[targetDate]) {
-      setDailyData(mealsCacheRef.current[targetDate]);
+    const cached = mealsCacheRef.current[targetDate];
+    if (cached) {
+      setDailyData(cached);
     }
     try {
       const res = await mealsApi.getDailyMeals(targetDate);
@@ -315,8 +316,18 @@ export default function HomeScreen() {
         summary: res.summary,
         meals: res.meals || [],
       };
+      const isUnchanged =
+        cached &&
+        cached.summary?.totalCalories === data.summary?.totalCalories &&
+        cached.summary?.totalProtein === data.summary?.totalProtein &&
+        cached.summary?.totalCarbs === data.summary?.totalCarbs &&
+        cached.summary?.totalFat === data.summary?.totalFat &&
+        cached.meals.length === data.meals.length;
+
       mealsCacheRef.current[targetDate] = data;
-      setDailyData(data);
+      if (!isUnchanged) {
+        setDailyData(data);
+      }
     } catch (err: any) {
       console.warn('Failed to load meals for dashboard:', err?.message);
     }
@@ -324,9 +335,9 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setFocusKey((prev) => prev + 1);
       fetchDateData(selectedDate);
-      refetchProfile();
-    }, [fetchDateData, selectedDate, refetchProfile])
+    }, [fetchDateData, selectedDate])
   );
 
   const onRefresh = useCallback(async () => {
@@ -457,7 +468,7 @@ export default function HomeScreen() {
           consumedFat={consumedFat}
           targetFat={targetFat}
           dateKey={selectedDate}
-          onTargetPress={() => router.push('/(main)/progress/calorie')}
+          focusKey={focusKey}
         />
 
         {/* ── 1. Water Tracker Section (Matching Image 1) ───────────── */}

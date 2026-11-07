@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -19,30 +19,52 @@ export default function AICameraScanScreen() {
     mealType?: string;
     date?: string;
   }>();
+
+  const fromParam = params.from;
+  const originFromParam = params.originFrom;
+  const modeParam = params.mode;
+  const mealTypeParam = params.mealType;
+  const dateParam = params.date;
+
   const [permission, requestPermission] = useCameraPermissions();
   const [scanMode, setScanMode] = useState<ScanMode>(
-    params.mode === 'BARCODE' ? 'BARCODE' : 'SCAN_FOOD',
+    modeParam === 'BARCODE' ? 'BARCODE' : 'SCAN_FOOD',
   );
   const [flashOn, setFlashOn] = useState(false);
-  // Session key to force complete remount & state reset on tab change or screen focus
+  // Session key to force complete remount & state reset on mode tab switch
   const [sessionKey, setSessionKey] = useState<number>(() => Date.now());
 
+  // Automatically request camera permission on initial mount if needed
+  useEffect(() => {
+    if (permission && !permission.granted && permission.canAskAgain) {
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
+
+  // Sync mode if navigated with explicit mode param
+  useEffect(() => {
+    if (modeParam === 'BARCODE' || modeParam === 'SCAN_FOOD') {
+      setScanMode(modeParam);
+    }
+  }, [modeParam]);
+
   const handleBack = useCallback(() => {
-    if (params.from === 'add') {
+    setFlashOn(false);
+    if (fromParam === 'add') {
       router.replace({
         pathname: '/(main)/meals/add',
         params: {
-          from: params.originFrom || 'log',
-          mealType: params.mealType,
-          date: params.date,
+          from: originFromParam || 'log',
+          mealType: mealTypeParam,
+          date: dateParam,
         },
       });
       return;
     }
-    if (params.from === 'log') {
+    if (fromParam === 'log') {
       router.replace({
         pathname: '/(main)/meals',
-        params: params.date ? { date: params.date } : undefined,
+        params: dateParam ? { date: dateParam } : undefined,
       });
       return;
     }
@@ -51,35 +73,34 @@ export default function AICameraScanScreen() {
     } else {
       router.replace('/(main)/meals');
     }
-  }, [params, router]);
+  }, [fromParam, originFromParam, mealTypeParam, dateParam, router]);
 
-  // Reset all state whenever user navigates away or returns to this screen & register hardware back handler
+  const handleBackRef = useRef(handleBack);
+  handleBackRef.current = handleBack;
+
+  // Register hardware back handler without triggering state updates or remounting when native ImagePicker returns
   useFocusEffect(
     useCallback(() => {
-      setSessionKey(Date.now());
-      setFlashOn(false);
-
       const onBackPress = () => {
-        handleBack();
+        handleBackRef.current();
         return true;
       };
 
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
       return () => {
-        setFlashOn(false);
         subscription.remove();
       };
-    }, [handleBack])
+    }, []),
   );
 
   const handleSwitchMode = async (mode: ScanMode) => {
-    if (mode === 'BARCODE' && !permission?.granted) {
+    if (!permission?.granted) {
       await requestPermission();
     }
     setFlashOn(false);
     setScanMode(mode);
-    setSessionKey(Date.now()); // Completely resets sub-component state
+    setSessionKey(Date.now()); // Completely resets sub-component state on tab switch
   };
 
   return (
@@ -144,6 +165,7 @@ export default function AICameraScanScreen() {
           permission={permission}
           flashOn={flashOn}
           onToggleFlash={() => setFlashOn((prev) => !prev)}
+          mealType={mealTypeParam}
         />
       ) : (
         <BarcodeSection

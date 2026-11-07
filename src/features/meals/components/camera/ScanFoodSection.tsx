@@ -41,16 +41,19 @@ interface ScanFoodSectionProps {
   permission: PermissionResponse | null;
   flashOn: boolean;
   onToggleFlash: () => void;
+  mealType?: string;
 }
 
 export const ScanFoodSection: React.FC<ScanFoodSectionProps> = ({
   permission,
   flashOn,
   onToggleFlash,
+  mealType,
 }) => {
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
   const { setScanData } = useAiScanStore();
+  const resolvedMealType = (mealType as any) || 'LUNCH';
 
   const [isScanning, setIsScanning] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
@@ -68,18 +71,22 @@ export const ScanFoodSection: React.FC<ScanFoodSectionProps> = ({
   const handleCapture = async () => {
     try {
       if (cameraRef.current && permission?.granted) {
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.7,
-          base64: true,
-        });
-
-        if (photo && photo.uri) {
-          onPhotoCaptured({
-            uri: photo.uri,
-            base64: photo.base64,
-            mimeType: 'image/jpeg',
+        try {
+          const photo = await cameraRef.current.takePictureAsync({
+            quality: 0.7,
+            base64: true,
           });
-          return;
+
+          if (photo && photo.uri) {
+            onPhotoCaptured({
+              uri: photo.uri,
+              base64: photo.base64,
+              mimeType: 'image/jpeg',
+            });
+            return;
+          }
+        } catch {
+          // Fallback to ImagePicker below if live CameraView capture fails on simulator
         }
       }
 
@@ -157,7 +164,7 @@ export const ScanFoodSection: React.FC<ScanFoodSectionProps> = ({
       const scanResult = await mealsApi.scanFoodWithAi({
         imageBase64: photo.base64,
         mimeType: photo.mimeType || 'image/jpeg',
-        mealType: 'LUNCH',
+        mealType: resolvedMealType,
         foodHint: hint?.trim() || undefined,
       });
 
@@ -195,7 +202,7 @@ export const ScanFoodSection: React.FC<ScanFoodSectionProps> = ({
         imageUri: photo.uri,
         imageBase64: photo.base64,
         scanResult,
-        mealType: 'LUNCH',
+        mealType: resolvedMealType,
         foodHint: hint?.trim() || undefined,
       });
 

@@ -21,12 +21,12 @@ import { CalorieIntakeProgress, DailyMacroSummary } from '../types';
 
 export type CalorieTimeframe = 'Daily' | 'Weekly' | 'Monthly';
 
-// Synchronized Macro Colors with Homepage & Theme
+// Synchronized Macro Colors from Central Theme (theme.macros)
 export const MACRO_THEME_COLORS = {
-  carbs: '#7BC754',   // Soft Leaf Green (from Homepage CalorieRemainingCard)
-  protein: '#5D80E6', // Soft Blue / Violet (from Homepage CalorieRemainingCard)
-  fat: '#F5A623',     // Golden Honey / Amber (from Homepage CalorieRemainingCard)
-  quickLog: '#9CA3AF',// Neutral Gray for Quick Log
+  carbs: theme.macros.carbs,     // #7BC754
+  protein: theme.macros.protein, // #5D80E6
+  fat: theme.macros.fat,         // #F5A623
+  quickLog: theme.macros.quickLog, // #9CA3AF
 };
 
 interface ChartBarItem {
