@@ -35,7 +35,7 @@ import {
   Utensils,
 } from 'lucide-react-native';
 import theme from '../../src/constants/theme';
-import { Logo, CalorieRemainingCard } from '../../src/components';
+import { Logo, CalorieRemainingCard, WeeklyCalendarStrip } from '../../src/components';
 import { useAuthStore } from '../../src/store/authStore';
 import { useProfile } from '../../src/features/profile/hooks/useProfile';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
@@ -159,133 +159,6 @@ export default function HomeScreen() {
   }, []);
 
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
-
-  // Multi-week swipeable calendar strip dimensions & state
-  const { width: windowWidth } = useWindowDimensions();
-  const containerWidth = Math.max(280, windowWidth - 40);
-  const weekScrollRef = useRef<ScrollView>(null);
-  const hasInitialScrolled = useRef(false);
-
-  const PAST_WEEKS = 16;
-  const FUTURE_WEEKS = 1;
-  const currentWeekIndex = PAST_WEEKS;
-  const [visibleWeekIndex, setVisibleWeekIndex] = useState<number>(currentWeekIndex);
-
-  // Dynamic multi-week list supporting swipe to older days (16 weeks past, 1 week future)
-  const weeks = useMemo(() => {
-    const [y, m, d] = todayStr.split('-').map(Number);
-    const localDate = new Date(Date.UTC(y, m - 1, d));
-    const dayOfWeek = localDate.getUTCDay(); // 0: Sun, 1: Mon...
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-
-    const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
-    ];
-    const shortMonths = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-
-    const result: Array<{
-      weekIndex: number;
-      monthLabel: string;
-      days: Array<{
-        dayName: string;
-        dayNumber: number;
-        fullDate: string;
-        isToday: boolean;
-      }>;
-    }> = [];
-
-    for (let offset = -PAST_WEEKS; offset <= FUTURE_WEEKS; offset++) {
-      const days: Array<{
-        dayName: string;
-        dayNumber: number;
-        fullDate: string;
-        isToday: boolean;
-      }> = [];
-
-      for (let i = 0; i < 7; i++) {
-        const iter = new Date(localDate);
-        iter.setUTCDate(localDate.getUTCDate() + mondayOffset + offset * 7 + i);
-        const iso = iter.toISOString().split('T')[0];
-        days.push({
-          dayName: dayNames[i],
-          dayNumber: iter.getUTCDate(),
-          fullDate: iso,
-          isToday: iso === todayStr,
-        });
-      }
-
-      // Compute month label for this week
-      const firstDayDate = new Date(days[0].fullDate + 'T00:00:00Z');
-      const lastDayDate = new Date(days[6].fullDate + 'T00:00:00Z');
-      const m1 = firstDayDate.getUTCMonth();
-      const y1 = firstDayDate.getUTCFullYear();
-      const m2 = lastDayDate.getUTCMonth();
-      const y2 = lastDayDate.getUTCFullYear();
-
-      let monthLabel = '';
-      if (m1 === m2 && y1 === y2) {
-        monthLabel = `${monthNames[m1]} ${y1}`;
-      } else if (y1 === y2) {
-        monthLabel = `${shortMonths[m1]} – ${shortMonths[m2]} ${y1}`;
-      } else {
-        monthLabel = `${shortMonths[m1]} ${y1} – ${shortMonths[m2]} ${y2}`;
-      }
-
-      result.push({
-        weekIndex: offset,
-        monthLabel,
-        days,
-      });
-    }
-
-    return result;
-  }, [todayStr]);
-
-  const handleScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetX = e.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / containerWidth);
-    if (index >= 0 && index < weeks.length) {
-      setVisibleWeekIndex(index);
-    }
-  };
-
-  const handleWeekScrollLayout = () => {
-    if (!hasInitialScrolled.current && weekScrollRef.current) {
-      weekScrollRef.current.scrollTo({
-        x: currentWeekIndex * containerWidth,
-        animated: false,
-      });
-      hasInitialScrolled.current = true;
-    }
-  };
-
-  const handleJumpToToday = () => {
-    handleSelectDay(todayStr);
-    weekScrollRef.current?.scrollTo({
-      x: currentWeekIndex * containerWidth,
-      animated: true,
-    });
-    setVisibleWeekIndex(currentWeekIndex);
-  };
-
-  // Sync scroll position whenever selectedDate is updated outside the visible week
-  useEffect(() => {
-    const targetWeekIdx = weeks.findIndex((w) =>
-      w.days.some((d) => d.fullDate === selectedDate)
-    );
-    if (targetWeekIdx !== -1 && targetWeekIdx !== visibleWeekIndex) {
-      weekScrollRef.current?.scrollTo({
-        x: targetWeekIdx * containerWidth,
-        animated: true,
-      });
-      setVisibleWeekIndex(targetWeekIdx);
-    }
-  }, [selectedDate, containerWidth, weeks]);
 
   // Compute Greeting based on local time
   const getGreeting = () => {
@@ -561,88 +434,17 @@ export default function HomeScreen() {
       >
         {/* ── Greeting Section ─────────────────────────────────────── */}
         <View style={styles.greetingSection}>
-          <Text style={styles.greetingTime}>{getGreeting()}
+          <Text style={styles.greetingTime} numberOfLines={1}>{getGreeting()}
             <Text style={styles.userNameText}> {userName}</Text>
           </Text>
         </View>
 
         {/* ── Date Selector (Dynamic Weekly strip with swipe) ──────── */}
-        <View style={styles.dateSelectorContainer}>
-          <View style={styles.dateSelectorHeader}>
-            <Text style={styles.dateSelectorMonth}>
-              {weeks[visibleWeekIndex]?.monthLabel || ''}
-            </Text>
-            {(visibleWeekIndex !== currentWeekIndex || selectedDate !== todayStr) && (
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={handleJumpToToday}
-                style={styles.todayPillBtn}
-              >
-                <RotateCcw size={11} color="#285880" strokeWidth={2.5} />
-                <Text style={styles.todayPillText}>Today</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <ScrollView
-            ref={weekScrollRef}
-            horizontal
-            pagingEnabled
-            nestedScrollEnabled
-            showsHorizontalScrollIndicator={false}
-            decelerationRate="fast"
-            snapToInterval={containerWidth}
-            snapToAlignment="center"
-            bounces={false}
-            contentOffset={{ x: currentWeekIndex * containerWidth, y: 0 }}
-            onLayout={handleWeekScrollLayout}
-            onMomentumScrollEnd={handleScrollEnd}
-            onScrollEndDrag={handleScrollEnd}
-            style={{ width: containerWidth }}
-          >
-            {weeks.map((w, wIdx) => (
-              <View
-                key={`week_${wIdx}`}
-                style={[styles.dateSelectorRow, { width: containerWidth, marginBottom: 0 }]}
-              >
-                {w.days.map((d) => {
-                  const isSelected = selectedDate === d.fullDate;
-                  return (
-                    <TouchableOpacity
-                      key={d.fullDate}
-                      activeOpacity={0.75}
-                      onPress={() => handleSelectDay(d.fullDate)}
-                      style={[
-                        styles.dayCell,
-                        isSelected && styles.dayCellActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.dayName,
-                          isSelected && styles.dayNameActive,
-                        ]}
-                      >
-                        {d.dayName}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.dayNumber,
-                          isSelected && styles.dayNumberActive,
-                        ]}
-                      >
-                        {d.dayNumber}
-                      </Text>
-                      {d.isToday && !isSelected && (
-                        <View style={styles.todayIndicatorDot} />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            ))}
-          </ScrollView>
-        </View>
+        <WeeklyCalendarStrip
+          selectedDate={selectedDate}
+          onSelectDate={handleSelectDay}
+          containerStyle={{ paddingHorizontal: 0 }}
+        />
 
         {/* ── Calorie Remaining Card ───────────────────────────────── */}
         <CalorieRemainingCard
@@ -740,26 +542,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-
-        {/* ── AI Nutrition Assistant Banner ────────────────────────── */}
-        <TouchableOpacity
-          style={styles.aiBanner}
-          activeOpacity={0.85}
-          onPress={() => router.push('/ai')}
-        >
-          <View style={styles.aiSparkleWrap}>
-            <Sparkles size={18} color="#2A382A" />
-          </View>
-          <View style={styles.aiTextCol}>
-            <Text style={styles.aiTitle}>AI Nutrition Assistant</Text>
-            <Text style={styles.aiSubtitle}>
-              Get personalized advice, meal ideas and more.
-            </Text>
-          </View>
-          <View style={styles.aiArrowBtn}>
-            <ArrowRight size={16} color="#1B281B" />
-          </View>
-        </TouchableOpacity>
 
         {/* ── Recent Meals Section ─────────────────────────────────── */}
         {/* ── Recent Meals Section ─────────────────────────────────── */}
@@ -1097,7 +879,30 @@ const styles = StyleSheet.create({
   },
   // ── Greeting
   greetingSection: {
-    marginBottom: 16,
+    marginBottom: 14,
+  },
+  aiAssistantPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 7,
+    paddingHorizontal: 14,
+    height: 38,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 145, 20, 0.45)',
+    marginBottom: 12,
+    shadowColor: '#131313',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  aiAssistantPillText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 14,
+    color: '#131313',
   },
   greetingTime: {
     fontSize: 16,

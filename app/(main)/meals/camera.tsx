@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCameraPermissions } from 'expo-camera';
 import { ArrowLeft } from 'lucide-react-native';
 import { cameraStyles as styles } from '../../../src/features/meals/components/camera/camera.styles';
@@ -12,23 +12,65 @@ type ScanMode = 'SCAN_FOOD' | 'BARCODE';
 
 export default function AICameraScanScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    from?: string;
+    originFrom?: string;
+    mode?: string;
+    mealType?: string;
+    date?: string;
+  }>();
   const [permission, requestPermission] = useCameraPermissions();
-  const [scanMode, setScanMode] = useState<ScanMode>('SCAN_FOOD');
+  const [scanMode, setScanMode] = useState<ScanMode>(
+    params.mode === 'BARCODE' ? 'BARCODE' : 'SCAN_FOOD',
+  );
   const [flashOn, setFlashOn] = useState(false);
   // Session key to force complete remount & state reset on tab change or screen focus
   const [sessionKey, setSessionKey] = useState<number>(() => Date.now());
 
-  // Reset all state whenever user navigates away or returns to this screen
+  const handleBack = useCallback(() => {
+    if (params.from === 'add') {
+      router.replace({
+        pathname: '/(main)/meals/add',
+        params: {
+          from: params.originFrom || 'log',
+          mealType: params.mealType,
+          date: params.date,
+        },
+      });
+      return;
+    }
+    if (params.from === 'log') {
+      router.replace({
+        pathname: '/(main)/meals',
+        params: params.date ? { date: params.date } : undefined,
+      });
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(main)/meals');
+    }
+  }, [params, router]);
+
+  // Reset all state whenever user navigates away or returns to this screen & register hardware back handler
   useFocusEffect(
     useCallback(() => {
       setSessionKey(Date.now());
       setFlashOn(false);
 
-      return () => {
-        // Cleanup when screen loses focus
-        setFlashOn(false);
+      const onBackPress = () => {
+        handleBack();
+        return true;
       };
-    }, [])
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => {
+        setFlashOn(false);
+        subscription.remove();
+      };
+    }, [handleBack])
   );
 
   const handleSwitchMode = async (mode: ScanMode) => {
@@ -46,7 +88,7 @@ export default function AICameraScanScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => router.back()}
+          onPress={handleBack}
           style={styles.backBtn}
         >
           <ArrowLeft size={20} color="#FFFFFF" />

@@ -12,8 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
-  ChevronLeft,
-  ChevronRight,
   Plus,
   Trash2,
   Utensils,
@@ -26,7 +24,7 @@ import {
   AlertTriangle,
 } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
-import { Card, Button } from '../../../src/components';
+import { Card, Button, WeeklyCalendarStrip } from '../../../src/components';
 import { mealsApi } from '../../../src/features/meals/api/meals.api';
 import { Meal, MealType, DailyMealsResponse } from '../../../src/features/meals/types';
 import { useUnitStore, formatFoodWeight } from '../../../src/store/unitStore';
@@ -95,20 +93,6 @@ export default function MealsListScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchMeals();
-  };
-
-  const changeDateByDays = (days: number) => {
-    const [y, m, d] = selectedDate.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-    dateObj.setDate(dateObj.getDate() + days);
-
-    const newDateStr = new Intl.DateTimeFormat('en-CA', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(dateObj);
-
-    setSelectedDate(newDateStr);
   };
 
   // Deletion modal state
@@ -189,7 +173,12 @@ export default function MealsListScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, styles.actionBtnAccent]}
-            onPress={() => router.push('/(main)/meals/camera')}
+            onPress={() =>
+              router.push({
+                pathname: '/(main)/meals/camera',
+                params: { from: 'log' },
+              })
+            }
             activeOpacity={0.8}
           >
             <Camera size={18} color="#FFFFFF" />
@@ -197,42 +186,12 @@ export default function MealsListScreen() {
         </View>
       </View>
 
-      {/* Date Switcher Bar */}
-      <View style={styles.dateBar}>
-        <TouchableOpacity
-          onPress={() => changeDateByDays(-1)}
-          style={styles.dateNavBtn}
-          activeOpacity={0.7}
-        >
-          <ChevronLeft size={20} color={theme.colors.textPrimary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => {
-            const todayStr = new Intl.DateTimeFormat('en-CA', {
-              timeZone: 'Asia/Ho_Chi_Minh',
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-            }).format(new Date());
-            setSelectedDate(todayStr);
-          }}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.dateText}>
-            {isToday ? 'Today, ' : ''}
-            {selectedDate}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => changeDateByDays(1)}
-          style={styles.dateNavBtn}
-          activeOpacity={0.7}
-        >
-          <ChevronRight size={20} color={theme.colors.textPrimary} />
-        </TouchableOpacity>
-      </View>
+      {/* ── Dynamic Weekly Calendar Strip with Swipe ───────────── */}
+      <WeeklyCalendarStrip
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+        containerStyle={styles.calendarStripWrap}
+      />
 
       {/* Daily Summary Card */}
       <View style={styles.summaryContainer}>
@@ -446,23 +405,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.saffron,
     borderColor: theme.colors.saffron,
   },
-  dateBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.screenMargin,
-    paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(19, 19, 19, 0.06)',
-  },
-  dateNavBtn: {
-    padding: 6,
-  },
-  dateText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 15,
-    color: theme.colors.textPrimary,
+  calendarStripWrap: {
+    marginBottom: 4,
+    marginTop: 6,
   },
   summaryContainer: {
     paddingHorizontal: theme.spacing.screenMargin,

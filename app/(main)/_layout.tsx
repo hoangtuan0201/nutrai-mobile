@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Tabs, useRouter, usePathname } from 'expo-router';
 import { Platform, TouchableOpacity, View, StyleSheet, Text } from 'react-native';
-import { Home, MessageSquare, TrendingUp, User, Plus, Utensils, Compass } from 'lucide-react-native';
+import { Home, TrendingUp, Sparkles, Plus, Utensils } from 'lucide-react-native';
 import theme from '../../src/constants/theme';
 import { useOnboardingStore, mapGoalToBackend } from '../../src/store/onboardingStore';
 import { profileApi } from '../../src/features/profile/api/profile.api';
@@ -35,6 +35,7 @@ export default function MainLayout() {
 
   return (
     <Tabs
+      backBehavior="firstRoute"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
@@ -104,24 +105,26 @@ export default function MainLayout() {
         }}
       />
 
-      {/* 5. AI Tab (navigates to /ai) */}
+      {/* 5. AI Coach Tab */}
       <Tabs.Screen
         name="ai/chat"
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            router.push('/(main)/ai/chat');
-          },
-        }}
         options={{
-          title: 'AI',
+          title: 'AI Coach',
+          tabBarStyle: { display: 'none' },
           tabBarIcon: ({ color }) => (
-            <Compass size={22} color={color} strokeWidth={2.2} />
+            <Sparkles size={22} color={color} strokeWidth={2.2} />
           ),
         }}
       />
 
       {/* ── Sub-screens hidden from bottom tabs ── */}
+      <Tabs.Screen
+        name="ai/index"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
       <Tabs.Screen
         name="progress/weight"
         options={{
@@ -144,12 +147,14 @@ export default function MainLayout() {
         name="meals/ai-breakdown"
         options={{
           href: null,
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tabs.Screen
         name="meals/camera"
         options={{
           href: null,
+          tabBarStyle: { display: 'none' },
         }}
       />
     </Tabs>

@@ -306,7 +306,13 @@ export default function SettingsScreen() {
           <Logo variant="full" size="md" />
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(main)');
+            }
+          }}
           activeOpacity={0.7}
           style={styles.backBtn}
         >

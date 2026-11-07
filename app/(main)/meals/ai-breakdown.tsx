@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,10 @@ import {
   ActivityIndicator,
   Modal,
   Alert,
+  BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import {
   ArrowLeft,
   Trash2,
@@ -171,6 +172,23 @@ export default function AIScanConfirmationScreen() {
     }
   };
 
+  // Handle hardware back button on Android
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(main)/meals/camera');
+        }
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [router])
+  );
+
   const previewImage =
     imageUri ||
     'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80';
@@ -181,7 +199,13 @@ export default function AIScanConfirmationScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.navigate('/(main)/meals/camera');
+            }
+          }}
           style={styles.backBtn}
         >
           <ArrowLeft size={20} color={theme.colors.textPrimary} />
@@ -352,7 +376,13 @@ export default function AIScanConfirmationScreen() {
                   justifyContent: 'center',
                   gap: 6,
                 }}
-                onPress={() => router.back()}
+                onPress={() => {
+                  if (router.canGoBack()) {
+                    router.back();
+                  } else {
+                    router.navigate('/(main)/meals/camera');
+                  }
+                }}
                 activeOpacity={0.8}
               >
                 <RotateCcw size={16} color="#475569" />

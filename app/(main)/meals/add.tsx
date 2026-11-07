@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Modal,
   TouchableWithoutFeedback,
+  BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -134,7 +135,7 @@ export default function AddFoodManuallyScreen() {
   }>();
   const { energyUnit } = useUnitStore();
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (params.from === 'log') {
       router.replace({
         pathname: '/(main)/meals',
@@ -151,7 +152,20 @@ export default function AddFoodManuallyScreen() {
     } else {
       router.replace('/(main)/meals');
     }
-  };
+  }, [params.from, params.date, router]);
+
+  // Handle hardware back button on Android
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleBack();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [handleBack])
+  );
 
   const [selectedType, setSelectedType] = useState<MealType>(
     params.mealType || 'LUNCH',
@@ -538,7 +552,17 @@ export default function AddFoodManuallyScreen() {
         <TouchableOpacity
           style={styles.shortcutCard}
           activeOpacity={0.8}
-          onPress={() => router.push('/(main)/meals/camera')}
+          onPress={() =>
+            router.push({
+              pathname: '/(main)/meals/camera',
+              params: {
+                from: 'add',
+                originFrom: params.from || 'log',
+                mealType: selectedType,
+                date: params.date,
+              },
+            })
+          }
         >
           <View style={[styles.shortcutIconWrap, { backgroundColor: '#F8F3EA' }]}>
             <Scan size={20} color="#92672B" />
