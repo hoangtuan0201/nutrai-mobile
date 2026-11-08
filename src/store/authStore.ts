@@ -9,6 +9,7 @@ interface AuthUser {
   email: string;
   name: string | null;
   role: string;
+  avatarUrl?: string | null;
 }
 
 interface AuthState {
@@ -37,6 +38,8 @@ interface AuthActions {
   logout: () => Promise<void>;
   /** Called by the 401 interceptor when a token refresh succeeds */
   setAccessToken: (token: string) => void;
+  /** Update current user fields (e.g. avatar) and persist to SecureStore */
+  updateUser: (fields: Partial<AuthUser>) => void;
   /** Clear error */
   clearError: () => void;
 }
@@ -154,6 +157,14 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     set({ accessToken: token });
     // Persist in background — don't await
     storage.setToken(token).catch(() => {});
+  },
+
+  updateUser: (fields: Partial<AuthUser>) => {
+    const current = get().user;
+    if (!current) return;
+    const updated = { ...current, ...fields };
+    set({ user: updated });
+    storage.setUser(updated).catch(() => {});
   },
 
   clearError: () => set({ error: null }),

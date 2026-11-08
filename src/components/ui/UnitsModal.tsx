@@ -8,14 +8,13 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { X } from 'lucide-react-native';
-import { theme } from '../../constants';
-import { Button } from './Button';
 import {
   useUnitStore,
   EnergyUnit,
   FoodUnit,
   BodyUnit,
 } from '../../store/unitStore';
+import { useAppTheme } from '../../hooks/useAppTheme';
 
 interface UnitsModalProps {
   visible: boolean;
@@ -23,6 +22,7 @@ interface UnitsModalProps {
 }
 
 export function UnitsModal({ visible, onClose }: UnitsModalProps) {
+  const { colors } = useAppTheme();
   const { energyUnit, foodUnit, bodyUnit, setUnits } = useUnitStore();
 
   const [tempEnergy, setTempEnergy] = useState<EnergyUnit>(energyUnit);
@@ -46,165 +46,126 @@ export function UnitsModal({ visible, onClose }: UnitsModalProps) {
     onClose();
   };
 
+  const renderOptionRow = (
+    label: string,
+    options: { value: string; label: string; active: boolean; onSelect: () => void }[],
+  ) => (
+    <View style={styles.unitRow}>
+      <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{label}</Text>
+      <View style={styles.radioRow}>
+        {options.map((opt) => (
+          <TouchableOpacity
+            key={opt.value}
+            style={[
+              styles.pillOption,
+              { backgroundColor: colors.inputBg, borderColor: colors.border },
+              opt.active && { backgroundColor: colors.primary, borderColor: colors.primary },
+            ]}
+            onPress={opt.onSelect}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.pillText,
+                { color: opt.active ? colors.onPrimary : colors.textPrimary },
+                opt.active && styles.pillTextActive,
+              ]}
+            >
+              {opt.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}
     >
       <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
+        <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
           <TouchableWithoutFeedback>
-            <View style={styles.sheetContainer}>
+            <View
+              style={[
+                styles.sheetContainer,
+                { backgroundColor: colors.surface },
+              ]}
+            >
               {/* Header */}
               <View style={styles.headerRow}>
-                <Text style={styles.sheetTitle}>Units</Text>
+                <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>Units</Text>
                 <TouchableOpacity
                   onPress={onClose}
-                  style={styles.closeBtn}
+                  style={[styles.closeBtn, { backgroundColor: colors.surfaceMuted }]}
                   activeOpacity={0.7}
+                  accessibilityLabel="Close units modal"
                 >
-                  <X size={20} color={theme.colors.textPrimary} />
+                  <X size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
               </View>
 
-              {/* Rows */}
+              {/* Rows matching Personal Information / Goal & Activity layout */}
               <View style={styles.contentBody}>
-                {/* 1. Energy Value */}
-                <View style={styles.unitRow}>
-                  <Text style={styles.rowLabel}>Energy Value</Text>
-                  <View style={styles.pillGroup}>
-                    <TouchableOpacity
-                      style={[
-                        styles.pillOption,
-                        tempEnergy === 'Cal' && styles.pillOptionActive,
-                      ]}
-                      onPress={() => setTempEnergy('Cal')}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          tempEnergy === 'Cal' && styles.pillTextActive,
-                        ]}
-                      >
-                        Cal
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.pillOption,
-                        tempEnergy === 'kcal' && styles.pillOptionActive,
-                      ]}
-                      onPress={() => setTempEnergy('kcal')}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          tempEnergy === 'kcal' && styles.pillTextActive,
-                        ]}
-                      >
-                        kcal
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+                {renderOptionRow('Energy Value', [
+                  {
+                    value: 'Cal',
+                    label: 'Cal',
+                    active: tempEnergy === 'Cal',
+                    onSelect: () => setTempEnergy('Cal'),
+                  },
+                  {
+                    value: 'kcal',
+                    label: 'kcal',
+                    active: tempEnergy === 'kcal',
+                    onSelect: () => setTempEnergy('kcal'),
+                  },
+                ])}
 
-                {/* 2. Food/Recipe */}
-                <View style={styles.unitRow}>
-                  <Text style={styles.rowLabel}>Food/Recipe</Text>
-                  <View style={styles.pillGroup}>
-                    <TouchableOpacity
-                      style={[
-                        styles.pillOption,
-                        tempFood === 'metric' && styles.pillOptionActive,
-                      ]}
-                      onPress={() => setTempFood('metric')}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          tempFood === 'metric' && styles.pillTextActive,
-                        ]}
-                      >
-                        g/ml
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.pillOption,
-                        tempFood === 'imperial' && styles.pillOptionActive,
-                      ]}
-                      onPress={() => setTempFood('imperial')}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          tempFood === 'imperial' && styles.pillTextActive,
-                        ]}
-                      >
-                        oz/fl oz
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+                {renderOptionRow('Food / Recipe', [
+                  {
+                    value: 'metric',
+                    label: 'g / ml',
+                    active: tempFood === 'metric',
+                    onSelect: () => setTempFood('metric'),
+                  },
+                  {
+                    value: 'imperial',
+                    label: 'oz / fl oz',
+                    active: tempFood === 'imperial',
+                    onSelect: () => setTempFood('imperial'),
+                  },
+                ])}
 
-                {/* 3. Height/Weight */}
-                <View style={styles.unitRow}>
-                  <Text style={styles.rowLabel}>Height/Weight</Text>
-                  <View style={styles.pillGroup}>
-                    <TouchableOpacity
-                      style={[
-                        styles.pillOption,
-                        tempBody === 'metric' && styles.pillOptionActive,
-                      ]}
-                      onPress={() => setTempBody('metric')}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          tempBody === 'metric' && styles.pillTextActive,
-                        ]}
-                      >
-                        cm/kg
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.pillOption,
-                        tempBody === 'imperial' && styles.pillOptionActive,
-                      ]}
-                      onPress={() => setTempBody('imperial')}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          tempBody === 'imperial' && styles.pillTextActive,
-                        ]}
-                      >
-                        ft/lbs
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+                {renderOptionRow('Height / Weight', [
+                  {
+                    value: 'metric',
+                    label: 'cm / kg',
+                    active: tempBody === 'metric',
+                    onSelect: () => setTempBody('metric'),
+                  },
+                  {
+                    value: 'imperial',
+                    label: 'ft / lbs',
+                    active: tempBody === 'imperial',
+                    onSelect: () => setTempBody('imperial'),
+                  },
+                ])}
               </View>
 
-              {/* Save CTA */}
-              <View style={styles.footerRow}>
-                <Button
-                  title="Save"
-                  variant="primary"
-                  size="lg"
-                  fullWidth
-                  onPress={handleSave}
-                />
-              </View>
+              {/* Save CTA - identical to EditProfileModal saveBtn */}
+              <TouchableOpacity
+                style={[styles.saveBtn, { backgroundColor: colors.primary }]}
+                activeOpacity={0.8}
+                onPress={handleSave}
+              >
+                <Text style={[styles.saveBtnText, { color: colors.onPrimary }]}>
+                  Save Changes
+                </Text>
+              </TouchableOpacity>
             </View>
           </TouchableWithoutFeedback>
         </View>
@@ -216,84 +177,67 @@ export function UnitsModal({ visible, onClose }: UnitsModalProps) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(19, 19, 19, 0.45)',
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingTop: 24,
-    paddingBottom: 36,
-    paddingHorizontal: 24,
-    shadowColor: '#131313',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 10,
+    padding: 24,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sheetTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 22,
-    color: theme.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
   },
   closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(19, 19, 19, 0.05)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   contentBody: {
-    gap: 20,
-    marginBottom: 28,
+    gap: 16,
+    marginBottom: 24,
   },
   unitRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    gap: 8,
   },
   rowLabel: {
-    fontFamily: theme.fonts.semiBold,
-    fontSize: 16,
-    color: theme.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '700',
   },
-  pillGroup: {
+  radioRow: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(19, 19, 19, 0.06)',
-    borderRadius: 14,
-    padding: 3,
+    gap: 12,
   },
   pillOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 11,
-  },
-  pillOptionActive: {
-    backgroundColor: theme.colors.saffron,
-    shadowColor: theme.colors.saffron,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 2,
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
   },
   pillText: {
-    fontFamily: theme.fonts.medium,
-    fontSize: 13,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   pillTextActive: {
-    fontFamily: theme.fonts.bold,
-    color: '#FFFFFF',
+    fontWeight: '700',
   },
-  footerRow: {
-    marginTop: 8,
+  saveBtn: {
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  saveBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
