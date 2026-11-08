@@ -52,6 +52,14 @@ export const mealsApi = {
   },
 
   /**
+   * Update an existing meal log by ID
+   */
+  async updateMeal(id: string, payload: Partial<CreateMealPayload>): Promise<Meal> {
+    const response = await apiClient.put<Meal>(`/meals/${id}`, payload);
+    return response.data;
+  },
+
+  /**
    * Delete a meal log by ID
    */
   async deleteMeal(id: string): Promise<{ success: boolean; message: string }> {

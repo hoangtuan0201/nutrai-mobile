@@ -262,7 +262,7 @@ export const ScanFoodSection: React.FC<ScanFoodSectionProps> = ({
               <ActivityIndicator size="large" color={theme.colors.saffron} />
               <View style={styles.analyzingRow}>
                 <Sparkles size={18} color={theme.colors.saffron} />
-                <Text style={styles.analyzingText}>Gemini AI analyzing food...</Text>
+                <Text style={styles.analyzingText}>AI analyzing food...</Text>
               </View>
               {foodHint ? (
                 <Text style={styles.analyzingSubtext} numberOfLines={1}>
