@@ -39,6 +39,7 @@ import { Logo, CalorieRemainingCard, WeeklyCalendarStrip } from '../../src/compo
 import { useAuthStore } from '../../src/store/authStore';
 import { useAccount } from '../../src/features/settings/hooks/useAccount';
 import { useProfile } from '../../src/features/profile/hooks/useProfile';
+import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
 import {
   calculateClientNutritionPlan,
@@ -143,6 +144,7 @@ const TumblerGlass: React.FC<TumblerGlassProps> = React.memo(({ status, onPress 
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const { user } = useAuthStore();
   const { avatarUrl } = useAccount();
   const displayAvatar = avatarUrl || user?.avatarUrl;
@@ -401,7 +403,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ── Top Header Bar ───────────────────────────────────────── */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -411,17 +413,17 @@ export default function HomeScreen() {
         <View style={styles.headerRight}>
           {/* Notification Bell */}
           <TouchableOpacity
-            style={styles.bellBtn}
+            style={[styles.bellBtn, { backgroundColor: colors.iconBg }]}
             activeOpacity={0.7}
             onPress={() => router.push('/settings')}
           >
-            <Bell size={20} color="#1B281B" />
+            <Bell size={20} color={colors.textPrimary} />
             <View style={styles.notificationDot} />
           </TouchableOpacity>
 
           {/* User Profile Avatar -> Clicking navigates to /settings (Unified Profile & Settings) */}
           <TouchableOpacity
-            style={styles.avatarBtn}
+            style={[styles.avatarBtn, { borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => router.push('/settings')}
           >
@@ -448,14 +450,14 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#2E7D32"
+            tintColor={colors.primary}
           />
         }
       >
         {/* ── Greeting Section ─────────────────────────────────────── */}
         <View style={styles.greetingSection}>
-          <Text style={styles.greetingTime} numberOfLines={1}>{getGreeting()}
-            <Text style={styles.userNameText}> {userName}</Text>
+          <Text style={[styles.greetingTime, { color: colors.textSecondary }]} numberOfLines={1}>{getGreeting()}
+            <Text style={[styles.userNameText, { color: colors.textPrimary }]}> {userName}</Text>
           </Text>
         </View>
 
@@ -482,22 +484,22 @@ export default function HomeScreen() {
 
         {/* ── 1. Water Tracker Section (Matching Image 1) ───────────── */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Water</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Water</Text>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={handleWaterMore}
             style={styles.moreLinkBtn}
           >
-            <Text style={styles.moreLinkText}>More</Text>
-            <ChevronRight size={14} color="#797E74" />
+            <Text style={[styles.moreLinkText, { color: colors.textSecondary }]}>More</Text>
+            <ChevronRight size={14} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.trackerCard}>
-          <Text style={styles.trackerSubLabel}>Today's Intake</Text>
+        <View style={[styles.trackerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.trackerSubLabel, { color: colors.textSecondary }]}>Today's Intake</Text>
           <View style={styles.trackerValueRow}>
-            <Text style={styles.trackerBigNumber}>{waterDisplay.value}</Text>
-            <Text style={styles.trackerUnitText}>{waterDisplay.unit}</Text>
+            <Text style={[styles.trackerBigNumber, { color: colors.textPrimary }]}>{waterDisplay.value}</Text>
+            <Text style={[styles.trackerUnitText, { color: colors.textPrimary }]}>{waterDisplay.unit}</Text>
           </View>
 
           {/* 8 Tumbler glasses */}
@@ -519,24 +521,24 @@ export default function HomeScreen() {
             })}
           </View>
 
-          <Text style={styles.trackerGoalText}>Goal: {waterGoalDisplay.full}</Text>
+          <Text style={[styles.trackerGoalText, { color: colors.textSecondary }]}>Goal: {waterGoalDisplay.full}</Text>
         </View>
 
         {/* ── 2. Weight Tracker Section (Matching Image 1) ──────────── */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Weight</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Weight</Text>
         </View>
 
-        <View style={styles.trackerCard}>
-          <Text style={styles.trackerSubLabel}>Current Weight</Text>
+        <View style={[styles.trackerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.trackerSubLabel, { color: colors.textSecondary }]}>Current Weight</Text>
           <View style={styles.weightContentRow}>
             <View style={styles.weightValueCol}>
               <View style={styles.trackerValueRow}>
-                <Text style={styles.trackerBigNumber}>{weightDisplay.value}</Text>
-                <Text style={styles.trackerUnitText}>{weightDisplay.unit}</Text>
+                <Text style={[styles.trackerBigNumber, { color: colors.textPrimary }]}>{weightDisplay.value}</Text>
+                <Text style={[styles.trackerUnitText, { color: colors.textPrimary }]}>{weightDisplay.unit}</Text>
               </View>
-              <View style={styles.bmiPill}>
-                <Text style={styles.bmiPillText}>BMI: {bmi}</Text>
+              <View style={[styles.bmiPill, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(27, 40, 27, 0.06)' }]}>
+                <Text style={[styles.bmiPillText, { color: colors.textSecondary }]}>BMI: {bmi}</Text>
               </View>
             </View>
 
@@ -550,14 +552,14 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.weightFooterDivider} />
+          <View style={[styles.weightFooterDivider, { backgroundColor: colors.border }]} />
 
           <View style={styles.weightFooterRow}>
-            <Text style={styles.weightFooterItem}>
-              Goal Weight: <Text style={styles.weightFooterBold}>{goalWeightDisplay.full}</Text>
+            <Text style={[styles.weightFooterItem, { color: colors.textSecondary }]}>
+              Goal Weight: <Text style={[styles.weightFooterBold, { color: colors.textPrimary }]}>{goalWeightDisplay.full}</Text>
             </Text>
-            <Text style={styles.weightFooterItem}>
-              {deltaLabel}: <Text style={styles.weightFooterBold}>{deltaDisplay.full}</Text>
+            <Text style={[styles.weightFooterItem, { color: colors.textSecondary }]}>
+              {deltaLabel}: <Text style={[styles.weightFooterBold, { color: colors.textPrimary }]}>{deltaDisplay.full}</Text>
             </Text>
           </View>
         </View>
@@ -566,14 +568,14 @@ export default function HomeScreen() {
         {/* ── Recent Meals Section ─────────────────────────────────── */}
         {/* ── Recent Meals Section ─────────────────────────────────── */}
         <View style={styles.mealsHeaderRow}>
-          <Text style={styles.sectionTitle}>Recent Meals</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Meals</Text>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => router.push('/(main)/meals')}
             style={styles.seeAllBtn}
           >
-            <Text style={styles.seeAllText}>See all</Text>
-            <ChevronRight size={14} color="#686C63" />
+            <Text style={[styles.seeAllText, { color: colors.textSecondary }]}>See all</Text>
+            <ChevronRight size={14} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -596,7 +598,7 @@ export default function HomeScreen() {
             return (
               <TouchableOpacity
                 key={meal.id}
-                style={styles.mealCard}
+                style={[styles.mealCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 activeOpacity={0.8}
                 onPress={() =>
                   router.push({
@@ -613,26 +615,26 @@ export default function HomeScreen() {
                     style={styles.mealThumb}
                   />
                 ) : (
-                  <View style={styles.mealThumbFallback}>
-                    <Utensils size={20} color="#656A60" />
+                  <View style={[styles.mealThumbFallback, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                    <Utensils size={20} color={colors.textSecondary} />
                   </View>
                 )}
                 <View style={styles.mealInfoCol}>
-                  <Text style={styles.mealName} numberOfLines={1}>
+                  <Text style={[styles.mealName, { color: colors.textPrimary }]} numberOfLines={1}>
                     {summaryTitle}
                   </Text>
-                  <Text style={styles.mealMacros}>
+                  <Text style={[styles.mealMacros, { color: colors.textSecondary }]}>
                     {Math.round(meal.totalCalories)} {energyUnit}  •  P {formatFoodWeight(meal.totalProtein, foodUnit).full}  •  C {formatFoodWeight(meal.totalCarbs, foodUnit).full}  •  F {formatFoodWeight(meal.totalFat, foodUnit).full}
                   </Text>
-                  <Text style={styles.mealTime}>{timeStr}</Text>
+                  <Text style={[styles.mealTime, { color: colors.textSecondary }]}>{timeStr}</Text>
                 </View>
-                <ChevronRight size={18} color="#A6ABA1" />
+                <ChevronRight size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             );
           })
         ) : (
           <TouchableOpacity
-            style={styles.emptyMealsCard}
+            style={[styles.emptyMealsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() =>
               router.push({
@@ -642,12 +644,12 @@ export default function HomeScreen() {
             }
           >
             <View style={styles.emptyMealsLeft}>
-              <Text style={styles.emptyMealsTitle}>No meals logged today</Text>
-              <Text style={styles.emptyMealsSub}>
+              <Text style={[styles.emptyMealsTitle, { color: colors.textPrimary }]}>No meals logged today</Text>
+              <Text style={[styles.emptyMealsSub, { color: colors.textSecondary }]}>
                 Tap to scan food or search USDA database
               </Text>
             </View>
-            <View style={styles.emptyMealsAddBtn}>
+            <View style={[styles.emptyMealsAddBtn, { backgroundColor: colors.primary }]}>
               <Text style={styles.emptyMealsAddText}>+ Log Meal</Text>
             </View>
           </TouchableOpacity>
@@ -664,32 +666,39 @@ export default function HomeScreen() {
         onRequestClose={() => setIsUpdateWeightOpen(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Update Weight</Text>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Update Weight</Text>
               <TouchableOpacity
                 onPress={() => setIsUpdateWeightOpen(false)}
                 style={styles.modalCloseBtn}
               >
-                <X size={20} color="#333" />
+                <X size={20} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalLabel}>
+            <Text style={[styles.modalLabel, { color: colors.textSecondary }]}>
               Enter current weight ({bodyUnit === 'metric' ? 'kg' : 'lbs'})
             </Text>
             <TextInput
-              style={styles.modalInput}
+              style={[
+                styles.modalInput,
+                {
+                  backgroundColor: colors.inputBg,
+                  borderColor: colors.border,
+                  color: colors.textPrimary,
+                },
+              ]}
               keyboardType="numeric"
               value={newWeightInput}
               onChangeText={setNewWeightInput}
               placeholder={bodyUnit === 'metric' ? 'e.g. 60.5' : 'e.g. 133.5'}
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.textSecondary}
               autoFocus
             />
 
             <TouchableOpacity
-              style={styles.modalSaveBtn}
+              style={[styles.modalSaveBtn, { backgroundColor: colors.primary }]}
               activeOpacity={0.8}
               onPress={handleSaveWeight}
               disabled={isUpdating}
@@ -712,35 +721,35 @@ export default function HomeScreen() {
         onRequestClose={() => setIsWaterModalOpen(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
             {/* Header */}
             <View style={styles.modalHeader}>
               <View style={styles.modalHeaderTitleRow}>
-                <View style={styles.waterIconCircle}>
+                <View style={[styles.waterIconCircle, { backgroundColor: isDark ? 'rgba(37,99,235,0.2)' : '#EFF6FF' }]}>
                   <Droplets size={18} color="#2563EB" />
                 </View>
-                <Text style={styles.modalTitle}>Water Intake</Text>
+                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Water Intake</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setIsWaterModalOpen(false)}
                 style={styles.modalCloseBtn}
                 activeOpacity={0.7}
               >
-                <X size={20} color="#333" />
+                <X size={20} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
             {/* Current Status Box */}
-            <View style={styles.waterStatusBox}>
+            <View style={[styles.waterStatusBox, { backgroundColor: colors.inputBg }]}>
               <View style={styles.waterStatusRow}>
-                <Text style={styles.waterStatusLabel}>Today's Intake</Text>
-                <Text style={styles.waterStatusVal}>{waterDisplay.full}</Text>
+                <Text style={[styles.waterStatusLabel, { color: colors.textSecondary }]}>Today's Intake</Text>
+                <Text style={[styles.waterStatusVal, { color: colors.textPrimary }]}>{waterDisplay.full}</Text>
               </View>
               <View style={styles.waterStatusRow}>
-                <Text style={styles.waterStatusLabel}>Daily Goal</Text>
-                <Text style={styles.waterStatusGoal}>{waterGoalDisplay.full}</Text>
+                <Text style={[styles.waterStatusLabel, { color: colors.textSecondary }]}>Daily Goal</Text>
+                <Text style={[styles.waterStatusGoal, { color: colors.textSecondary }]}>{waterGoalDisplay.full}</Text>
               </View>
-              <View style={styles.waterProgressBarTrack}>
+              <View style={[styles.waterProgressBarTrack, { backgroundColor: colors.border }]}>
                 <View
                   style={[
                     styles.waterProgressBarFill,
@@ -760,7 +769,7 @@ export default function HomeScreen() {
             {/* Quick Actions List */}
             <View style={styles.waterActionsCol}>
               <TouchableOpacity
-                style={styles.waterActionItem}
+                style={[styles.waterActionItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 activeOpacity={0.75}
                 onPress={() => {
                   addCup(selectedDate, 250);
@@ -768,18 +777,18 @@ export default function HomeScreen() {
                 }}
               >
                 <View style={styles.waterActionLeft}>
-                  <View style={[styles.waterActionIconWrap, { backgroundColor: '#EFF6FF' }]}>
+                  <View style={[styles.waterActionIconWrap, { backgroundColor: isDark ? 'rgba(37,99,235,0.2)' : '#EFF6FF' }]}>
                     <Plus size={16} color="#2563EB" />
                   </View>
-                  <Text style={styles.waterActionText}>
+                  <Text style={[styles.waterActionText, { color: colors.textPrimary }]}>
                     {foodUnit === 'imperial' ? '+8 fl oz (1 cup)' : '+250 ml (1 cup)'}
                   </Text>
                 </View>
-                <ChevronRight size={16} color="#A0A096" />
+                <ChevronRight size={16} color={colors.textSecondary} />
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.waterActionItem}
+                style={[styles.waterActionItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 activeOpacity={0.75}
                 onPress={() => {
                   addCup(selectedDate, 500);
@@ -787,19 +796,19 @@ export default function HomeScreen() {
                 }}
               >
                 <View style={styles.waterActionLeft}>
-                  <View style={[styles.waterActionIconWrap, { backgroundColor: '#EFF6FF' }]}>
+                  <View style={[styles.waterActionIconWrap, { backgroundColor: isDark ? 'rgba(37,99,235,0.2)' : '#EFF6FF' }]}>
                     <Plus size={16} color="#2563EB" />
                   </View>
-                  <Text style={styles.waterActionText}>
+                  <Text style={[styles.waterActionText, { color: colors.textPrimary }]}>
                     {foodUnit === 'imperial' ? '+16 fl oz (2 cups)' : '+500 ml (2 cups)'}
                   </Text>
                 </View>
-                <ChevronRight size={16} color="#A0A096" />
+                <ChevronRight size={16} color={colors.textSecondary} />
               </TouchableOpacity>
 
               {currentWaterMl > 0 && (
                 <TouchableOpacity
-                  style={styles.waterActionItem}
+                  style={[styles.waterActionItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
                   activeOpacity={0.75}
                   onPress={() => {
                     removeCup(selectedDate, 250);
@@ -807,20 +816,20 @@ export default function HomeScreen() {
                   }}
                 >
                   <View style={styles.waterActionLeft}>
-                    <View style={[styles.waterActionIconWrap, { backgroundColor: '#F4F4F0' }]}>
-                      <Minus size={16} color="#656A60" />
+                    <View style={[styles.waterActionIconWrap, { backgroundColor: colors.inputBg }]}>
+                      <Minus size={16} color={colors.textSecondary} />
                     </View>
-                    <Text style={styles.waterActionText}>
+                    <Text style={[styles.waterActionText, { color: colors.textPrimary }]}>
                       {foodUnit === 'imperial' ? '-8 fl oz (Remove 1 cup)' : '-250 ml (Remove 1 cup)'}
                     </Text>
                   </View>
-                  <ChevronRight size={16} color="#A0A096" />
+                  <ChevronRight size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
               )}
 
               {currentWaterMl > 0 && (
                 <TouchableOpacity
-                  style={[styles.waterActionItem, styles.waterActionItemDanger]}
+                  style={[styles.waterActionItem, styles.waterActionItemDanger, { backgroundColor: isDark ? 'rgba(220,38,38,0.1)' : '#FFFBFB', borderColor: isDark ? 'rgba(220,38,38,0.3)' : '#FEE2E2' }]}
                   activeOpacity={0.75}
                   onPress={() => {
                     resetDate(selectedDate);
@@ -828,7 +837,7 @@ export default function HomeScreen() {
                   }}
                 >
                   <View style={styles.waterActionLeft}>
-                    <View style={[styles.waterActionIconWrap, { backgroundColor: '#FEF2F2' }]}>
+                    <View style={[styles.waterActionIconWrap, { backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : '#FEF2F2' }]}>
                       <RotateCcw size={16} color="#DC2626" />
                     </View>
                     <Text style={[styles.waterActionText, { color: '#DC2626' }]}>

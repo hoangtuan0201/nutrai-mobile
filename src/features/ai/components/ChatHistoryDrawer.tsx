@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, MessageSquarePlus, X } from 'lucide-react-native';
 import { FONTS, PALETTE, RADIUS } from '../../../constants/theme';
 import { ConversationSummary } from '../types';
+import { useAppTheme } from '../../../hooks/useAppTheme';
 
 const DRAWER_WIDTH = Math.min(340, Dimensions.get('window').width * 0.82);
 
@@ -56,6 +57,7 @@ export function ChatHistoryDrawer({
   onNewChat,
   onSelectConversation,
 }: ChatHistoryDrawerProps) {
+  const { colors, isDark } = useAppTheme();
   const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const [isMounted, setIsMounted] = useState(visible);
@@ -103,22 +105,22 @@ export function ChatHistoryDrawer({
           <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
         </TouchableWithoutFeedback>
 
-        <Animated.View style={[styles.drawer, { transform: [{ translateX }] }]}>
+        <Animated.View style={[styles.drawer, { transform: [{ translateX }], backgroundColor: colors.background }]}>
           <SafeAreaView style={styles.drawerInner} edges={['top', 'bottom']}>
             {/* Search */}
             <View style={styles.searchRow}>
-              <View style={styles.searchBox}>
-                <Search size={18} color={PALETTE.textMuted} strokeWidth={2.2} />
+              <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Search size={18} color={colors.textSecondary} strokeWidth={2.2} />
                 <TextInput
-                  style={styles.searchInput}
+                  style={[styles.searchInput, { color: colors.textPrimary }]}
                   placeholder="Search"
-                  placeholderTextColor={PALETTE.textMuted}
+                  placeholderTextColor={colors.textSecondary}
                   value={query}
                   onChangeText={setQuery}
                 />
                 {query.length > 0 && (
                   <TouchableOpacity onPress={() => setQuery('')} hitSlop={8}>
-                    <X size={16} color={PALETTE.textMuted} />
+                    <X size={16} color={colors.textSecondary} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -129,12 +131,12 @@ export function ChatHistoryDrawer({
               <View style={styles.newChatIcon}>
                 <MessageSquarePlus size={18} color={PALETTE.saffron} strokeWidth={2.2} />
               </View>
-              <Text style={styles.newChatText}>New Chat</Text>
+              <Text style={[styles.newChatText, { color: colors.textPrimary }]}>New Chat</Text>
             </TouchableOpacity>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-            <Text style={styles.historyHeading}>History</Text>
+            <Text style={[styles.historyHeading, { color: colors.textSecondary }]}>History</Text>
 
             <ScrollView style={styles.historyList} showsVerticalScrollIndicator={false}>
               {isLoading && (
@@ -145,7 +147,7 @@ export function ChatHistoryDrawer({
 
               {!isLoading && grouped.length === 0 && (
                 <View style={styles.emptyWrap}>
-                  <Text style={styles.emptyText}>
+                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                     {query ? 'No chats match your search.' : 'No conversations yet.'}
                   </Text>
                 </View>
@@ -156,19 +158,26 @@ export function ChatHistoryDrawer({
                   <View key={group.key} style={styles.groupBlock}>
                     <View style={styles.groupLabelRow}>
                       <View style={styles.groupDot} />
-                      <Text style={styles.groupLabel}>{group.key}</Text>
+                      <Text style={[styles.groupLabel, { color: colors.textSecondary }]}>{group.key}</Text>
                     </View>
                     {group.items.map((conv) => {
                       const isActive = conv.id === activeConversationId;
                       return (
                         <TouchableOpacity
                           key={conv.id}
-                          style={[styles.historyItem, isActive && styles.historyItemActive]}
+                          style={[
+                            styles.historyItem,
+                            isActive && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : colors.surface },
+                          ]}
                           activeOpacity={0.7}
                           onPress={() => onSelectConversation(conv.id)}
                         >
                           <Text
-                            style={[styles.historyItemText, isActive && styles.historyItemTextActive]}
+                            style={[
+                              styles.historyItemText,
+                              { color: colors.textPrimary },
+                              isActive && styles.historyItemTextActive,
+                            ]}
                             numberOfLines={1}
                           >
                             {conv.title}

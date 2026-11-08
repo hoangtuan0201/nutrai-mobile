@@ -17,6 +17,7 @@ import { X, Check, Minus, Plus } from 'lucide-react-native';
 import theme from '../../../constants/theme';
 import { useProfile } from '../hooks/useProfile';
 import { useOnboardingStore } from '../../../store/onboardingStore';
+import { useAppTheme } from '../../../hooks/useAppTheme';
 
 interface EditGoalsModalProps {
   visible: boolean;
@@ -32,6 +33,7 @@ export const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
   onClose,
   onSaved,
 }) => {
+  const { colors, isDark } = useAppTheme();
   const { profile, updateProfile, isUpdating } = useProfile();
   const onboarding = useOnboardingStore();
 
@@ -124,13 +126,13 @@ export const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
           <TouchableWithoutFeedback>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              style={styles.modalContent}
+              style={[styles.modalContent, { backgroundColor: colors.surface }]}
             >
               {/* Header */}
-              <View style={styles.header}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
                 <View>
-                  <Text style={styles.title}>Edit Goals & Activity</Text>
-                  <Text style={styles.subtitle}>
+                  <Text style={[styles.title, { color: colors.textPrimary }]}>Edit Goals & Activity</Text>
+                  <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                     Customize your target weight & fitness plan
                   </Text>
                 </View>
@@ -138,7 +140,7 @@ export const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
                   onPress={onClose}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <X size={20} color="#7E8379" />
+                  <X size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
@@ -147,38 +149,38 @@ export const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
                 contentContainerStyle={styles.scrollBody}
               >
                 {/* 1. Target Weight Field */}
-                <Text style={styles.sectionLabel}>Goal Weight</Text>
-                <View style={styles.stepperContainer}>
+                <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Goal Weight</Text>
+                <View style={[styles.stepperContainer, { backgroundColor: isDark ? colors.surfaceMuted : '#F8F7F2' }]}>
                   <TouchableOpacity
-                    style={styles.stepBtn}
+                    style={[styles.stepBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                     onPress={() => adjustTargetWeight(-0.5)}
                     activeOpacity={0.7}
                   >
-                    <Minus size={18} color="#131313" />
+                    <Minus size={18} color={colors.textPrimary} />
                   </TouchableOpacity>
 
                   <View style={styles.weightInputWrap}>
                     <TextInput
-                      style={styles.weightInput}
+                      style={[styles.weightInput, { color: colors.textPrimary }]}
                       keyboardType="decimal-pad"
                       value={inputTargetWeight}
                       onChangeText={setInputTargetWeight}
                       selectTextOnFocus
                     />
-                    <Text style={styles.unitText}>kg</Text>
+                    <Text style={[styles.unitText, { color: colors.textSecondary }]}>kg</Text>
                   </View>
 
                   <TouchableOpacity
-                    style={styles.stepBtn}
+                    style={[styles.stepBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                     onPress={() => adjustTargetWeight(0.5)}
                     activeOpacity={0.7}
                   >
-                    <Plus size={18} color="#131313" />
+                    <Plus size={18} color={colors.textPrimary} />
                   </TouchableOpacity>
                 </View>
 
                 {/* 2. Fitness Goal Options */}
-                <Text style={[styles.sectionLabel, { marginTop: 16 }]}>
+                <Text style={[styles.sectionLabel, { marginTop: 16, color: colors.textPrimary }]}>
                   Fitness Goal
                 </Text>
                 {(
@@ -187,30 +189,41 @@ export const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
                     { id: 'MUSCLE_GAIN', label: 'Build muscle' },
                     { id: 'MAINTENANCE', label: 'Maintain weight' },
                   ] as const
-                ).map((g) => (
-                  <TouchableOpacity
-                    key={g.id}
-                    style={[
-                      styles.selectOption,
-                      inputGoal === g.id && styles.selectOptionActive,
-                    ]}
-                    onPress={() => setInputGoal(g.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
+                ).map((g) => {
+                  const isActive = inputGoal === g.id;
+                  return (
+                    <TouchableOpacity
+                      key={g.id}
                       style={[
-                        styles.selectOptionText,
-                        inputGoal === g.id && styles.selectOptionTextActive,
+                        styles.selectOption,
+                        { backgroundColor: colors.surface, borderColor: colors.border },
+                        isActive && [
+                          styles.selectOptionActive,
+                          {
+                            borderColor: colors.accent,
+                            backgroundColor: isDark ? 'rgba(255, 145, 20, 0.12)' : '#FFFBF5',
+                          },
+                        ],
                       ]}
+                      onPress={() => setInputGoal(g.id)}
+                      activeOpacity={0.7}
                     >
-                      {g.label}
-                    </Text>
-                    {inputGoal === g.id && <Check size={18} color={theme.colors.saffron} />}
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={[
+                          styles.selectOptionText,
+                          { color: colors.textPrimary },
+                          isActive && { color: colors.accent, fontFamily: theme.fonts.bold },
+                        ]}
+                      >
+                        {g.label}
+                      </Text>
+                      {isActive && <Check size={18} color={colors.accent} />}
+                    </TouchableOpacity>
+                  );
+                })}
 
                 {/* 3. Activity Level Options */}
-                <Text style={[styles.sectionLabel, { marginTop: 16 }]}>
+                <Text style={[styles.sectionLabel, { marginTop: 16, color: colors.textPrimary }]}>
                   Activity Level
                 </Text>
                 {(
@@ -220,33 +233,44 @@ export const EditGoalsModal: React.FC<EditGoalsModalProps> = ({
                     { id: 'MODERATE', label: 'Moderately Active (3-5 days/wk)' },
                     { id: 'VERY_ACTIVE', label: 'Very Active (6-7 days/wk)' },
                   ] as const
-                ).map((lvl) => (
-                  <TouchableOpacity
-                    key={lvl.id}
-                    style={[
-                      styles.selectOption,
-                      inputActivity === lvl.id && styles.selectOptionActive,
-                    ]}
-                    onPress={() => setInputActivity(lvl.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
+                ).map((lvl) => {
+                  const isActive = inputActivity === lvl.id;
+                  return (
+                    <TouchableOpacity
+                      key={lvl.id}
                       style={[
-                        styles.selectOptionText,
-                        inputActivity === lvl.id && styles.selectOptionTextActive,
+                        styles.selectOption,
+                        { backgroundColor: colors.surface, borderColor: colors.border },
+                        isActive && [
+                          styles.selectOptionActive,
+                          {
+                            borderColor: colors.accent,
+                            backgroundColor: isDark ? 'rgba(255, 145, 20, 0.12)' : '#FFFBF5',
+                          },
+                        ],
                       ]}
+                      onPress={() => setInputActivity(lvl.id)}
+                      activeOpacity={0.7}
                     >
-                      {lvl.label}
-                    </Text>
-                    {inputActivity === lvl.id && (
-                      <Check size={18} color={theme.colors.saffron} />
-                    )}
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={[
+                          styles.selectOptionText,
+                          { color: colors.textPrimary },
+                          isActive && { color: colors.accent, fontFamily: theme.fonts.bold },
+                        ]}
+                      >
+                        {lvl.label}
+                      </Text>
+                      {isActive && (
+                        <Check size={18} color={colors.accent} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
 
                 {/* Save CTA Button */}
                 <TouchableOpacity
-                  style={[styles.saveBtn, isUpdating && styles.saveBtnDisabled]}
+                  style={[styles.saveBtn, { backgroundColor: colors.accent }, isUpdating && styles.saveBtnDisabled]}
                   activeOpacity={0.8}
                   onPress={handleSave}
                   disabled={isUpdating}

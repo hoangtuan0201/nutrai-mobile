@@ -17,6 +17,7 @@ import Svg, {
 } from 'react-native-svg';
 import { ChevronRight } from 'lucide-react-native';
 import theme from '../../../constants/theme';
+import { useAppTheme } from '../../../hooks/useAppTheme';
 import { CalorieIntakeProgress, DailyMacroSummary } from '../types';
 
 export type CalorieTimeframe = 'Daily' | 'Weekly' | 'Monthly';
@@ -63,6 +64,7 @@ export const CalorieIntakeCard: React.FC<CalorieIntakeCardProps> = ({
   onTimeframeChange,
   hideHeaderGoal = false,
 }) => {
+  const { colors, isDark } = useAppTheme();
   const screenWidth = Dimensions.get('window').width;
   const chartWidth = Math.max(260, screenWidth - 76);
   const chartHeight = 195;
@@ -275,7 +277,7 @@ export const CalorieIntakeCard: React.FC<CalorieIntakeCardProps> = ({
   };
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {/* Header Row */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -285,15 +287,15 @@ export const CalorieIntakeCard: React.FC<CalorieIntakeCardProps> = ({
         >
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={styles.title}>Calorie Intake</Text>
-              {onPressCard && <ChevronRight size={16} color="#8E9388" />}
+              <Text style={[styles.title, { color: colors.textPrimary }]}>Calorie Intake</Text>
+              {onPressCard && <ChevronRight size={16} color={colors.textSecondary} />}
             </View>
             <View style={styles.statRow}>
-              <Text style={styles.statValue}>
+              <Text style={[styles.statValue, { color: colors.textPrimary }]}>
                 {displayAverage > 0 ? displayAverage.toLocaleString() : '0'}
               </Text>
-              <Text style={styles.unit}>kcal</Text>
-              <Text style={styles.timeframe}>{subtitleLabel}</Text>
+              <Text style={[styles.unit, { color: colors.textSecondary }]}>kcal</Text>
+              <Text style={[styles.timeframe, { color: colors.textSecondary }]}>{subtitleLabel}</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -304,8 +306,8 @@ export const CalorieIntakeCard: React.FC<CalorieIntakeCardProps> = ({
             activeOpacity={0.7}
             onPress={onGoalPress || onPressCard}
           >
-            <Text style={styles.goalLabel}>Goal {targetCalories} kcal</Text>
-            <ChevronRight size={14} color="#8E9388" />
+            <Text style={[styles.goalLabel, { color: colors.textSecondary }]}>Goal {targetCalories} kcal</Text>
+            <ChevronRight size={14} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -349,14 +351,14 @@ export const CalorieIntakeCard: React.FC<CalorieIntakeCardProps> = ({
                 y1={tick.y}
                 x2={chartWidth - paddingRight}
                 y2={tick.y}
-                stroke="#F1EFE8"
+                stroke={colors.border}
                 strokeWidth={1}
               />
               <SvgText
                 x={paddingLeft - 6}
                 y={tick.y + 3.5}
                 fontSize={9}
-                fill="#A6ABA1"
+                fill={colors.textSecondary}
                 textAnchor="end"
                 fontFamily={theme.fonts.medium}
               >
@@ -550,7 +552,7 @@ export const CalorieIntakeCard: React.FC<CalorieIntakeCardProps> = ({
                   x={barCenterX}
                   y={chartHeight - 6}
                   fontSize={9}
-                  fill={isSelected ? '#131313' : '#8E9388'}
+                  fill={isSelected ? colors.textPrimary : colors.textSecondary}
                   textAnchor="middle"
                   fontFamily={isSelected ? theme.fonts.bold : theme.fonts.regular}
                   onPress={() => handleBarPress(bar)}
@@ -567,36 +569,37 @@ export const CalorieIntakeCard: React.FC<CalorieIntakeCardProps> = ({
       <View style={styles.legendRow}>
         <View style={styles.legendItem}>
           <View style={[styles.square, { backgroundColor: MACRO_THEME_COLORS.carbs }]} />
-          <Text style={styles.legendText}>Carb</Text>
+          <Text style={[styles.legendText, { color: colors.textSecondary }]}>Carb</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.square, { backgroundColor: MACRO_THEME_COLORS.protein }]} />
-          <Text style={styles.legendText}>Protein</Text>
+          <Text style={[styles.legendText, { color: colors.textSecondary }]}>Protein</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.square, { backgroundColor: MACRO_THEME_COLORS.fat }]} />
-          <Text style={styles.legendText}>Fat</Text>
+          <Text style={[styles.legendText, { color: colors.textSecondary }]}>Fat</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.square, { backgroundColor: MACRO_THEME_COLORS.quickLog }]} />
-          <Text style={styles.legendText}>Quick Log</Text>
+          <Text style={[styles.legendText, { color: colors.textSecondary }]}>Quick Log</Text>
         </View>
       </View>
 
       {/* Timeframe Segmented Control */}
-      <View style={styles.segmentedContainer}>
+      <View style={[styles.segmentedContainer, { backgroundColor: colors.inputBg }]}>
         {(['Daily', 'Weekly', 'Monthly'] as CalorieTimeframe[]).map((tf) => {
           const isActive = timeframe === tf;
           return (
             <TouchableOpacity
               key={tf}
-              style={[styles.segmentBtn, isActive && styles.segmentBtnActive]}
+              style={[styles.segmentBtn, isActive && [styles.segmentBtnActive, { backgroundColor: isDark ? colors.primary : '#1E293B' }]]}
               activeOpacity={0.7}
               onPress={() => onTimeframeChange && onTimeframeChange(tf)}
             >
               <Text
                 style={[
                   styles.segmentText,
+                  { color: colors.textSecondary },
                   isActive && styles.segmentTextActive,
                 ]}
               >
@@ -607,7 +610,7 @@ export const CalorieIntakeCard: React.FC<CalorieIntakeCardProps> = ({
         })}
       </View>
 
-      <Text style={styles.swipeHint}>Tap bar to inspect</Text>
+      <Text style={[styles.swipeHint, { color: colors.textSecondary }]}>Tap bar to inspect</Text>
     </View>
   );
 };

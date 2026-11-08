@@ -28,6 +28,7 @@ import { mealsApi } from '../../../src/features/meals/api/meals.api';
 import { MealItem } from '../../../src/features/meals/types';
 import { useUnitStore } from '../../../src/store/unitStore';
 import { useAiScanStore } from '../../../src/store/aiScanStore';
+import { useAppTheme } from '../../../src/hooks/useAppTheme';
 
 interface EditableFoodItem {
   id: string;
@@ -41,6 +42,7 @@ interface EditableFoodItem {
 
 export default function AIScanConfirmationScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const { energyUnit } = useUnitStore();
   const { imageUri, imageBase64, scanResult, mealType } = useAiScanStore();
 
@@ -194,9 +196,9 @@ export default function AIScanConfirmationScreen() {
     'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right', 'bottom']}>
       {/* Top Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => {
@@ -208,11 +210,11 @@ export default function AIScanConfirmationScreen() {
           }}
           style={styles.backBtn}
         >
-          <ArrowLeft size={20} color={theme.colors.textPrimary} />
-          <Text style={styles.backText}>Back</Text>
+          <ArrowLeft size={20} color={colors.textPrimary} />
+          <Text style={[styles.backText, { color: colors.textPrimary }]}>Back</Text>
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Review AI Scan</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Review AI Scan</Text>
 
         <View style={{ width: 60 }} />
       </View>
@@ -224,14 +226,14 @@ export default function AIScanConfirmationScreen() {
       >
         {/* Step Indicator Header (Step 4: User reviews before saving) */}
         <View style={styles.stepHeader}>
-          <Text style={styles.stepTitle}>Review & Confirm Portion</Text>
-          <Text style={styles.stepSubtitle}>
+          <Text style={[styles.stepTitle, { color: colors.textPrimary }]}>Review & Confirm Portion</Text>
+          <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
             Adjust portion weights (grams) below if needed before saving.
           </Text>
         </View>
 
         {/* AI Scan Result Card (Matching Reference Design) */}
-        <View style={styles.scanCard}>
+        <View style={[styles.scanCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {/* Top Row: Thumbnail + Summary */}
           <View style={styles.cardTopRow}>
             <Image source={{ uri: previewImage }} style={styles.thumbnailImage} />
@@ -239,12 +241,12 @@ export default function AIScanConfirmationScreen() {
             <View style={styles.cardTopDetails}>
               <View style={styles.aiBadgeRow}>
                 <Sparkles size={14} color="#7CB342" />
-                <Text style={styles.cardTitle}>
+                <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
                   {scanResult?.mealName || 'AI Scan Result'}
                 </Text>
               </View>
 
-              <Text style={styles.mealTypeSubtitle}>
+              <Text style={[styles.mealTypeSubtitle, { color: colors.textSecondary }]}>
                 {mealType === 'BREAKFAST'
                   ? 'Breakfast'
                   : mealType === 'DINNER'
@@ -263,22 +265,22 @@ export default function AIScanConfirmationScreen() {
                 </View>
               ) : null}
 
-              <Text style={styles.calorieHighlight}>
+              <Text style={[styles.calorieHighlight, { color: colors.textPrimary }]}>
                 ~ {totalCalories} {energyUnit}
               </Text>
 
-              <Text style={styles.disclaimerNote}>
+              <Text style={[styles.disclaimerNote, { color: colors.textSecondary }]}>
                 {scanResult?.advice || 'Estimated visually. You can adjust grams for exact accuracy.'}
               </Text>
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           {/* Section: Detected Foods */}
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Detected Foods</Text>
-            <Text style={styles.sectionGramsHint}>Portion (g)</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Detected Foods</Text>
+            <Text style={[styles.sectionGramsHint, { color: colors.textSecondary }]}>Portion (g)</Text>
           </View>
 
           {/* Food List */}
@@ -292,7 +294,7 @@ export default function AIScanConfirmationScreen() {
                   style={{
                     fontFamily: theme.fonts.medium,
                     fontSize: 13,
-                    color: '#666',
+                    color: colors.textSecondary,
                     textAlign: 'center',
                     maxWidth: 260,
                     lineHeight: 18,
@@ -305,24 +307,24 @@ export default function AIScanConfirmationScreen() {
               items.map((item) => (
                 <View key={item.id} style={styles.foodRow}>
                   <View style={styles.foodInfo}>
-                    <Text style={styles.foodName}>{item.name}</Text>
-                    <Text style={styles.foodUnitCal}>
+                    <Text style={[styles.foodName, { color: colors.textPrimary }]}>{item.name}</Text>
+                    <Text style={[styles.foodUnitCal, { color: colors.textSecondary }]}>
                       {item.caloriesPer100g} {energyUnit} / 100 g
                     </Text>
                   </View>
 
                   {/* Gram Input Pill */}
-                  <View style={styles.gramInputWrap}>
+                  <View style={[styles.gramInputWrap, { backgroundColor: isDark ? colors.background : '#F7F7F7', borderColor: colors.border }]}>
                     <TextInput
-                      style={styles.gramInput}
+                      style={[styles.gramInput, { color: colors.textPrimary }]}
                       value={item.grams === 0 ? '' : item.grams.toString()}
                       onChangeText={(text) => handleGramChange(item.id, text)}
                       keyboardType="numeric"
                       maxLength={4}
                       placeholder="0"
-                      placeholderTextColor="#999"
+                      placeholderTextColor={colors.textSecondary}
                     />
-                    <Text style={styles.gramUnitLabel}>g</Text>
+                    <Text style={[styles.gramUnitLabel, { color: colors.textSecondary }]}>g</Text>
                   </View>
 
                   {/* Remove item button */}
@@ -340,21 +342,21 @@ export default function AIScanConfirmationScreen() {
 
           {items.length > 0 ? (
             <>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
               {/* Bottom Total Calorie Summary */}
               <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Total Estimated Calories</Text>
+                <Text style={[styles.totalLabel, { color: colors.textPrimary }]}>Total Estimated Calories</Text>
                 <Text style={styles.totalValue}>
                   {totalCalories} {energyUnit}
                 </Text>
               </View>
 
-              <Text style={styles.macroSubtext}>
+              <Text style={[styles.macroSubtext, { color: colors.textSecondary }]}>
                 Protein: {totalProtein}g • Carbs: {totalCarbs}g • Fat: {totalFat}g
               </Text>
 
-              <Text style={styles.liveCalculationNote}>
+              <Text style={[styles.liveCalculationNote, { color: colors.textSecondary }]}>
                 Calculated with standard nutritional values. Changing grams will instantly update totals.
               </Text>
             </>
@@ -438,13 +440,13 @@ export default function AIScanConfirmationScreen() {
         onRequestClose={() => setSuccessModal(null)}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
             <View style={styles.modalIconWrap}>
               <CheckCircle2 size={36} color="#2E7D32" />
             </View>
-            <Text style={styles.modalTitle}>Meal Logged Successfully!</Text>
-            <Text style={styles.modalSubtitle}>
-              <Text style={{ fontWeight: '700', color: '#1B281B' }}>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Meal Logged Successfully!</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+              <Text style={{ fontWeight: '700', color: colors.textPrimary }}>
                 {successModal?.mealName}
               </Text>{' '}
               ({successModal?.calories} {energyUnit}) has been recorded to your nutrition diary.

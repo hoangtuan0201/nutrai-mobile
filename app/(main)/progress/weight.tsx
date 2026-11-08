@@ -38,6 +38,7 @@ import Svg, {
   Path,
 } from 'react-native-svg';
 import theme from '../../../src/constants/theme';
+import { useAppTheme } from '../../../src/hooks/useAppTheme';
 import { progressApi } from '../../../src/features/progress/api/progress.api';
 import { useProfile, PROFILE_QUERY_KEY } from '../../../src/features/profile/hooks/useProfile';
 import { ProgressOverviewResponse, WeightDataPoint } from '../../../src/features/progress/types';
@@ -45,9 +46,18 @@ import { LogWeightModal } from '../../../src/features/progress/components/LogWei
 import { EditGoalsModal } from '../../../src/features/profile/components/EditGoalsModal';
 import { useUnitStore, formatWeight } from '../../../src/store/unitStore';
 
+/** Pick a balanced subset of indices to show on X-axis (prevents text collision) */
+function shouldShowDateLabel(idx: number, total: number): boolean {
+  if (total <= 5) return true;
+  if (idx === 0 || idx === total - 1) return true;
+  const step = Math.ceil((total - 1) / 4);
+  return idx % step === 0 && (total - 1 - idx) >= Math.floor(step * 0.75);
+}
+
 export default function WeightDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors, isDark } = useAppTheme();
   const { profile } = useProfile();
   const screenWidth = Dimensions.get('window').width;
   const chartWidth = Math.max(260, screenWidth - 76);
@@ -270,11 +280,7 @@ export default function WeightDetailScreen() {
   const bmiPointerPercent = ((clampedBmi - 14) / (40 - 14)) * 100;
 
   const handleBack = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(main)/progress');
-    }
+    router.replace('/(main)/progress');
   }, [router]);
 
   // Handle Android hardware back
@@ -291,27 +297,27 @@ export default function WeightDetailScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F4F2E7" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backBtn}
+          style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
           activeOpacity={0.7}
           onPress={handleBack}
         >
-          <ChevronLeft size={22} color="#131313" strokeWidth={2.5} />
+          <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2.5} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Weight</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Weight</Text>
 
         <View style={{ width: 38 }} />
       </View>
 
       {isLoading && !isRefreshing ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={theme.colors.saffron} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <ScrollView
@@ -322,21 +328,21 @@ export default function WeightDetailScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={() => fetchOverview(true)}
-              tintColor={theme.colors.saffron}
+              tintColor={colors.primary}
             />
           }
         >
           {/* Card 1: Today Card with Unit Switch and + Update Action Button */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.todayTopRow}>
-              <Text style={styles.todayTitle}>Today</Text>
+              <Text style={[styles.todayTitle, { color: colors.textPrimary }]}>Today</Text>
 
               {/* Unit Toggle Pill (lbs / kg) */}
-              <View style={styles.unitToggleWrap}>
+              <View style={[styles.unitToggleWrap, { backgroundColor: colors.inputBg }]}>
                 <TouchableOpacity
                   style={[
                     styles.unitToggleBtn,
-                    bodyUnit === 'imperial' && styles.unitToggleBtnActive,
+                    bodyUnit === 'imperial' && [styles.unitToggleBtnActive, { backgroundColor: colors.surface }],
                   ]}
                   activeOpacity={0.8}
                   onPress={() => setUnits({ bodyUnit: 'imperial' })}
@@ -344,7 +350,8 @@ export default function WeightDetailScreen() {
                   <Text
                     style={[
                       styles.unitToggleText,
-                      bodyUnit === 'imperial' && styles.unitToggleTextActive,
+                      { color: colors.textSecondary },
+                      bodyUnit === 'imperial' && [styles.unitToggleTextActive, { color: colors.textPrimary }],
                     ]}
                   >
                     lbs
@@ -354,7 +361,7 @@ export default function WeightDetailScreen() {
                 <TouchableOpacity
                   style={[
                     styles.unitToggleBtn,
-                    bodyUnit === 'metric' && styles.unitToggleBtnActive,
+                    bodyUnit === 'metric' && [styles.unitToggleBtnActive, { backgroundColor: colors.surface }],
                   ]}
                   activeOpacity={0.8}
                   onPress={() => setUnits({ bodyUnit: 'metric' })}
@@ -362,7 +369,8 @@ export default function WeightDetailScreen() {
                   <Text
                     style={[
                       styles.unitToggleText,
-                      bodyUnit === 'metric' && styles.unitToggleTextActive,
+                      { color: colors.textSecondary },
+                      bodyUnit === 'metric' && [styles.unitToggleTextActive, { color: colors.textPrimary }],
                     ]}
                   >
                     kg
@@ -371,7 +379,7 @@ export default function WeightDetailScreen() {
               </View>
 
               <TouchableOpacity
-                style={styles.calendarBtn}
+                style={[styles.calendarBtn, { backgroundColor: colors.inputBg }]}
                 activeOpacity={0.7}
                 onPress={() => {
                   const todayStr = new Intl.DateTimeFormat('en-CA', {
@@ -384,17 +392,17 @@ export default function WeightDetailScreen() {
                   setIsLogModalVisible(true);
                 }}
               >
-                <Calendar size={18} color="#131313" />
+                <Calendar size={18} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.todayBottomRow}>
               <View>
                 <View style={styles.todayValueRow}>
-                  <Text style={styles.todayWeightValue}>
+                  <Text style={[styles.todayWeightValue, { color: colors.textPrimary }]}>
                     {formatWeight(currentKg, bodyUnit).value}
                   </Text>
-                  <Text style={styles.todayWeightUnit}>
+                  <Text style={[styles.todayWeightUnit, { color: colors.textSecondary }]}>
                     {formatWeight(currentKg, bodyUnit).unit}
                   </Text>
                 </View>
@@ -415,7 +423,7 @@ export default function WeightDetailScreen() {
 
               {/* + Update Button right on Today Card */}
               <TouchableOpacity
-                style={styles.updateBtn}
+                style={[styles.updateBtn, { backgroundColor: colors.primary }]}
                 activeOpacity={0.85}
                 onPress={() => setIsLogModalVisible(true)}
               >
@@ -425,60 +433,60 @@ export default function WeightDetailScreen() {
           </View>
 
           {/* Card 2: Goal & Progress Card */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.goalWeightsRow}>
               {/* Start Weight */}
               <View style={styles.goalWeightCol}>
-                <Text style={styles.goalColLabel}>Start Weight</Text>
+                <Text style={[styles.goalColLabel, { color: colors.textSecondary }]}>Start Weight</Text>
                 <TouchableOpacity
                   style={styles.goalValWithPencil}
                   activeOpacity={0.7}
                   onPress={() => setIsGoalModalVisible(true)}
                 >
-                  <Text style={styles.goalWeightNum}>
+                  <Text style={[styles.goalWeightNum, { color: colors.textPrimary }]}>
                     {formatWeight(startKg, bodyUnit).value}
                   </Text>
-                  <Text style={styles.goalWeightUnit}>
+                  <Text style={[styles.goalWeightUnit, { color: colors.textSecondary }]}>
                     {formatWeight(startKg, bodyUnit).unit}
                   </Text>
-                  <Pencil size={13} color="#8E9388" />
+                  <Pencil size={13} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
-              <ArrowRight size={18} color="#8E9388" />
+              <ArrowRight size={18} color={colors.textSecondary} />
 
               {/* Goal Weight */}
               <View style={[styles.goalWeightCol, { alignItems: 'flex-end' }]}>
-                <Text style={styles.goalColLabel}>Goal Weight</Text>
+                <Text style={[styles.goalColLabel, { color: colors.textSecondary }]}>Goal Weight</Text>
                 <TouchableOpacity
                   style={styles.goalValWithPencil}
                   activeOpacity={0.7}
                   onPress={() => setIsGoalModalVisible(true)}
                 >
-                  <Text style={styles.goalWeightNum}>
+                  <Text style={[styles.goalWeightNum, { color: colors.textPrimary }]}>
                     {formatWeight(targetKg, bodyUnit).value}
                   </Text>
-                  <Text style={styles.goalWeightUnit}>
+                  <Text style={[styles.goalWeightUnit, { color: colors.textSecondary }]}>
                     {formatWeight(targetKg, bodyUnit).unit}
                   </Text>
-                  <Pencil size={13} color="#8E9388" />
+                  <Pencil size={13} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Progress Percentage & Estimated Target Date Pill */}
             <View style={styles.progressHeaderRow}>
-              <Text style={styles.progressPercentText}>
+              <Text style={[styles.progressPercentText, { color: colors.textPrimary }]}>
                 Progress: {progressPercent}%
               </Text>
-              <View style={styles.targetDatePill}>
+              <View style={[styles.targetDatePill, { backgroundColor: isDark ? 'rgba(96,165,250,0.15)' : '#EFF6FF' }]}>
                 <Flag size={12} color="#60A5FA" />
                 <Text style={styles.targetDateText}>{estimatedDateLabel}</Text>
               </View>
             </View>
 
             {/* Progress Bar with Pointer */}
-            <View style={styles.progressBarTrack}>
+            <View style={[styles.progressBarTrack, { backgroundColor: colors.inputBg }]}>
               <View
                 style={[
                   styles.progressBarFill,
@@ -491,15 +499,15 @@ export default function WeightDetailScreen() {
 
             {/* Gained/Lost & Remaining */}
             <View style={styles.progressBottomRow}>
-              <Text style={styles.progressSubLabel}>
+              <Text style={[styles.progressSubLabel, { color: colors.textSecondary }]}>
                 {isGainGoal ? 'Gained' : 'Lost'}:{' '}
-                <Text style={styles.progressSubValue}>
+                <Text style={[styles.progressSubValue, { color: colors.textPrimary }]}>
                   {gainedOrLost.toFixed(1)} kg
                 </Text>
               </Text>
-              <Text style={styles.progressSubLabel}>
+              <Text style={[styles.progressSubLabel, { color: colors.textSecondary }]}>
                 Remaining:{' '}
-                <Text style={styles.progressSubValue}>
+                <Text style={[styles.progressSubValue, { color: colors.textPrimary }]}>
                   {remainingKg.toFixed(1)} kg
                 </Text>
               </Text>
@@ -508,10 +516,10 @@ export default function WeightDetailScreen() {
 
           {/* Card 3: Current BMI Card */}
           {bmi && (
-            <View style={styles.card}>
-              <Text style={styles.cardSectionTitle}>Current BMI</Text>
+            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.cardSectionTitle, { color: colors.textPrimary }]}>Current BMI</Text>
               <View style={styles.bmiValueRow}>
-                <Text style={styles.bmiValueNum}>{bmi.value}</Text>
+                <Text style={[styles.bmiValueNum, { color: colors.textPrimary }]}>{bmi.value}</Text>
                 <Text style={styles.bmiCategoryText}>{bmi.category}</Text>
               </View>
 
@@ -528,7 +536,7 @@ export default function WeightDetailScreen() {
 
                 {/* Circular Pointer */}
                 <View style={[styles.pointerWrap, { left: `${bmiPointerPercent}%` }]}>
-                  <View style={styles.pointerOuter}>
+                  <View style={[styles.pointerOuter, { backgroundColor: colors.surface }]}>
                     <View style={styles.pointerInner} />
                   </View>
                 </View>
@@ -536,26 +544,26 @@ export default function WeightDetailScreen() {
 
               {/* Scale Labels */}
               <View style={styles.scaleLabelsRow}>
-                <Text style={styles.scaleText}>15</Text>
-                <Text style={styles.scaleText}>16</Text>
-                <Text style={styles.scaleText}>18.5</Text>
-                <Text style={styles.scaleText}>25</Text>
-                <Text style={styles.scaleText}>30</Text>
-                <Text style={styles.scaleText}>35</Text>
-                <Text style={styles.scaleText}>40</Text>
+                <Text style={[styles.scaleText, { color: colors.textSecondary }]}>15</Text>
+                <Text style={[styles.scaleText, { color: colors.textSecondary }]}>16</Text>
+                <Text style={[styles.scaleText, { color: colors.textSecondary }]}>18.5</Text>
+                <Text style={[styles.scaleText, { color: colors.textSecondary }]}>25</Text>
+                <Text style={[styles.scaleText, { color: colors.textSecondary }]}>30</Text>
+                <Text style={[styles.scaleText, { color: colors.textSecondary }]}>35</Text>
+                <Text style={[styles.scaleText, { color: colors.textSecondary }]}>40</Text>
               </View>
             </View>
           )}
 
           {/* Card 4: Weight Chart Card */}
-          <View style={styles.card}>
-            <Text style={styles.cardSectionTitle}>Weight</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.cardSectionTitle, { color: colors.textPrimary }]}>Weight</Text>
 
             <View style={styles.chartStatRow}>
-              <Text style={styles.chartWeightNum}>
+              <Text style={[styles.chartWeightNum, { color: colors.textPrimary }]}>
                 {formatWeight(currentKg, bodyUnit).value}
               </Text>
-              <Text style={styles.chartWeightUnit}>
+              <Text style={[styles.chartWeightUnit, { color: colors.textSecondary }]}>
                 {formatWeight(currentKg, bodyUnit).unit}
               </Text>
 
@@ -589,14 +597,14 @@ export default function WeightDetailScreen() {
                       y1={tick.y}
                       x2={chartWidth - paddingRight}
                       y2={tick.y}
-                      stroke="#F1EFE8"
+                      stroke={colors.border}
                       strokeWidth={1}
                     />
                     <SvgText
                       x={paddingLeft - 8}
                       y={tick.y + 4}
                       fontSize={10}
-                      fill="#A6ABA1"
+                      fill={colors.textSecondary}
                       textAnchor="end"
                       fontFamily={theme.fonts.medium}
                     >
@@ -665,22 +673,24 @@ export default function WeightDetailScreen() {
                         cx={p.x}
                         cy={p.y}
                         r={isSelected ? 6 : 5}
-                        fill={isSelected ? theme.colors.blue : '#FFFFFF'}
+                        fill={isSelected ? theme.colors.blue : colors.surface}
                         stroke={isSelected ? '#FFFFFF' : theme.colors.blue}
                         strokeWidth={2.5}
                         onPress={() => setSelectedPointId(pointKey)}
                       />
-                      <SvgText
-                        x={p.x}
-                        y={chartHeight - 6}
-                        fontSize={10}
-                        fill={isSelected ? '#131313' : '#8E9388'}
-                        textAnchor="middle"
-                        fontFamily={isSelected ? theme.fonts.bold : theme.fonts.regular}
-                        onPress={() => setSelectedPointId(pointKey)}
-                      >
-                        {p.date.slice(5).replace('-', '/')}
-                      </SvgText>
+                      {shouldShowDateLabel(idx, points.length) && (
+                        <SvgText
+                          x={p.x}
+                          y={chartHeight - 6}
+                          fontSize={10}
+                          fill={isSelected ? colors.textPrimary : colors.textSecondary}
+                          textAnchor="middle"
+                          fontFamily={isSelected ? theme.fonts.bold : theme.fonts.regular}
+                          onPress={() => setSelectedPointId(pointKey)}
+                        >
+                          {p.date.slice(5).replace('-', '/')}
+                        </SvgText>
+                      )}
                     </React.Fragment>
                   );
                 })}
@@ -743,16 +753,16 @@ export default function WeightDetailScreen() {
           </View>
 
           {/* Card 5: History Card at the bottom (Tap any item to edit/update) */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <Text style={[styles.cardSectionTitle, { marginBottom: 0 }]}>History</Text>
-              <Text style={{ fontFamily: theme.fonts.medium, fontSize: 12, color: '#8E9388' }}>
+              <Text style={[styles.cardSectionTitle, { color: colors.textPrimary, marginBottom: 0 }]}>History</Text>
+              <Text style={{ fontFamily: theme.fonts.medium, fontSize: 12, color: colors.textSecondary }}>
                 Tap row to edit
               </Text>
             </View>
 
             {listHistory.length === 0 ? (
-              <Text style={styles.emptyHistoryText}>
+              <Text style={[styles.emptyHistoryText, { color: colors.textSecondary }]}>
                 No weight logs yet. Tap "+ Update" on Today card to record your weight!
               </Text>
             ) : (
@@ -765,23 +775,23 @@ export default function WeightDetailScreen() {
                   return (
                     <TouchableOpacity
                       key={item.id || idx}
-                      style={styles.historyRow}
+                      style={[styles.historyRow, { borderBottomColor: colors.border }]}
                       activeOpacity={0.7}
                       onPress={() => {
                         setSelectedDateForLog(item.date);
                         setIsLogModalVisible(true);
                       }}
                     >
-                      <View style={styles.scaleIconWrap}>
+                      <View style={[styles.scaleIconWrap, { backgroundColor: colors.inputBg }]}>
                         <Scale size={20} color={theme.colors.blue} />
                       </View>
 
                       <View style={styles.historyInfoCol}>
-                        <Text style={styles.historyDateText}>
+                        <Text style={[styles.historyDateText, { color: colors.textPrimary }]}>
                           {formatLogDate(item.date)}
                         </Text>
                         <View style={styles.historyWeightSubRow}>
-                          <Text style={styles.historyWeightValue}>
+                          <Text style={[styles.historyWeightValue, { color: colors.textPrimary }]}>
                             {formatWeight(item.weightKg, bodyUnit).full}
                           </Text>
                           {hasChange && (

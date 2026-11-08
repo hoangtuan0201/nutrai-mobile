@@ -5,10 +5,12 @@ import { Home, TrendingUp, Sparkles, Plus, Utensils } from 'lucide-react-native'
 import theme from '../../src/constants/theme';
 import { useOnboardingStore, mapGoalToBackend } from '../../src/store/onboardingStore';
 import { profileApi } from '../../src/features/profile/api/profile.api';
+import { useAppTheme } from '../../src/hooks/useAppTheme';
 
 export default function MainLayout() {
   const router = useRouter();
   const pathname = usePathname();
+  const { colors } = useAppTheme();
 
   // Background fallback sync for pending onboarding data
   useEffect(() => {
@@ -35,13 +37,16 @@ export default function MainLayout() {
 
   return (
     <Tabs
-      backBehavior="firstRoute"
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: '#1B281B',
-        tabBarInactiveTintColor: '#7E8379',
+        tabBarStyle: [
+          styles.tabBar,
+          { backgroundColor: colors.tabBarBg, borderTopColor: colors.tabBarBorder },
+        ],
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarItemStyle: styles.tabBarItem,
       }}
@@ -73,10 +78,10 @@ export default function MainLayout() {
         name="meals/add"
         options={{
           title: '',
-          tabBarButton: () => (
+          tabBarButton: (props) => (
             <TouchableOpacity
               activeOpacity={0.85}
-              style={styles.fabWrap}
+              style={[props.style, styles.fabWrap]}
               onPress={() => {
                 const fromScreen = pathname.includes('meals') ? 'log' : 'home';
                 router.push({
@@ -86,7 +91,7 @@ export default function MainLayout() {
               }}
               accessibilityLabel="Log Meal"
             >
-              <View style={styles.fab}>
+              <View style={[styles.fab, { backgroundColor: colors.fabBg }]}>
                 <Plus size={24} color="#FFFFFF" strokeWidth={2.6} />
               </View>
             </TouchableOpacity>
@@ -186,16 +191,16 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   fabWrap: {
-    top: -16,
+    top: Platform.OS === 'ios' ? -18 : -14,
     justifyContent: 'center',
     alignItems: 'center',
-    width: 60,
+    flex: 1,
   },
   fab: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#1E3120', // Signature deep forest green matching Image 2
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#1E3120',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
