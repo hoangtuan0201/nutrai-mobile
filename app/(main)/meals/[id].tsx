@@ -33,6 +33,7 @@ import {
 } from 'lucide-react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { theme } from '../../../src/constants';
+import { useAppTheme } from '../../../src/hooks/useAppTheme';
 import { mealsApi } from '../../../src/features/meals/api/meals.api';
 import { Meal, MealItem, MealType } from '../../../src/features/meals/types';
 import { useUnitStore, formatFoodWeight } from '../../../src/store/unitStore';
@@ -118,6 +119,7 @@ const MealSectionIcon: React.FC<{ type: MealType; size?: number; color?: string 
 export default function MealDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useAppTheme();
   const { id, from, date } = useLocalSearchParams<{ id: string; from?: string; date?: string }>();
   const { energyUnit, foodUnit } = useUnitStore();
 
@@ -438,24 +440,31 @@ export default function MealDetailScreen() {
   }
 
   return (
-    <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FAF8F5" />
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* ── Top Header Navigation ────────────────────────────────────── */}
-      <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'android' ? 8 : 4) }]}>
+      <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'android' ? 8 : 4), backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         <TouchableOpacity
-          style={styles.headerIconButton}
+          style={[styles.headerIconButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={handleBack}
           activeOpacity={0.7}
           accessibilityLabel="Back to meals log"
         >
-          <ArrowLeft size={22} color={theme.colors.textPrimary} />
+          <ArrowLeft size={22} color={colors.textPrimary} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Meal Details</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Meal Details</Text>
 
         <TouchableOpacity
-          style={[styles.headerIconButton, styles.headerDeleteBtn]}
+          style={[
+            styles.headerIconButton,
+            styles.headerDeleteBtn,
+            {
+              backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : '#FEF2F2',
+              borderColor: isDark ? 'rgba(220,38,38,0.4)' : '#FEE2E2',
+            },
+          ]}
           onPress={() => setIsDeleteModalVisible(true)}
           activeOpacity={0.7}
           accessibilityLabel="Delete meal"
@@ -471,8 +480,8 @@ export default function MealDetailScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[theme.colors.saffron]}
-            tintColor={theme.colors.saffron}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
           />
         }
       >
@@ -486,7 +495,7 @@ export default function MealDetailScreen() {
 
         {/* ── Cloudinary Hero Image (Only rendered if image exists) ──── */}
         {meal.imageUrl ? (
-          <View style={styles.heroImageWrapper}>
+          <View style={[styles.heroImageWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Image
               source={{ uri: meal.imageUrl }}
               style={styles.heroImage}
@@ -494,13 +503,13 @@ export default function MealDetailScreen() {
             />
             {/* Top Badges Overlay */}
             <View style={styles.heroOverlayBadges}>
-              <View style={styles.heroBadgePill}>
+              <View style={[styles.heroBadgePill, { backgroundColor: isDark ? 'rgba(20,20,20,0.85)' : 'rgba(255, 255, 255, 0.94)' }]}>
                 <MealSectionIcon type={meal.mealType} size={15} color={theme.colors.saffron} />
-                <Text style={styles.heroBadgeText}>{meal.mealType}</Text>
+                <Text style={[styles.heroBadgeText, { color: colors.textPrimary }]}>{meal.mealType}</Text>
               </View>
 
               {(meal.source === 'AI_IMAGE' || meal.source === 'AI_TEXT') && (
-                <View style={[styles.heroBadgePill, styles.aiScanBadge]}>
+                <View style={[styles.heroBadgePill, styles.aiScanBadge, { backgroundColor: isDark ? 'rgba(124,58,237,0.25)' : 'rgba(245, 243, 255, 0.94)' }]}>
                   <Sparkles size={14} color="#7C3AED" />
                   <Text style={[styles.heroBadgeText, { color: '#7C3AED' }]}>AI Scan</Text>
                 </View>
@@ -510,15 +519,15 @@ export default function MealDetailScreen() {
         ) : null}
 
         {/* ── Primary Meal Info Card ───────────────────────────────────── */}
-        <View style={styles.primaryCard}>
+        <View style={[styles.primaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.cardHeaderRow}>
             <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={styles.mealTitle} numberOfLines={2}>
+              <Text style={[styles.mealTitle, { color: colors.textPrimary }]} numberOfLines={2}>
                 {meal.name || `${meal.mealType} Meal`}
               </Text>
               <View style={styles.dateTimeRow}>
-                <Clock size={14} color={theme.colors.textSecondary} />
-                <Text style={styles.dateTimeText}>{formattedDateTime}</Text>
+                <Clock size={14} color={colors.textSecondary} />
+                <Text style={[styles.dateTimeText, { color: colors.textSecondary }]}>{formattedDateTime}</Text>
               </View>
             </View>
 
@@ -532,16 +541,16 @@ export default function MealDetailScreen() {
         </View>
 
         {/* ── Macro Distribution Section (Bar + 3 Cards) ───────────────── */}
-        <View style={styles.macroCard}>
+        <View style={[styles.macroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.macroHeaderRow}>
-            <Text style={styles.sectionHeaderTitle}>Macro Distribution</Text>
-            <Text style={styles.macroSubText}>
+            <Text style={[styles.sectionHeaderTitle, { color: colors.textPrimary }]}>Macro Distribution</Text>
+            <Text style={[styles.macroSubText, { color: colors.textSecondary }]}>
               {Math.round(meal.totalProtein + meal.totalCarbs + meal.totalFat)}g total
             </Text>
           </View>
 
           {/* Segmented Ratio Bar */}
-          <View style={styles.segmentedBarTrack}>
+          <View style={[styles.segmentedBarTrack, { backgroundColor: colors.inputBg }]}>
             <View
               style={[
                 styles.segmentedBarSegment,
@@ -574,43 +583,43 @@ export default function MealDetailScreen() {
           {/* 3 Macro Stat Columns */}
           <View style={styles.macroGridRow}>
             {/* Protein */}
-            <View style={styles.macroStatCol}>
+            <View style={[styles.macroStatCol, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <View style={styles.macroLabelRow}>
                 <View style={[styles.macroDot, { backgroundColor: theme.macros.protein }]} />
-                <Text style={styles.macroNameLabel}>Protein</Text>
+                <Text style={[styles.macroNameLabel, { color: colors.textSecondary }]}>Protein</Text>
               </View>
               <Text style={[styles.macroGramsValue, { color: theme.macros.protein }]}>
                 {formatFoodWeight(meal.totalProtein, foodUnit).full}
               </Text>
-              <Text style={styles.macroPctText}>
+              <Text style={[styles.macroPctText, { color: colors.textSecondary }]}>
                 {macroStats.pPct}% • {Math.round(macroStats.pCal)} kcal
               </Text>
             </View>
 
             {/* Carbs */}
-            <View style={styles.macroStatCol}>
+            <View style={[styles.macroStatCol, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <View style={styles.macroLabelRow}>
                 <View style={[styles.macroDot, { backgroundColor: theme.macros.carbs }]} />
-                <Text style={styles.macroNameLabel}>Carbs</Text>
+                <Text style={[styles.macroNameLabel, { color: colors.textSecondary }]}>Carbs</Text>
               </View>
               <Text style={[styles.macroGramsValue, { color: theme.macros.carbs }]}>
                 {formatFoodWeight(meal.totalCarbs, foodUnit).full}
               </Text>
-              <Text style={styles.macroPctText}>
+              <Text style={[styles.macroPctText, { color: colors.textSecondary }]}>
                 {macroStats.cPct}% • {Math.round(macroStats.cCal)} kcal
               </Text>
             </View>
 
             {/* Fat */}
-            <View style={styles.macroStatCol}>
+            <View style={[styles.macroStatCol, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <View style={styles.macroLabelRow}>
                 <View style={[styles.macroDot, { backgroundColor: theme.macros.fat }]} />
-                <Text style={styles.macroNameLabel}>Fat</Text>
+                <Text style={[styles.macroNameLabel, { color: colors.textSecondary }]}>Fat</Text>
               </View>
               <Text style={[styles.macroGramsValue, { color: theme.macros.fat }]}>
                 {formatFoodWeight(meal.totalFat, foodUnit).full}
               </Text>
-              <Text style={styles.macroPctText}>
+              <Text style={[styles.macroPctText, { color: colors.textSecondary }]}>
                 {macroStats.fPct}% • {Math.round(macroStats.fCal)} kcal
               </Text>
             </View>
@@ -620,10 +629,10 @@ export default function MealDetailScreen() {
         {/* ── Food Items Section ───────────────────────────────────────── */}
         <View style={styles.itemsSection}>
           <View style={styles.itemsHeaderRow}>
-            <Text style={styles.sectionHeaderTitle}>
+            <Text style={[styles.sectionHeaderTitle, { color: colors.textPrimary }]}>
               Food Items ({displayItems.length})
             </Text>
-            <Text style={styles.itemsHelperText}>Tap Edit to change portion</Text>
+            <Text style={[styles.itemsHelperText, { color: colors.textSecondary }]}>Tap Edit to change portion</Text>
           </View>
 
           {displayItems.map((item, index) => {
@@ -633,7 +642,7 @@ export default function MealDetailScreen() {
             const itemImageUrl = getItemImage(item);
 
             return (
-              <View key={item.id || `item-${index}`} style={styles.itemCard}>
+              <View key={item.id || `item-${index}`} style={[styles.itemCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.itemMainRow}>
                   {/* Food Thumbnail Image */}
                   {itemImageUrl ? (
@@ -643,39 +652,39 @@ export default function MealDetailScreen() {
                       resizeMode="cover"
                     />
                   ) : (
-                    <View style={styles.itemThumbFallback}>
-                      <Utensils size={18} color="#8E8B82" />
+                    <View style={[styles.itemThumbFallback, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                      <Utensils size={18} color={colors.textSecondary} />
                     </View>
                   )}
 
                   <View style={styles.itemCenterCol}>
-                    <Text style={styles.itemFoodName} numberOfLines={1}>
+                    <Text style={[styles.itemFoodName, { color: colors.textPrimary }]} numberOfLines={1}>
                       {item.foodName}
                     </Text>
-                    <Text style={styles.itemPortionText} numberOfLines={1}>
+                    <Text style={[styles.itemPortionText, { color: colors.textSecondary }]} numberOfLines={1}>
                       {portionText}
                     </Text>
                   </View>
 
                   <View style={styles.itemRightWrap}>
-                    <Text style={styles.itemCalorieText}>
+                    <Text style={[styles.itemCalorieText, { color: colors.textPrimary }]}>
                       {Math.round(item.calories)} {energyUnit}
                     </Text>
 
                     {/* Neutral, non-orange Edit Button */}
                     <TouchableOpacity
-                      style={styles.itemEditBtn}
+                      style={[styles.itemEditBtn, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
                       activeOpacity={0.7}
                       onPress={() => openEditModal(item, index)}
                     >
-                      <Edit3 size={12} color="#4A463B" />
-                      <Text style={styles.itemEditBtnText}>Edit</Text>
+                      <Edit3 size={12} color={colors.textSecondary} />
+                      <Text style={[styles.itemEditBtnText, { color: colors.textSecondary }]}>Edit</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
 
                 {/* Macro Mini Chips */}
-                <View style={styles.itemMacroChipsRow}>
+                <View style={[styles.itemMacroChipsRow, { borderTopColor: colors.border }]}>
                   <View style={[styles.miniChip, { backgroundColor: 'rgba(93, 128, 230, 0.12)' }]}>
                     <Text style={[styles.miniChipText, { color: '#3A5ECC' }]}>
                       P {Math.round(item.protein * 10) / 10}g
@@ -701,7 +710,7 @@ export default function MealDetailScreen() {
 
         {/* ── Bottom Delete Meal Action ────────────────────────────────── */}
         <TouchableOpacity
-          style={styles.bottomDeleteBtn}
+          style={[styles.bottomDeleteBtn, { backgroundColor: colors.surface, borderColor: isDark ? 'rgba(220,38,38,0.4)' : '#FCA5A5' }]}
           activeOpacity={0.8}
           onPress={() => setIsDeleteModalVisible(true)}
         >
@@ -725,10 +734,10 @@ export default function MealDetailScreen() {
         }}
       >
         <View style={styles.portionModalOverlay}>
-          <View style={styles.portionModalSheet}>
+          <View style={[styles.portionModalSheet, { backgroundColor: colors.surface }]}>
             {/* Header */}
-            <View style={styles.portionModalHeader}>
-              <Text style={styles.portionModalTitle}>Edit Quantity</Text>
+            <View style={[styles.portionModalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.portionModalTitle, { color: colors.textPrimary }]}>Edit Quantity</Text>
               <TouchableOpacity
                 onPress={() => {
                   if (!savingEdit) {
@@ -737,10 +746,10 @@ export default function MealDetailScreen() {
                   }
                 }}
                 disabled={savingEdit}
-                style={styles.portionCloseBtn}
+                style={[styles.portionCloseBtn, { backgroundColor: colors.inputBg }]}
                 accessibilityLabel="Close edit modal"
               >
-                <X size={18} color="#1B281B" />
+                <X size={18} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
@@ -750,7 +759,7 @@ export default function MealDetailScreen() {
                 contentContainerStyle={{ paddingBottom: 24 }}
               >
                 {/* Food summary card */}
-                <View style={styles.portionFoodCard}>
+                <View style={[styles.portionFoodCard, { backgroundColor: colors.inputBg }]}>
                   {getItemImage(editingItem) ? (
                     <Image
                       source={{ uri: getItemImage(editingItem) }}
@@ -758,41 +767,41 @@ export default function MealDetailScreen() {
                       resizeMode="cover"
                     />
                   ) : (
-                    <View style={styles.portionIconPlaceholder}>
-                      <Utensils size={24} color="#656A60" />
+                    <View style={[styles.portionIconPlaceholder, { backgroundColor: colors.surface }]}>
+                      <Utensils size={24} color={colors.textSecondary} />
                     </View>
                   )}
                   <View style={styles.portionFoodInfo}>
-                    <Text style={styles.portionFoodName} numberOfLines={2}>
+                    <Text style={[styles.portionFoodName, { color: colors.textPrimary }]} numberOfLines={2}>
                       {editingItem.foodName}
                     </Text>
-                    <Text style={styles.portionFoodServing}>
+                    <Text style={[styles.portionFoodServing, { color: colors.textSecondary }]}>
                       Original: {editingItem.portionDescription || `${editingItem.quantity || 1} ${editingItem.unit || 'serving'}`}
                     </Text>
                   </View>
                 </View>
 
                 {/* Serving stepper / quantity control */}
-                <View style={styles.portionQuantityCard}>
-                  <Text style={styles.portionQuantityLabel}>
+                <View style={[styles.portionQuantityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Text style={[styles.portionQuantityLabel, { color: colors.textPrimary }]}>
                     {isGramOrMlUnit(editUnit) ? `Weight (${editUnit})` : 'Number of Servings'}
                   </Text>
                   <View style={styles.stepperContainer}>
                     <TouchableOpacity
-                      style={styles.stepperBtn}
+                      style={[styles.stepperBtn, { backgroundColor: colors.inputBg }]}
                       activeOpacity={0.7}
                       disabled={savingEdit}
                       onPress={() => handleStepQuantity(-1)}
                     >
-                      <Minus size={18} color="#1B281B" />
+                      <Minus size={18} color={colors.textPrimary} />
                     </TouchableOpacity>
 
                     <TextInput
-                      style={styles.stepperInput}
+                      style={[styles.stepperInput, { color: colors.textPrimary, borderBottomColor: colors.primary }]}
                       keyboardType="decimal-pad"
                       value={editQuantity}
                       placeholder="0"
-                      placeholderTextColor="#C8C4B7"
+                      placeholderTextColor={colors.textSecondary}
                       onChangeText={handleQuantityTextChange}
                       selectTextOnFocus
                       editable={!savingEdit}
@@ -800,12 +809,12 @@ export default function MealDetailScreen() {
                     />
 
                     <TouchableOpacity
-                      style={styles.stepperBtn}
+                      style={[styles.stepperBtn, { backgroundColor: colors.inputBg }]}
                       activeOpacity={0.7}
                       disabled={savingEdit}
                       onPress={() => handleStepQuantity(1)}
                     >
-                      <Plus size={18} color="#1B281B" />
+                      <Plus size={18} color={colors.textPrimary} />
                     </TouchableOpacity>
                   </View>
 
@@ -821,7 +830,7 @@ export default function MealDetailScreen() {
                           key={factor}
                           style={[
                             styles.portionChip,
-                            isCurrentActive && styles.portionChipActive,
+                            { backgroundColor: isCurrentActive ? colors.primary : colors.inputBg },
                           ]}
                           activeOpacity={0.7}
                           disabled={savingEdit}
@@ -830,7 +839,7 @@ export default function MealDetailScreen() {
                           <Text
                             style={[
                               styles.portionChipText,
-                              isCurrentActive && styles.portionChipTextActive,
+                              { color: isCurrentActive ? '#FFFFFF' : colors.textSecondary },
                             ]}
                           >
                             {factor}x
@@ -842,42 +851,42 @@ export default function MealDetailScreen() {
                 </View>
 
                 {/* Nutrition summary for this quantity */}
-                <View style={styles.portionMacroCard}>
-                  <Text style={styles.portionMacroTitle}>Nutritional Content</Text>
+                <View style={[styles.portionMacroCard, { backgroundColor: colors.inputBg }]}>
+                  <Text style={[styles.portionMacroTitle, { color: colors.textSecondary }]}>Nutritional Content</Text>
                   <View style={styles.portionMacroGrid}>
                     <View style={styles.portionMacroCol}>
-                      <Text style={styles.portionMacroCalVal}>
+                      <Text style={[styles.portionMacroCalVal, { color: colors.textPrimary }]}>
                         {editPreview.calories}
                       </Text>
-                      <Text style={styles.portionMacroCalLabel}>{energyUnit}</Text>
+                      <Text style={[styles.portionMacroCalLabel, { color: colors.textSecondary }]}>{energyUnit}</Text>
                     </View>
-                    <View style={styles.portionMacroDivider} />
+                    <View style={[styles.portionMacroDivider, { backgroundColor: colors.border }]} />
                     <View style={styles.portionMacroCol}>
                       <Text style={[styles.portionMacroVal, { color: theme.macros.protein }]}>
                         {editPreview.protein}g
                       </Text>
-                      <Text style={styles.portionMacroLabel}>Protein</Text>
+                      <Text style={[styles.portionMacroLabel, { color: colors.textSecondary }]}>Protein</Text>
                     </View>
-                    <View style={styles.portionMacroDivider} />
+                    <View style={[styles.portionMacroDivider, { backgroundColor: colors.border }]} />
                     <View style={styles.portionMacroCol}>
                       <Text style={[styles.portionMacroVal, { color: theme.macros.carbs }]}>
                         {editPreview.carbs}g
                       </Text>
-                      <Text style={styles.portionMacroLabel}>Carbs</Text>
+                      <Text style={[styles.portionMacroLabel, { color: colors.textSecondary }]}>Carbs</Text>
                     </View>
-                    <View style={styles.portionMacroDivider} />
+                    <View style={[styles.portionMacroDivider, { backgroundColor: colors.border }]} />
                     <View style={styles.portionMacroCol}>
                       <Text style={[styles.portionMacroVal, { color: theme.macros.fat }]}>
                         {editPreview.fat}g
                       </Text>
-                      <Text style={styles.portionMacroLabel}>Fat</Text>
+                      <Text style={[styles.portionMacroLabel, { color: colors.textSecondary }]}>Fat</Text>
                     </View>
                   </View>
                 </View>
 
                 {/* Submit button */}
                 <TouchableOpacity
-                  style={styles.portionSubmitBtn}
+                  style={[styles.portionSubmitBtn, { backgroundColor: colors.primary }]}
                   activeOpacity={0.8}
                   disabled={savingEdit}
                   onPress={handleSaveEdit}
@@ -906,24 +915,24 @@ export default function MealDetailScreen() {
         }}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.deleteModalCard}>
-            <View style={styles.deleteIconCircle}>
+          <View style={[styles.deleteModalCard, { backgroundColor: colors.surface }]}>
+            <View style={[styles.deleteIconCircle, { backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : '#FEF2F2' }]}>
               <Trash2 size={24} color="#D32F2F" />
             </View>
 
-            <Text style={styles.deleteModalTitle}>Remove Meal Entry?</Text>
-            <Text style={styles.deleteModalSubtitle}>
+            <Text style={[styles.deleteModalTitle, { color: colors.textPrimary }]}>Remove Meal Entry?</Text>
+            <Text style={[styles.deleteModalSubtitle, { color: colors.textSecondary }]}>
               Are you sure you want to delete &ldquo;{meal.name || `${meal.mealType} Meal`}&rdquo; from your nutrition diary?
             </Text>
 
             <View style={styles.modalActionsRow}>
               <TouchableOpacity
-                style={styles.modalSecondaryBtn}
+                style={[styles.modalSecondaryBtn, { backgroundColor: colors.inputBg }]}
                 onPress={() => setIsDeleteModalVisible(false)}
                 disabled={deleting}
                 activeOpacity={0.8}
               >
-                <Text style={styles.modalSecondaryBtnText}>Cancel</Text>
+                <Text style={[styles.modalSecondaryBtnText, { color: colors.textPrimary }]}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

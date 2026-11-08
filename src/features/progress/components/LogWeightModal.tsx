@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { X, Minus, Plus, Calendar, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import theme from '../../../constants/theme';
+import { useAppTheme } from '../../../hooks/useAppTheme';
 
 interface LogWeightModalProps {
   visible: boolean;
@@ -29,6 +30,7 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const { colors, isDark } = useAppTheme();
   const getTodayStr = () => {
     return new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Asia/Ho_Chi_Minh',
@@ -122,62 +124,62 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
           <TouchableWithoutFeedback>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              style={styles.modalContent}
+              style={[styles.modalContent, { backgroundColor: colors.surface }]}
             >
-              <View style={styles.header}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
                 <View>
-                  <Text style={styles.title}>Log Weight</Text>
-                  <Text style={styles.subtitle}>Track your body progress</Text>
+                  <Text style={[styles.title, { color: colors.textPrimary }]}>Log Weight</Text>
+                  <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Track your body progress</Text>
                 </View>
                 <TouchableOpacity
                   onPress={onClose}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <X size={20} color="#8E9388" />
+                  <X size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
               {/* Date Selector Row with Calendar & Quick Shifts */}
-              <View style={styles.dateSelectorContainer}>
+              <View style={[styles.dateSelectorContainer, { backgroundColor: isDark ? colors.surfaceMuted : '#F8F7F2' }]}>
                 <View style={styles.dateNavRow}>
                   <TouchableOpacity
-                    style={styles.dateNavBtn}
+                    style={[styles.dateNavBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                     onPress={() => shiftDate(-1)}
                     activeOpacity={0.7}
                   >
-                    <ChevronLeft size={18} color="#131313" />
+                    <ChevronLeft size={18} color={colors.textPrimary} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.dateDisplayBtn}
+                    style={[styles.dateDisplayBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                     onPress={() => setIsEditingCustomDate(!isEditingCustomDate)}
                     activeOpacity={0.8}
                   >
-                    <Calendar size={16} color={theme.colors.saffron} />
-                    <Text style={styles.dateDisplayText}>
+                    <Calendar size={16} color={colors.accent} />
+                    <Text style={[styles.dateDisplayText, { color: colors.textPrimary }]}>
                       {formatDateLabel(selectedDate)} ({selectedDate})
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.dateNavBtn}
+                    style={[styles.dateNavBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                     onPress={() => shiftDate(1)}
                     activeOpacity={0.7}
                   >
-                    <ChevronRight size={18} color="#131313" />
+                    <ChevronRight size={18} color={colors.textPrimary} />
                   </TouchableOpacity>
                 </View>
 
                 {/* Optional Custom Date Direct Input */}
                 {isEditingCustomDate && (
                   <View style={styles.customDateInputWrap}>
-                    <Text style={styles.customDateLabel}>Select Date (YYYY-MM-DD):</Text>
+                    <Text style={[styles.customDateLabel, { color: colors.textSecondary }]}>Select Date (YYYY-MM-DD):</Text>
                     <TextInput
-                      style={styles.customDateInput}
+                      style={[styles.customDateInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface }]}
                       value={selectedDate}
                       onChangeText={setSelectedDate}
                       placeholder="2026-10-28"
-                      placeholderTextColor="#A6ABA1"
+                      placeholderTextColor={colors.textSecondary}
                       autoFocus
                     />
                   </View>
@@ -188,7 +190,11 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
                   <TouchableOpacity
                     style={[
                       styles.quickChip,
-                      selectedDate === getTodayStr() && styles.quickChipActive,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      selectedDate === getTodayStr() && [
+                        styles.quickChipActive,
+                        { backgroundColor: isDark ? colors.primary : '#131313', borderColor: isDark ? colors.primary : '#131313' },
+                      ],
                     ]}
                     onPress={() => {
                       setSelectedDate(getTodayStr());
@@ -198,6 +204,7 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
                     <Text
                       style={[
                         styles.quickChipText,
+                        { color: colors.textSecondary },
                         selectedDate === getTodayStr() && styles.quickChipTextActive,
                       ]}
                     >
@@ -208,7 +215,11 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
                   <TouchableOpacity
                     style={[
                       styles.quickChip,
-                      selectedDate === getYesterdayStr() && styles.quickChipActive,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      selectedDate === getYesterdayStr() && [
+                        styles.quickChipActive,
+                        { backgroundColor: isDark ? colors.primary : '#131313', borderColor: isDark ? colors.primary : '#131313' },
+                      ],
                     ]}
                     onPress={() => {
                       setSelectedDate(getYesterdayStr());
@@ -218,6 +229,7 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
                     <Text
                       style={[
                         styles.quickChipText,
+                        { color: colors.textSecondary },
                         selectedDate === getYesterdayStr() && styles.quickChipTextActive,
                       ]}
                     >
@@ -228,41 +240,41 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
               </View>
 
               {/* Stepper & Input */}
-              <View style={styles.stepperRow}>
+              <View style={[styles.stepperRow, { backgroundColor: isDark ? colors.surfaceMuted : '#F8F7F2' }]}>
                 <TouchableOpacity
-                  style={styles.stepBtn}
+                  style={[styles.stepBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                   onPress={() => adjustWeight(-0.5)}
                   activeOpacity={0.7}
                 >
-                  <Minus size={20} color="#131313" />
+                  <Minus size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
 
                 <View style={styles.inputWrap}>
                   <TextInput
-                    style={styles.weightInput}
+                    style={[styles.weightInput, { color: colors.textPrimary }]}
                     keyboardType="decimal-pad"
                     value={weight}
                     onChangeText={setWeight}
                     selectTextOnFocus
                   />
-                  <Text style={styles.unitText}>kg</Text>
+                  <Text style={[styles.unitText, { color: colors.textSecondary }]}>kg</Text>
                 </View>
 
                 <TouchableOpacity
-                  style={styles.stepBtn}
+                  style={[styles.stepBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                   onPress={() => adjustWeight(0.5)}
                   activeOpacity={0.7}
                 >
-                  <Plus size={20} color="#131313" />
+                  <Plus size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
               </View>
 
               {/* Note input */}
-              <View style={styles.noteWrap}>
+              <View style={[styles.noteWrap, { backgroundColor: isDark ? colors.surfaceMuted : '#F8F7F2', borderColor: colors.border }]}>
                 <TextInput
-                  style={styles.noteInput}
+                  style={[styles.noteInput, { color: colors.textPrimary }]}
                   placeholder="Add a note (e.g. morning fasting, gym weigh-in)..."
-                  placeholderTextColor="#A6ABA1"
+                  placeholderTextColor={colors.textSecondary}
                   value={note}
                   onChangeText={setNote}
                   maxLength={100}
@@ -271,7 +283,7 @@ export const LogWeightModal: React.FC<LogWeightModalProps> = ({
 
               {/* Submit CTA */}
               <TouchableOpacity
-                style={[styles.saveBtn, isSubmitting && styles.saveBtnDisabled]}
+                style={[styles.saveBtn, { backgroundColor: colors.accent }, isSubmitting && styles.saveBtnDisabled]}
                 onPress={handleSave}
                 disabled={isSubmitting}
                 activeOpacity={0.8}

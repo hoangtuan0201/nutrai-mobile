@@ -26,6 +26,7 @@ import {
   X,
 } from 'lucide-react-native';
 import theme from '../../../src/constants/theme';
+import { useAppTheme } from '../../../src/hooks/useAppTheme';
 import { progressApi } from '../../../src/features/progress/api/progress.api';
 import { PROFILE_QUERY_KEY } from '../../../src/features/profile/hooks/useProfile';
 import {
@@ -40,6 +41,7 @@ import {
 export default function CalorieIntakeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors, isDark } = useAppTheme();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -232,11 +234,7 @@ export default function CalorieIntakeScreen() {
   };
 
   const handleBack = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(main)/progress');
-    }
+    router.replace('/(main)/progress');
   }, [router]);
 
   // Handle Android hardware back
@@ -253,27 +251,27 @@ export default function CalorieIntakeScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F4F2E7" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backBtn}
+          style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
           activeOpacity={0.7}
           onPress={handleBack}
         >
-          <ChevronLeft size={22} color="#131313" strokeWidth={2.5} />
+          <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2.5} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Calorie Intake</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Calorie Intake</Text>
 
         <View style={{ width: 38 }} />
       </View>
 
       {isLoading && !isRefreshing ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={theme.colors.saffron} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <ScrollView
@@ -284,32 +282,33 @@ export default function CalorieIntakeScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={onRefresh}
-              tintColor={theme.colors.saffron}
-              colors={[theme.colors.saffron]}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
             />
           }
         >
           {/* Card 1: Today Card with Expandable Calendar Inspector */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.todayTopRow}>
-              <Text style={styles.todayTitle}>
+              <Text style={[styles.todayTitle, { color: colors.textPrimary }]}>
                 {formatHeaderDate(selectedDate)}
               </Text>
 
               <View style={styles.todayActionsRight}>
                 {selectedDate !== todayStr && (
                   <TouchableOpacity
-                    style={styles.resetTodayBtn}
+                    style={[styles.resetTodayBtn, { backgroundColor: colors.inputBg }]}
                     activeOpacity={0.7}
                     onPress={() => setSelectedDate(todayStr)}
                   >
-                    <Text style={styles.resetTodayText}>Today</Text>
+                    <Text style={[styles.resetTodayText, { color: colors.textPrimary }]}>Today</Text>
                   </TouchableOpacity>
                 )}
 
                 <TouchableOpacity
                   style={[
                     styles.calendarBtn,
+                    { backgroundColor: colors.inputBg },
                     isCalendarExpanded && styles.calendarBtnActive,
                   ]}
                   activeOpacity={0.7}
@@ -317,7 +316,7 @@ export default function CalorieIntakeScreen() {
                 >
                   <CalendarIcon
                     size={18}
-                    color={isCalendarExpanded ? '#FFFFFF' : '#131313'}
+                    color={isCalendarExpanded ? '#FFFFFF' : colors.textPrimary}
                   />
                 </TouchableOpacity>
               </View>
@@ -325,23 +324,23 @@ export default function CalorieIntakeScreen() {
 
             {/* Expandable Calendar Month Grid */}
             {isCalendarExpanded && (
-              <View style={styles.calendarSection}>
+              <View style={[styles.calendarSection, { backgroundColor: isDark ? colors.surfaceMuted : '#FAF9F5', borderColor: colors.border }]}>
                 {/* Month Navigator Header */}
                 <View style={styles.monthNavRow}>
                   <TouchableOpacity
                     onPress={handlePrevMonth}
-                    style={styles.monthNavArrow}
+                    style={[styles.monthNavArrow, { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: colors.border }]}
                   >
-                    <ChevronLeft size={18} color="#131313" />
+                    <ChevronLeft size={18} color={colors.textPrimary} />
                   </TouchableOpacity>
 
-                  <Text style={styles.monthNavTitle}>{calendarMonthLabel}</Text>
+                  <Text style={[styles.monthNavTitle, { color: colors.textPrimary }]}>{calendarMonthLabel}</Text>
 
                   <TouchableOpacity
                     onPress={handleNextMonth}
-                    style={styles.monthNavArrow}
+                    style={[styles.monthNavArrow, { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: colors.border }]}
                   >
-                    <ChevronRight size={18} color="#131313" />
+                    <ChevronRight size={18} color={colors.textPrimary} />
                   </TouchableOpacity>
                 </View>
 
@@ -349,7 +348,7 @@ export default function CalorieIntakeScreen() {
                 <View style={styles.weekDaysRow}>
                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
                     (d, idx) => (
-                      <Text key={idx} style={styles.weekDayLabel}>
+                      <Text key={idx} style={[styles.weekDayLabel, { color: colors.textSecondary }]}>
                         {d}
                       </Text>
                     ),
@@ -371,6 +370,7 @@ export default function CalorieIntakeScreen() {
                         key={item.dateStr}
                         style={[
                           styles.dayCell,
+                          { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: colors.border },
                           isSelected && styles.dayCellSelected,
                         ]}
                         activeOpacity={0.7}
@@ -379,6 +379,7 @@ export default function CalorieIntakeScreen() {
                         <Text
                           style={[
                             styles.dayNumText,
+                            { color: isSelected ? '#131313' : colors.textPrimary },
                             isSelected && styles.dayNumTextSelected,
                           ]}
                         >
@@ -390,12 +391,14 @@ export default function CalorieIntakeScreen() {
                           <View
                             style={[
                               styles.miniCalBadge,
+                              { backgroundColor: isDark ? colors.surfaceMuted : '#E2E8F0' },
                               isSelected && styles.miniCalBadgeSelected,
                             ]}
                           >
                             <Text
                               style={[
                                 styles.miniCalText,
+                                { color: isSelected ? '#FFFFFF' : (isDark ? colors.textPrimary : '#475569') },
                                 isSelected && styles.miniCalTextSelected,
                               ]}
                               numberOfLines={1}
@@ -414,10 +417,10 @@ export default function CalorieIntakeScreen() {
             {/* Today/Selected Day Calories & Goal Progress Row */}
             <View style={styles.calorieStatRow}>
               <View style={styles.calsLeftCol}>
-                <Text style={styles.calorieBigValue}>
+                <Text style={[styles.calorieBigValue, { color: colors.textPrimary }]}>
                   {selectedDayCalories.toLocaleString()}
                 </Text>
-                <Text style={styles.calorieBigUnit}>kcal</Text>
+                <Text style={[styles.calorieBigUnit, { color: colors.textSecondary }]}>kcal</Text>
               </View>
 
               {/* Goal Button with Pencil */}
@@ -434,7 +437,7 @@ export default function CalorieIntakeScreen() {
             </View>
 
             {/* Blue Progress Bar Track */}
-            <View style={styles.progressBarTrack}>
+            <View style={[styles.progressBarTrack, { backgroundColor: colors.inputBg }]}>
               <View
                 style={[
                   styles.progressBarFill,
@@ -443,10 +446,10 @@ export default function CalorieIntakeScreen() {
               />
             </View>
             <View style={styles.progressPercentRow}>
-              <Text style={styles.progressPercentLabel}>
+              <Text style={[styles.progressPercentLabel, { color: colors.textSecondary }]}>
                 {progressPercent}% of daily goal
               </Text>
-              <Text style={styles.progressRemainingLabel}>
+              <Text style={[styles.progressRemainingLabel, { color: colors.textSecondary }]}>
                 {selectedDayCalories >= targetCalories
                   ? 'Goal Achieved!'
                   : `${(targetCalories - selectedDayCalories).toLocaleString()} kcal left`}
@@ -484,41 +487,41 @@ export default function CalorieIntakeScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.modalBackdrop}
         >
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
             {/* Modal Header */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Calories</Text>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Calories</Text>
               <TouchableOpacity
-                style={styles.modalCloseBtn}
+                style={[styles.modalCloseBtn, { backgroundColor: colors.inputBg }]}
                 activeOpacity={0.7}
                 onPress={() => setIsEditModalVisible(false)}
               >
-                <X size={18} color="#131313" />
+                <X size={18} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
             {/* Input Row: Your Daily Intake [ 5000 ] kcal */}
-            <View style={styles.inputContainerRow}>
-              <Text style={styles.inputLabel}>Your Daily Intake</Text>
+            <View style={[styles.inputContainerRow, { backgroundColor: isDark ? colors.surfaceMuted : '#FAF9F5', borderColor: colors.border }]}>
+              <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Your Daily Intake</Text>
               <View style={styles.inputWithUnit}>
                 <TextInput
-                  style={styles.calorieInput}
+                  style={[styles.calorieInput, { color: colors.textPrimary }]}
                   value={goalInput}
                   onChangeText={setGoalInput}
                   keyboardType="numeric"
                   placeholder="2000"
-                  placeholderTextColor="#A6ABA1"
+                  placeholderTextColor={colors.textSecondary}
                   maxLength={5}
                   selectTextOnFocus
                   autoFocus
                 />
-                <Text style={styles.inputUnitSuffix}>kcal</Text>
+                <Text style={[styles.inputUnitSuffix, { color: colors.textSecondary }]}>kcal</Text>
               </View>
             </View>
 
             {/* Done Button */}
             <TouchableOpacity
-              style={styles.modalDoneBtn}
+              style={[styles.modalDoneBtn, { backgroundColor: colors.accent }]}
               activeOpacity={0.85}
               onPress={handleSaveGoal}
               disabled={isSavingGoal}

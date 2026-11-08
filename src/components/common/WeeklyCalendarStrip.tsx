@@ -12,6 +12,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { RotateCcw } from 'lucide-react-native';
+import { useAppTheme } from '../../hooks/useAppTheme';
 
 export interface WeeklyCalendarStripProps {
   selectedDate: string;
@@ -24,6 +25,7 @@ export const WeeklyCalendarStrip: React.FC<WeeklyCalendarStripProps> = React.mem
   onSelectDate,
   containerStyle,
 }) => {
+  const { colors, isDark } = useAppTheme();
   const { width: windowWidth } = useWindowDimensions();
   const containerWidth = Math.max(280, windowWidth - 40);
   const weekScrollRef = useRef<ScrollView>(null);
@@ -166,17 +168,17 @@ export const WeeklyCalendarStrip: React.FC<WeeklyCalendarStripProps> = React.mem
     <View style={[styles.container, containerStyle]}>
       {/* Header with Month Title & Today button */}
       <View style={styles.headerRow}>
-        <Text style={styles.monthLabel}>
+        <Text style={[styles.monthLabel, { color: colors.textSecondary }]}>
           {weeks[visibleWeekIndex]?.monthLabel || ''}
         </Text>
         {(visibleWeekIndex !== currentWeekIndex || selectedDate !== todayStr) && (
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={handleJumpToToday}
-            style={styles.todayPillBtn}
+            style={[styles.todayPillBtn, { backgroundColor: colors.surfaceMuted }]}
           >
-            <RotateCcw size={11} color="#285880" strokeWidth={2.5} />
-            <Text style={styles.todayPillText}>Today</Text>
+            <RotateCcw size={11} color={colors.accent} strokeWidth={2.5} />
+            <Text style={[styles.todayPillText, { color: colors.accent }]}>Today</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -212,12 +214,20 @@ export const WeeklyCalendarStrip: React.FC<WeeklyCalendarStripProps> = React.mem
                   onPress={() => onSelectDate(d.fullDate)}
                   style={[
                     styles.dayCell,
-                    isSelected && styles.dayCellActive,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                    isSelected && [
+                      styles.dayCellActive,
+                      {
+                        backgroundColor: isDark ? colors.accent : '#131313',
+                        borderColor: isDark ? colors.accent : '#131313',
+                      },
+                    ],
                   ]}
                 >
                   <Text
                     style={[
                       styles.dayName,
+                      { color: isDark ? colors.textMuted : '#285880' },
                       isSelected && styles.dayNameActive,
                     ]}
                   >
@@ -226,6 +236,7 @@ export const WeeklyCalendarStrip: React.FC<WeeklyCalendarStripProps> = React.mem
                   <Text
                     style={[
                       styles.dayNumber,
+                      { color: colors.textPrimary },
                       isSelected && styles.dayNumberActive,
                     ]}
                   >
@@ -259,14 +270,12 @@ const styles = StyleSheet.create({
   monthLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#656A60',
     letterSpacing: -0.2,
   },
   todayPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#E8F0F8',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -274,7 +283,6 @@ const styles = StyleSheet.create({
   todayPillText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#285880',
   },
   weekRow: {
     flexDirection: 'row',
@@ -285,9 +293,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 60,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#EFECE2',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -297,15 +303,12 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   dayCellActive: {
-    backgroundColor: '#131313',
-    borderColor: '#131313',
     shadowOpacity: 0.12,
     elevation: 3,
   },
   dayName: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#285880',
     marginBottom: 2,
     letterSpacing: 0.2,
   },
@@ -315,7 +318,6 @@ const styles = StyleSheet.create({
   dayNumber: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#1B281B',
   },
   dayNumberActive: {
     color: '#FFFFFF',
@@ -329,4 +331,3 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF9114',
   },
 });
-

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
 import { CalorieRemainingCard, WeeklyCalendarStrip } from '../../../src/components';
+import { useAppTheme } from '../../../src/hooks/useAppTheme';
 import { mealsApi } from '../../../src/features/meals/api/meals.api';
 import { Meal, MealType, DailyMealsResponse } from '../../../src/features/meals/types';
 import { useUnitStore, formatFoodWeight } from '../../../src/store/unitStore';
@@ -210,6 +211,7 @@ const MEAL_SECTIONS: Array<{
 export default function MealsListScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ date?: string }>();
+  const { colors, isDark } = useAppTheme();
   const { profile } = useProfile();
   const onboarding = useOnboardingStore();
   const { energyUnit, foodUnit } = useUnitStore();
@@ -405,12 +407,12 @@ export default function MealsListScreen() {
   const totalLoggedItems = data?.meals?.length || 0;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* ── Top Editorial Header ──────────────────────────────────── */}
       <View style={styles.header}>
         <View>
           <View style={styles.headerBadgeRow}>
-            <Text style={styles.headerSubtitle}>DAILY LOG</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>DAILY LOG</Text>
             {totalLoggedItems > 0 && (
               <View style={styles.loggedCountPill}>
                 <Text style={styles.loggedCountText}>
@@ -419,12 +421,12 @@ export default function MealsListScreen() {
               </View>
             )}
           </View>
-          <Text style={styles.headerTitle}>Nutrition Diary</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Nutrition Diary</Text>
         </View>
 
         <View style={styles.headerActions}>
           <TouchableOpacity
-            style={styles.actionBtn}
+            style={[styles.actionBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() =>
               router.push({
                 pathname: '/(main)/meals/add',
@@ -433,7 +435,7 @@ export default function MealsListScreen() {
             }
             activeOpacity={0.8}
           >
-            <Search size={19} color={theme.colors.textPrimary} />
+            <Search size={19} color={colors.textPrimary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, styles.actionBtnAccent]}
@@ -457,7 +459,7 @@ export default function MealsListScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={theme.colors.saffron}
+            tintColor={colors.primary}
           />
         }
       >
@@ -486,7 +488,7 @@ export default function MealsListScreen() {
         {loading && !refreshing && !data ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color={theme.colors.saffron} />
-            <Text style={styles.loadingText}>Loading your nutrition diary...</Text>
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading your nutrition diary...</Text>
           </View>
         ) : (
           MEAL_SECTIONS.map((section) => {
@@ -497,7 +499,7 @@ export default function MealsListScreen() {
             const recommendedCals = Math.round(targetCalories * section.recommendedRatio);
 
             return (
-              <View key={section.type} style={styles.sectionCard}>
+              <View key={section.type} style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 {/* Sleek Section Row: [Saffron Icon] Label ...... 114/1250 kcal (+) */}
                 <TouchableOpacity
                   style={styles.sectionHeader}
@@ -515,11 +517,11 @@ export default function MealsListScreen() {
                 >
                   <View style={styles.sectionHeaderLeft}>
                     <MealSectionIcon type={section.type} color={theme.colors.saffron} />
-                    <Text style={styles.sectionTitle}>{section.label}</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{section.label}</Text>
                   </View>
 
                   <View style={styles.sectionHeaderRight}>
-                    <Text style={styles.sectionCalFraction}>
+                    <Text style={[styles.sectionCalFraction, { color: colors.textSecondary }]}>
                       <AnimatedCalorieNumber
                         value={sectionCalories}
                         dateKey={selectedDate}
@@ -549,7 +551,7 @@ export default function MealsListScreen() {
 
                 {/* Only render logged food items when meals exist (no empty box) */}
                 {meals.length > 0 && (
-                  <View style={styles.loggedMealsList}>
+                  <View style={[styles.loggedMealsList, { borderTopColor: colors.border }]}>
                     {meals.map((meal, index) => {
                       const displayTitle =
                         meal.name ||
@@ -570,7 +572,7 @@ export default function MealsListScreen() {
                           key={meal.id}
                           style={[
                             styles.mealItemContainer,
-                            index > 0 && styles.mealItemBorderTop,
+                            index > 0 && [styles.mealItemBorderTop, { borderTopColor: colors.border }],
                           ]}
                           activeOpacity={0.7}
                           onPress={() =>
@@ -587,16 +589,16 @@ export default function MealsListScreen() {
                                 style={styles.mealThumb}
                               />
                             ) : (
-                              <View style={styles.mealThumbFallback}>
+                              <View style={[styles.mealThumbFallback, { backgroundColor: isDark ? 'rgba(255,145,20,0.15)' : '#FFF3E0' }]}>
                                 <Utensils size={18} color={theme.colors.saffron} />
                               </View>
                             )}
 
                             <View style={styles.mealCenterCol}>
-                              <Text style={styles.mealName} numberOfLines={1}>
+                              <Text style={[styles.mealName, { color: colors.textPrimary }]} numberOfLines={1}>
                                 {displayTitle}
                               </Text>
-                              <Text style={styles.mealSubtitleText} numberOfLines={1}>
+                              <Text style={[styles.mealSubtitleText, { color: colors.textSecondary }]} numberOfLines={1}>
                                 {Math.round(meal.totalCalories)} {energyUnit}, {firstItemPortion}
                               </Text>
                             </View>
@@ -610,7 +612,7 @@ export default function MealsListScreen() {
                               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                               activeOpacity={0.7}
                             >
-                              <MoreHorizontal size={18} color={theme.colors.textSecondary} />
+                              <MoreHorizontal size={18} color={colors.textSecondary} />
                             </TouchableOpacity>
                           </View>
                         </TouchableOpacity>
@@ -634,23 +636,23 @@ export default function MealsListScreen() {
         onRequestClose={() => setMealToDelete(null)}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
             <View style={styles.modalIconWrap}>
               <Trash2 size={24} color="#D32F2F" />
             </View>
-            <Text style={styles.modalTitle}>Remove Meal Entry?</Text>
-            <Text style={styles.modalSubtitle}>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Remove Meal Entry?</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
               Are you sure you want to remove &ldquo;{mealToDelete?.name}&rdquo; from your
               nutrition diary?
             </Text>
             <View style={styles.modalButtonRow}>
               <TouchableOpacity
-                style={styles.modalCancelBtn}
+                style={[styles.modalCancelBtn, { backgroundColor: colors.inputBg }]}
                 onPress={() => setMealToDelete(null)}
                 disabled={deleting}
                 activeOpacity={0.8}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: colors.textPrimary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalDeleteBtn}

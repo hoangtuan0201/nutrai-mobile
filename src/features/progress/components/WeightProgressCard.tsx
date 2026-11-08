@@ -11,6 +11,7 @@ import Svg, {
 } from 'react-native-svg';
 import { ChevronRight } from 'lucide-react-native';
 import theme from '../../../constants/theme';
+import { useAppTheme } from '../../../hooks/useAppTheme';
 import { WeightProgress, WeightDataPoint } from '../types';
 import { useUnitStore, formatWeight } from '../../../store/unitStore';
 
@@ -20,11 +21,20 @@ interface WeightProgressCardProps {
   onPressCard?: () => void;
 }
 
+/** Pick a balanced subset of indices to show on X-axis (prevents text collision) */
+function shouldShowDateLabel(idx: number, total: number): boolean {
+  if (total <= 5) return true;
+  if (idx === 0 || idx === total - 1) return true;
+  const step = Math.ceil((total - 1) / 4);
+  return idx % step === 0 && (total - 1 - idx) >= Math.floor(step * 0.75);
+}
+
 export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
   weight,
   onGoalPress,
   onPressCard,
 }) => {
+  const { colors, isDark } = useAppTheme();
   const { bodyUnit } = useUnitStore();
   const screenWidth = Dimensions.get('window').width;
   const chartWidth = Math.max(260, screenWidth - 76);
@@ -109,7 +119,7 @@ export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
     : 60;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {/* Top Header Row matching Appediet reference */}
       <View style={styles.topHeader}>
         <TouchableOpacity
@@ -118,8 +128,8 @@ export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
           onPress={onPressCard || onGoalPress}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Text style={styles.title}>Weight</Text>
-            {onPressCard && <ChevronRight size={16} color="#8E9388" />}
+            <Text style={[styles.title, { color: colors.textPrimary }]}>Weight</Text>
+            {onPressCard && <ChevronRight size={16} color={colors.textSecondary} />}
           </View>
         </TouchableOpacity>
 
@@ -128,10 +138,10 @@ export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
           activeOpacity={0.7}
           onPress={onGoalPress || onPressCard}
         >
-          <Text style={styles.goalText}>
+          <Text style={[styles.goalText, { color: colors.textSecondary }]}>
             Goal:{targetKg > 0 ? formatWeight(targetKg, bodyUnit).full : 'Set Goal'}
           </Text>
-          <ChevronRight size={14} color="#8E9388" strokeWidth={2.5} />
+          <ChevronRight size={14} color={colors.textSecondary} strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
 
@@ -141,10 +151,10 @@ export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
         activeOpacity={onPressCard ? 0.7 : 1}
         onPress={onPressCard}
       >
-        <Text style={styles.currentWeight}>
+        <Text style={[styles.currentWeight, { color: colors.textPrimary }]}>
           {currentKg > 0 ? formatWeight(currentKg, bodyUnit).value : '--'}
         </Text>
-        <Text style={styles.unit}>{formatWeight(currentKg, bodyUnit).unit}</Text>
+        <Text style={[styles.unit, { color: colors.textSecondary }]}>{formatWeight(currentKg, bodyUnit).unit}</Text>
       </TouchableOpacity>
 
       {/* SVG Chart */}
@@ -158,14 +168,14 @@ export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
                 y1={tick.y}
                 x2={chartWidth - paddingRight}
                 y2={tick.y}
-                stroke="#F1EFE8"
+                stroke={colors.border}
                 strokeWidth={1}
               />
               <SvgText
                 x={paddingLeft - 8}
                 y={tick.y + 4}
                 fontSize={10}
-                fill="#A6ABA1"
+                fill={colors.textSecondary}
                 textAnchor="end"
                 fontFamily={theme.fonts.medium}
               >
@@ -229,24 +239,26 @@ export const WeightProgressCard: React.FC<WeightProgressCardProps> = ({
                   cx={p.x}
                   cy={p.y}
                   r={isSelected ? 6 : 5}
-                  fill={isSelected ? theme.colors.blue : '#FFFFFF'}
+                  fill={isSelected ? theme.colors.blue : colors.surface}
                   stroke={isSelected ? '#FFFFFF' : theme.colors.blue}
                   strokeWidth={2.5}
                   onPress={() => setSelectedId(p.pointKey)}
                 />
 
-                {/* Date label at bottom (e.g. 10/14) */}
-                <SvgText
-                  x={p.x}
-                  y={chartHeight - 6}
-                  fontSize={10}
-                  fill={isSelected ? '#131313' : '#8E9388'}
-                  textAnchor="middle"
-                  fontFamily={isSelected ? theme.fonts.bold : theme.fonts.regular}
-                  onPress={() => setSelectedId(p.pointKey)}
-                >
-                  {p.date.slice(5).replace('-', '/')}
-                </SvgText>
+                {/* Date label at bottom (e.g. 10/14) — sampled to prevent overlapping */}
+                {shouldShowDateLabel(idx, points.length) && (
+                  <SvgText
+                    x={p.x}
+                    y={chartHeight - 6}
+                    fontSize={10}
+                    fill={isSelected ? colors.textPrimary : colors.textSecondary}
+                    textAnchor="middle"
+                    fontFamily={isSelected ? theme.fonts.bold : theme.fonts.regular}
+                    onPress={() => setSelectedId(p.pointKey)}
+                  >
+                    {p.date.slice(5).replace('-', '/')}
+                  </SvgText>
+                )}
               </G>
             );
           })}

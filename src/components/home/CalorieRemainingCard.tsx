@@ -11,6 +11,7 @@ import { Flame } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '../../constants/theme';
 import { useUnitStore } from '../../store/unitStore';
+import { useAppTheme } from '../../hooks/useAppTheme';
 
 export interface CalorieRemainingCardProps {
   consumedCalories: number;
@@ -42,6 +43,7 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
   }) => {
     const router = useRouter();
     const { energyUnit } = useUnitStore();
+    const { colors, isDark } = useAppTheme();
 
     const handleTargetPress =
       onTargetPress || (() => router.push('/(main)/progress/calorie'));
@@ -191,23 +193,28 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
     });
 
     return (
-      <View style={styles.summaryCard}>
+      <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.summaryTopRow}>
           <TouchableOpacity
             style={styles.summaryCalLeft}
             activeOpacity={0.75}
             onPress={handleTargetPress}
           >
-            <View style={styles.summaryFlameWrap}>
+            <View
+              style={[
+                styles.summaryFlameWrap,
+                { backgroundColor: isDark ? 'rgba(255, 145, 20, 0.15)' : '#FFF3E0' },
+              ]}
+            >
               <Flame size={20} color={theme.colors.saffron} />
             </View>
             <View>
-              <Text style={styles.summaryLabel}>Calories Consumed</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Calories Consumed</Text>
               <View style={styles.summaryValueBaseline}>
-                <Text style={styles.summaryCaloriesValue}>
+                <Text style={[styles.summaryCaloriesValue, { color: colors.textPrimary }]}>
                   {counters.cal.toLocaleString('en-US')}
                 </Text>
-                <Text style={styles.summaryTargetText}>
+                <Text style={[styles.summaryTargetText, { color: colors.textSecondary }]}>
                   / {targetCalories.toLocaleString('en-US')} {energyUnit}
                 </Text>
               </View>
@@ -217,6 +224,7 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
           <TouchableOpacity
             style={[
               styles.remainingBadge,
+              { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
               isOverCalories && styles.remainingBadgeOver,
             ]}
             activeOpacity={0.75}
@@ -225,6 +233,7 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
             <Text
               style={[
                 styles.remainingBadgeValue,
+                { color: colors.textPrimary },
                 isOverCalories && styles.remainingBadgeValueOver,
               ]}
             >
@@ -236,6 +245,7 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
             <Text
               style={[
                 styles.remainingBadgeSub,
+                { color: colors.textSecondary },
                 isOverCalories && styles.remainingBadgeValueOver,
               ]}
             >
@@ -245,7 +255,7 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
         </View>
 
         {/* Main Calorie Animated Progress Bar */}
-        <View style={styles.mainProgressTrack}>
+        <View style={[styles.mainProgressTrack, { backgroundColor: colors.surfaceMuted }]}>
           <Animated.View
             style={[
               styles.mainProgressFill,
@@ -259,12 +269,13 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
           />
         </View>
 
-        <View style={styles.summaryDivider} />
+        <View style={[styles.summaryDivider, { backgroundColor: colors.divider }]}>
+        </View>
 
         {/* 3 Macro Progress Columns with Animated Counters & Progress Bars */}
         <View style={styles.macroGrid}>
           {/* Protein */}
-          <View style={styles.macroColumn}>
+          <View style={[styles.macroColumn, { backgroundColor: colors.surfaceMuted }]}>
             <View style={styles.macroHeaderRow}>
               <View
                 style={[
@@ -272,9 +283,9 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
                   { backgroundColor: theme.macros.protein },
                 ]}
               />
-              <Text style={styles.macroName}>Protein</Text>
+              <Text style={[styles.macroName, { color: colors.textSecondary }]}>Protein</Text>
             </View>
-            <Text style={styles.macroValText}>
+            <Text style={[styles.macroValText, { color: colors.textSecondary }]}>
               <Text
                 style={[
                   styles.macroConsumedStrong,
@@ -285,7 +296,7 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
               </Text>
               /{targetProtein}g
             </Text>
-            <View style={styles.macroMiniTrack}>
+            <View style={[styles.macroMiniTrack, { backgroundColor: colors.border }]}>
               <Animated.View
                 style={[
                   styles.macroMiniFill,
@@ -299,7 +310,7 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
           </View>
 
           {/* Carbs */}
-          <View style={styles.macroColumn}>
+          <View style={[styles.macroColumn, { backgroundColor: colors.surfaceMuted }]}>
             <View style={styles.macroHeaderRow}>
               <View
                 style={[
@@ -307,9 +318,9 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
                   { backgroundColor: theme.macros.carbs },
                 ]}
               />
-              <Text style={styles.macroName}>Carbs</Text>
+              <Text style={[styles.macroName, { color: colors.textSecondary }]}>Carbs</Text>
             </View>
-            <Text style={styles.macroValText}>
+            <Text style={[styles.macroValText, { color: colors.textSecondary }]}>
               <Text
                 style={[
                   styles.macroConsumedStrong,
@@ -320,7 +331,7 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
               </Text>
               /{targetCarbs}g
             </Text>
-            <View style={styles.macroMiniTrack}>
+            <View style={[styles.macroMiniTrack, { backgroundColor: colors.border }]}>
               <Animated.View
                 style={[
                   styles.macroMiniFill,
@@ -334,14 +345,14 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
           </View>
 
           {/* Fat */}
-          <View style={styles.macroColumn}>
+          <View style={[styles.macroColumn, { backgroundColor: colors.surfaceMuted }]}>
             <View style={styles.macroHeaderRow}>
               <View
                 style={[styles.macroDot, { backgroundColor: theme.macros.fat }]}
               />
-              <Text style={styles.macroName}>Fat</Text>
+              <Text style={[styles.macroName, { color: colors.textSecondary }]}>Fat</Text>
             </View>
-            <Text style={styles.macroValText}>
+            <Text style={[styles.macroValText, { color: colors.textSecondary }]}>
               <Text
                 style={[
                   styles.macroConsumedStrong,
@@ -352,7 +363,7 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
               </Text>
               /{targetFat}g
             </Text>
-            <View style={styles.macroMiniTrack}>
+            <View style={[styles.macroMiniTrack, { backgroundColor: colors.border }]}>
               <Animated.View
                 style={[
                   styles.macroMiniFill,

@@ -13,6 +13,7 @@ import {
 import { theme } from '../src/constants';
 import { QueryProvider } from '../src/lib/queryClient';
 import { useAuthStore } from '../src/store/authStore';
+import { useAppTheme } from '../src/hooks/useAppTheme';
 
 /**
  * Auth guard — auto-redirect based on authentication state.
@@ -41,6 +42,7 @@ function useProtectedRoute() {
 export default function RootLayout() {
   const hydrate = useAuthStore((s) => s.hydrate);
   const isHydrated = useAuthStore((s) => s.isHydrated);
+  const { isDark } = useAppTheme();
 
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
@@ -63,7 +65,7 @@ export default function RootLayout() {
   return (
     <QueryProvider>
       <SafeAreaProvider>
-        <StatusBar style="dark" />
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         <RootNav />
       </SafeAreaProvider>
     </QueryProvider>
@@ -73,12 +75,13 @@ export default function RootLayout() {
 /** Separated so useProtectedRoute can access router (must be under Stack) */
 function RootNav() {
   useProtectedRoute();
+  const { colors } = useAppTheme();
 
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: theme.colors.surfaceBase },
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
       <Stack.Screen name="index" />

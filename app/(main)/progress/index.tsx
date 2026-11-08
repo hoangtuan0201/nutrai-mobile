@@ -15,6 +15,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Camera, RotateCcw, Plus } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
+import { useAppTheme } from '../../../src/hooks/useAppTheme';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useAccount } from '../../../src/features/settings/hooks/useAccount';
 import { progressApi } from '../../../src/features/progress/api/progress.api';
@@ -35,6 +36,7 @@ type TabType = 'All' | 'Weight' | 'Calorie Intake';
 export default function ProgressScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors, isDark } = useAppTheme();
   const { user } = useAuthStore();
   const { avatarUrl } = useAccount();
   const displayAvatar = avatarUrl || user?.avatarUrl;
@@ -105,14 +107,14 @@ export default function ProgressScreen() {
   const tabs: TabType[] = ['All', 'Weight', 'Calorie Intake'];
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F4F2E7" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Top Header */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <TouchableOpacity
-            style={styles.avatar}
+            style={[styles.avatar, { borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => router.push('/settings')}
           >
@@ -125,31 +127,31 @@ export default function ProgressScreen() {
             )}
           </TouchableOpacity>
           <View>
-            <Text style={styles.greeting}>Progress & Analytics</Text>
-            <Text style={styles.userName}>{user?.name || 'Health Tracker'}</Text>
+            <Text style={[styles.greeting, { color: colors.textSecondary }]}>Progress & Analytics</Text>
+            <Text style={[styles.userName, { color: colors.textPrimary }]}>{user?.name || 'Health Tracker'}</Text>
           </View>
         </View>
 
         <TouchableOpacity
-          style={styles.headerAction}
+          style={[styles.headerAction, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => fetchOverview(true)}
           activeOpacity={0.7}
         >
-          <RotateCcw size={18} color="#131313" />
+          <RotateCcw size={18} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       {/* Main Content */}
       {isLoading && !isRefreshing ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.saffron} />
-          <Text style={styles.loadingText}>Calculating metrics...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Calculating metrics...</Text>
         </View>
       ) : errorMessage && !overview ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{errorMessage}</Text>
           <TouchableOpacity
-            style={styles.retryBtn}
+            style={[styles.retryBtn, { backgroundColor: colors.primary }]}
             onPress={() => fetchOverview(false)}
             activeOpacity={0.8}
           >
@@ -165,8 +167,8 @@ export default function ProgressScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={() => fetchOverview(true)}
-              tintColor={theme.colors.saffron}
-              colors={[theme.colors.saffron]}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
             />
           }
         >
@@ -193,13 +195,24 @@ export default function ProgressScreen() {
               return (
                 <TouchableOpacity
                   key={tab}
-                  style={[styles.tabChip, isActive && styles.tabChipActive]}
+                  style={[
+                    styles.tabChip,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                    isActive && [
+                      styles.tabChipActive,
+                      {
+                        backgroundColor: isDark ? colors.primary : '#131313',
+                        borderColor: isDark ? colors.primary : '#131313',
+                      },
+                    ],
+                  ]}
                   activeOpacity={0.7}
                   onPress={() => setSelectedTab(tab)}
                 >
                   <Text
                     style={[
                       styles.tabChipText,
+                      { color: colors.textSecondary },
                       isActive && styles.tabChipTextActive,
                     ]}
                   >

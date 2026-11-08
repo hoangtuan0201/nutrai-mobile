@@ -35,6 +35,7 @@ import {
   TodayNutritionContext,
 } from '../../../src/features/ai/types';
 import { FONTS, PALETTE, RADIUS, SHADOWS } from '../../../src/constants/theme';
+import { useAppTheme } from '../../../src/hooks/useAppTheme';
 
 // ── Prompt cards (Meals) ─────────────────────────────────────────────
 type PromptAction = 'ask' | 'prefill' | 'scan';
@@ -118,16 +119,17 @@ function formatToolBadgeLabel(tools?: string[]): string | null {
  * Renders markdown-lite text (**bold** and bullet lines) cleanly in React Native
  */
 function FormattedAssistantText({ content }: { content: string }) {
+  const { colors } = useAppTheme();
   const lines = content.split('\n');
 
   const renderInlineBold = (lineText: string, keyPrefix: string) =>
     lineText.split(/(\*\*[^*]+\*\*)/g).map((part, idx) =>
       part.startsWith('**') && part.endsWith('**') ? (
-        <Text key={`${keyPrefix}-b-${idx}`} style={styles.boldInlineText}>
+        <Text key={`${keyPrefix}-b-${idx}`} style={[styles.boldInlineText, { color: colors.textPrimary }]}>
           {part.slice(2, -2)}
         </Text>
       ) : (
-        <Text key={`${keyPrefix}-t-${idx}`}>{part}</Text>
+        <Text key={`${keyPrefix}-t-${idx}`} style={{ color: colors.textPrimary }}>{part}</Text>
       ),
     );
 
@@ -144,7 +146,7 @@ function FormattedAssistantText({ content }: { content: string }) {
           return (
             <View key={`line-${lineIdx}`} style={styles.bulletRow}>
               <View style={styles.bulletDot} />
-              <Text style={styles.assistantBubbleText}>
+              <Text style={[styles.assistantBubbleText, { color: colors.textPrimary }]}>
                 {renderInlineBold(cleanLine, `l-${lineIdx}`)}
               </Text>
             </View>
@@ -152,7 +154,7 @@ function FormattedAssistantText({ content }: { content: string }) {
         }
 
         return (
-          <Text key={`line-${lineIdx}`} style={styles.assistantBubbleText}>
+          <Text key={`line-${lineIdx}`} style={[styles.assistantBubbleText, { color: colors.textPrimary }]}>
             {renderInlineBold(cleanLine, `l-${lineIdx}`)}
           </Text>
         );
@@ -163,6 +165,7 @@ function FormattedAssistantText({ content }: { content: string }) {
 
 export default function AiAssistantChatScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const { width: windowWidth } = useWindowDimensions();
   const cardWidth = (windowWidth - 20 * 2 - 12) / 2;
 
@@ -405,7 +408,7 @@ export default function AiAssistantChatScreen() {
   const canSend = Boolean((inputText.trim() || pendingImage) && !isSending);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -418,13 +421,13 @@ export default function AiAssistantChatScreen() {
             onPress={handleOpenDrawer}
             accessibilityLabel="Open chat history"
           >
-            <AlignLeft size={22} color={PALETTE.onyx} strokeWidth={2.2} />
+            <AlignLeft size={22} color={colors.textPrimary} strokeWidth={2.2} />
           </TouchableOpacity>
 
           {hasConversation ? (
             <View style={styles.compactTitleRow}>
               <Sparkles size={16} color={PALETTE.saffron} strokeWidth={2.4} />
-              <Text style={styles.compactTitle}>AI Coach</Text>
+              <Text style={[styles.compactTitle, { color: colors.textPrimary }]}>AI Coach</Text>
             </View>
           ) : (
             <View />
@@ -436,7 +439,7 @@ export default function AiAssistantChatScreen() {
             onPress={handleClose}
             accessibilityLabel="Close AI Coach"
           >
-            <X size={22} color={PALETTE.onyx} strokeWidth={2.2} />
+            <X size={22} color={colors.textPrimary} strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
 
@@ -452,17 +455,17 @@ export default function AiAssistantChatScreen() {
               {/* ── Hero Title ─────────────────────────────────────── */}
               <View style={styles.hero}>
                 <View style={styles.heroTitleRow}>
-                  <Text style={styles.heroTitle}>AI Coach</Text>
+                  <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>AI Coach</Text>
                   <Sparkles size={20} color={PALETTE.saffron} strokeWidth={2.4} style={styles.heroSparkle} />
                 </View>
-                <Text style={styles.heroSubtitle}>Your everyday nutrition companion</Text>
+                <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>Your everyday nutrition companion</Text>
 
                 {todayNutrition && (
-                  <View style={styles.todayPill}>
+                  <View style={[styles.todayPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                     <View style={styles.todayPillDot} />
-                    <Text style={styles.todayPillText}>
+                    <Text style={[styles.todayPillText, { color: colors.textSecondary }]}>
                       Today{' '}
-                      <Text style={styles.todayPillBold}>
+                      <Text style={[styles.todayPillBold, { color: colors.textPrimary }]}>
                         {todayNutrition.caloriesConsumed.toLocaleString()}
                       </Text>
                       {' / '}
@@ -474,7 +477,7 @@ export default function AiAssistantChatScreen() {
 
               {/* ── Section label (Meals) ──────────────────────────── */}
               <View style={styles.sectionLabelWrap}>
-                <Text style={styles.sectionLabel}>Meals</Text>
+                <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Meals</Text>
                 <View style={styles.sectionLabelUnderline} />
               </View>
 
@@ -488,8 +491,14 @@ export default function AiAssistantChatScreen() {
                   {PROMPT_CARDS.map((card) => {
                     const isScan = card.action === 'scan';
                     return (
-                      <View key={card.id} style={[styles.promptCard, { width: cardWidth }]}>
-                        <View style={styles.promptImageWrap}>
+                      <View
+                        key={card.id}
+                        style={[
+                          styles.promptCard,
+                          { width: cardWidth, backgroundColor: colors.surface, borderColor: colors.border },
+                        ]}
+                      >
+                        <View style={[styles.promptImageWrap, { backgroundColor: colors.surfaceMuted }]}>
                           <Image source={{ uri: card.imageUri }} style={styles.promptImage} />
                           <View style={styles.promptTag}>
                             <Text style={styles.promptTagText}>{card.tag}</Text>
@@ -497,7 +506,7 @@ export default function AiAssistantChatScreen() {
                         </View>
 
                         <View style={styles.promptBody}>
-                          <Text style={styles.promptText} numberOfLines={2}>
+                          <Text style={[styles.promptText, { color: colors.textPrimary }]} numberOfLines={2}>
                             {card.displayText}
                           </Text>
                           <TouchableOpacity
@@ -522,7 +531,7 @@ export default function AiAssistantChatScreen() {
                 </View>
               )}
 
-              <Text style={styles.disclaimer}>
+              <Text style={[styles.disclaimer, { color: colors.textSecondary }]}>
                 Content provided for information only.{'\n'}AI can make mistakes.
               </Text>
             </>
@@ -535,7 +544,7 @@ export default function AiAssistantChatScreen() {
                 if (msg.role === 'USER') {
                   return (
                     <View key={msg.id} style={styles.userMessageRow}>
-                      <View style={styles.userBubble}>
+                      <View style={[styles.userBubble, isDark && { backgroundColor: '#2C2C2E' }]}>
                         {msg.localImageUri && (
                           <Image
                             source={{ uri: msg.localImageUri }}
@@ -554,7 +563,7 @@ export default function AiAssistantChatScreen() {
                     <View style={styles.assistantAvatar}>
                       <Sparkles size={14} color={PALETTE.saffron} strokeWidth={2.4} />
                     </View>
-                    <View style={styles.assistantBubble}>
+                    <View style={[styles.assistantBubble, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                       {toolBadge && (
                         <View style={styles.toolBadgePill}>
                           <CheckCircle2 size={13} color="#3D7A1F" strokeWidth={2.3} />
@@ -572,9 +581,9 @@ export default function AiAssistantChatScreen() {
                   <View style={styles.assistantAvatar}>
                     <Sparkles size={14} color={PALETTE.saffron} strokeWidth={2.4} />
                   </View>
-                  <View style={styles.typingBubble}>
+                  <View style={[styles.typingBubble, { backgroundColor: colors.surface }]}>
                     <ActivityIndicator size="small" color={PALETTE.saffron} />
-                    <Text style={styles.typingText}>Thinking...</Text>
+                    <Text style={[styles.typingText, { color: colors.textSecondary }]}>Thinking...</Text>
                   </View>
                 </View>
               )}
@@ -590,26 +599,29 @@ export default function AiAssistantChatScreen() {
 
         {/* ── Pending Image Attachment Preview (above input bar) ── */}
         {pendingImage && (
-          <View style={styles.attachmentBar}>
+          <View style={[styles.attachmentBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Image source={{ uri: pendingImage.uri }} style={styles.attachmentThumb} />
             <View style={styles.attachmentTextCol}>
-              <Text style={styles.attachmentTitle}>Meal photo attached</Text>
-              <Text style={styles.attachmentSub} numberOfLines={1}>
+              <Text style={[styles.attachmentTitle, { color: colors.textPrimary }]}>Meal photo attached</Text>
+              <Text style={[styles.attachmentSub, { color: colors.textSecondary }]} numberOfLines={1}>
                 Ask a question below or tap send to analyze
               </Text>
             </View>
             <TouchableOpacity
-              style={styles.attachmentRemoveBtn}
+              style={[
+                styles.attachmentRemoveBtn,
+                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : PALETTE.surfaceContainerLow },
+              ]}
               onPress={() => setPendingImage(null)}
               hitSlop={8}
             >
-              <X size={16} color={PALETTE.textSecondary} />
+              <X size={16} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
         )}
 
         {/* ── Bottom bar: Camera + Ask anything ─────────────────── */}
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { backgroundColor: colors.background }]}>
           <TouchableOpacity
             style={styles.cameraBtn}
             activeOpacity={0.85}
@@ -619,12 +631,12 @@ export default function AiAssistantChatScreen() {
             <Camera size={22} color={PALETTE.textInverse} strokeWidth={2.3} />
           </TouchableOpacity>
 
-          <View style={styles.inputBar}>
+          <View style={[styles.inputBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TextInput
               ref={inputRef}
-              style={styles.textInput}
+              style={[styles.textInput, { color: colors.textPrimary }]}
               placeholder={pendingImage ? 'Ask about this photo...' : 'Ask anything'}
-              placeholderTextColor={PALETTE.textMuted}
+              placeholderTextColor={colors.textSecondary}
               value={inputText}
               onChangeText={setInputText}
               multiline
@@ -632,13 +644,17 @@ export default function AiAssistantChatScreen() {
               editable={!isSending}
             />
             <TouchableOpacity
-              style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}
+              style={[
+                styles.sendBtn,
+                isDark && { backgroundColor: colors.textPrimary },
+                !canSend && (isDark ? { backgroundColor: '#3A3A3C' } : styles.sendBtnDisabled),
+              ]}
               activeOpacity={0.8}
               disabled={!canSend}
               onPress={() => handleSendMessage()}
               accessibilityLabel="Send message"
             >
-              <ArrowUp size={18} color={PALETTE.textInverse} strokeWidth={2.6} />
+              <ArrowUp size={18} color={isDark ? colors.background : PALETTE.textInverse} strokeWidth={2.6} />
             </TouchableOpacity>
           </View>
         </View>

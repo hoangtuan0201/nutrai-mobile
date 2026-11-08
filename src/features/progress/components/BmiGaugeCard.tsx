@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import theme from '../../../constants/theme';
+import { useAppTheme } from '../../../hooks/useAppTheme';
 import { BMIInfo } from '../types';
 
 interface BmiGaugeCardProps {
@@ -8,6 +9,7 @@ interface BmiGaugeCardProps {
 }
 
 export const BmiGaugeCard: React.FC<BmiGaugeCardProps> = ({ bmi }) => {
+  const { colors, isDark } = useAppTheme();
   // Normalize BMI on a scale from 14 to 40 for gauge pointer positioning
   const clampedBmi = Math.max(14, Math.min(40, bmi.value));
   const pointerPercent = ((clampedBmi - 14) / (40 - 14)) * 100;
@@ -32,11 +34,11 @@ export const BmiGaugeCard: React.FC<BmiGaugeCardProps> = ({ bmi }) => {
   const badgeColor = getCategoryColor(bmi.category);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.headerRow}>
         <View style={styles.titleWrap}>
-          <Text style={styles.label}>BMI</Text>
-          <Text style={styles.value}>{bmi.value}</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>BMI</Text>
+          <Text style={[styles.value, { color: colors.textPrimary }]}>{bmi.value}</Text>
         </View>
 
         <View style={[styles.badge, { backgroundColor: `${badgeColor}18` }]}>
@@ -57,7 +59,7 @@ export const BmiGaugeCard: React.FC<BmiGaugeCardProps> = ({ bmi }) => {
 
         {/* Circular Pointer */}
         <View style={[styles.pointerWrap, { left: `${pointerPercent}%` }]}>
-          <View style={[styles.pointerOuter, { borderColor: badgeColor }]}>
+          <View style={[styles.pointerOuter, { backgroundColor: colors.surface, borderColor: badgeColor }]}>
             <View style={[styles.pointerInner, { backgroundColor: badgeColor }]} />
           </View>
         </View>
@@ -65,12 +67,12 @@ export const BmiGaugeCard: React.FC<BmiGaugeCardProps> = ({ bmi }) => {
 
       {/* Scale Labels */}
       <View style={styles.scaleLabelsRow}>
-        <Text style={styles.scaleText}>15</Text>
-        <Text style={styles.scaleText}>18.5</Text>
-        <Text style={styles.scaleText}>25</Text>
-        <Text style={styles.scaleText}>30</Text>
-        <Text style={styles.scaleText}>35</Text>
-        <Text style={styles.scaleText}>40</Text>
+        <Text style={[styles.scaleText, { color: colors.textSecondary }]}>15</Text>
+        <Text style={[styles.scaleText, { color: colors.textSecondary }]}>18.5</Text>
+        <Text style={[styles.scaleText, { color: colors.textSecondary }]}>25</Text>
+        <Text style={[styles.scaleText, { color: colors.textSecondary }]}>30</Text>
+        <Text style={[styles.scaleText, { color: colors.textSecondary }]}>35</Text>
+        <Text style={[styles.scaleText, { color: colors.textSecondary }]}>40</Text>
       </View>
     </View>
   );

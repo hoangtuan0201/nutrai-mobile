@@ -38,6 +38,7 @@ import {
   Minus,
 } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
+import { useAppTheme } from '../../../src/hooks/useAppTheme';
 import { mealsApi } from '../../../src/features/meals/api/meals.api';
 import {
   MealType,
@@ -128,6 +129,7 @@ const MEAL_TABS: Array<{ type: MealType; label: string; icon: any }> = [
 
 export default function AddFoodManuallyScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const params = useLocalSearchParams<{
     mealType?: MealType;
     date?: string;
@@ -517,30 +519,28 @@ export default function AddFoodManuallyScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
- 
-
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Header Bar */}
       {/* ── Top Header with Meal Type Dropdown (Matching Image 3) ──── */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={handleBack}
-          style={styles.backBtn}
+          style={[styles.backBtn, { backgroundColor: colors.inputBg }]}
           activeOpacity={0.7}
         >
-          <ArrowLeft size={20} color="#1B281B" />
+          <ArrowLeft size={20} color={colors.textPrimary} />
         </TouchableOpacity>
 
         {/* Meal Type Dropdown Trigger in Center of Header */}
         <TouchableOpacity
-          style={styles.headerDropdownBtn}
+          style={[styles.headerDropdownBtn, { backgroundColor: colors.inputBg }]}
           activeOpacity={0.75}
           onPress={() => setIsMealTypeDropdownOpen(true)}
         >
-          <Text style={styles.headerMealTitle}>
+          <Text style={[styles.headerMealTitle, { color: colors.textPrimary }]}>
             {MEAL_TABS.find((t) => t.type === selectedType)?.label || 'Lunch'}
           </Text>
-          <ChevronDown size={18} color="#1B281B" style={{ marginLeft: 4 }} />
+          <ChevronDown size={18} color={colors.textPrimary} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
 
         <View style={{ width: 36 }} />
@@ -550,7 +550,7 @@ export default function AddFoodManuallyScreen() {
       <View style={styles.shortcutsRow}>
         {/* 1. Scan food */}
         <TouchableOpacity
-          style={styles.shortcutCard}
+          style={[styles.shortcutCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
           activeOpacity={0.8}
           onPress={() =>
             router.push({
@@ -564,79 +564,46 @@ export default function AddFoodManuallyScreen() {
             })
           }
         >
-          <View style={[styles.shortcutIconWrap, { backgroundColor: '#F8F3EA' }]}>
+          <View style={[styles.shortcutIconWrap, { backgroundColor: isDark ? 'rgba(146,103,43,0.2)' : '#F8F3EA' }]}>
             <Scan size={20} color="#92672B" />
           </View>
-          <Text style={styles.shortcutLabel}>Scan food</Text>
+          <Text style={[styles.shortcutLabel, { color: colors.textPrimary }]}>Scan food</Text>
         </TouchableOpacity>
-
-        {/* 2. Barcode (Temporarily commented out) */}
-        {/*
-        <TouchableOpacity
-          style={styles.shortcutCard}
-          activeOpacity={0.8}
-          onPress={() =>
-            router.push({
-              pathname: '/(main)/meals/camera',
-              params: { mode: 'BARCODE' },
-            })
-          }
-        >
-          <View style={[styles.shortcutIconWrap, { backgroundColor: '#EBF4ED' }]}>
-            <Barcode size={20} color="#2E7D32" />
-          </View>
-          <Text style={styles.shortcutLabel}>Barcode</Text>
-        </TouchableOpacity>
-        */}
-
-        {/* 3. Say Food (Temporarily commented out) */}
-        {/*
-        <TouchableOpacity
-          style={styles.shortcutCard}
-          activeOpacity={0.8}
-          onPress={() => router.push('/ai')}
-        >
-          <View style={[styles.shortcutIconWrap, { backgroundColor: '#EFF6FF' }]}>
-            <Mic size={20} color="#2563EB" />
-          </View>
-          <Text style={styles.shortcutLabel}>Say Food</Text>
-        </TouchableOpacity>
-        */}
 
         {/* 4. Quick Log */}
         <TouchableOpacity
-          style={styles.shortcutCard}
+          style={[styles.shortcutCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
           activeOpacity={0.8}
           onPress={handleOpenQuickLog}
         >
-          <View style={[styles.shortcutIconWrap, { backgroundColor: '#FDF2E9' }]}>
+          <View style={[styles.shortcutIconWrap, { backgroundColor: isDark ? 'rgba(217,119,6,0.2)' : '#FDF2E9' }]}>
             <Zap size={20} color="#D97706" />
           </View>
-          <Text style={styles.shortcutLabel}>Quick Log</Text>
+          <Text style={[styles.shortcutLabel, { color: colors.textPrimary }]}>Quick Log</Text>
         </TouchableOpacity>
       </View>
 
       {/* Search Input Box */}
       <View style={styles.searchSection}>
-        <View style={styles.searchBox}>
-          <Search size={18} color="#8E9388" />
+        <View style={[styles.searchBox, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+          <Search size={18} color={colors.textSecondary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.textPrimary }]}
             placeholder="Food, meal or brand..."
-            placeholderTextColor="#999E94"
+            placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             returnKeyType="search"
             autoCorrect={false}
           />
           {searching ? (
-            <ActivityIndicator size="small" color="#2E7D32" />
+            <ActivityIndicator size="small" color={colors.primary} />
           ) : searchQuery.length > 0 ? (
             <TouchableOpacity
               onPress={() => setSearchQuery('')}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <X size={16} color="#8E9388" />
+              <X size={16} color={colors.textSecondary} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -661,12 +628,12 @@ export default function AddFoodManuallyScreen() {
         {/* Dynamic Search Results Mode */}
         {searchQuery.trim().length >= 2 ? (
           <View style={styles.sectionWrap}>
-            <Text style={styles.sectionTitle}>Search Results</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Search Results</Text>
             {searchResults.length === 0 && !searching ? (
               <View style={styles.emptyWrap}>
-                <Utensils size={32} color="#C4C8BE" />
-                <Text style={styles.emptyTitle}>No matching food found</Text>
-                <Text style={styles.emptySub}>
+                <Utensils size={32} color={colors.textSecondary} />
+                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No matching food found</Text>
+                <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
                   Try searching for generic terms like "chicken", "apple", or "rice"
                 </Text>
               </View>
@@ -674,7 +641,7 @@ export default function AddFoodManuallyScreen() {
               searchResults.map((f, idx) => (
                 <TouchableOpacity
                   key={`sr-${f.id || f.name}-${idx}`}
-                  style={styles.foodRow}
+                  style={[styles.foodRow, { borderBottomColor: colors.border }]}
                   activeOpacity={0.8}
                   onPress={() =>
                     openPortionModal({
@@ -693,8 +660,8 @@ export default function AddFoodManuallyScreen() {
                   {f.imageUrl ? (
                     <Image source={{ uri: f.imageUrl }} style={styles.foodThumb} />
                   ) : (
-                    <View style={styles.foodIconPlaceholder}>
-                      <Utensils size={20} color="#656A60" />
+                    <View style={[styles.foodIconPlaceholder, { backgroundColor: colors.inputBg }]}>
+                      <Utensils size={20} color={colors.textSecondary} />
                     </View>
                   )}
                   <View style={styles.foodInfo}>
@@ -710,14 +677,14 @@ export default function AddFoodManuallyScreen() {
                           <Text style={styles.localBadgeText}>VERIFIED</Text>
                         </View>
                       )}
-                      <Text style={styles.foodName} numberOfLines={1}>
+                      <Text style={[styles.foodName, { color: colors.textPrimary }]} numberOfLines={1}>
                         {f.name}
                       </Text>
                     </View>
                     <View style={styles.macroDetailsRow}>
-                      <Text style={styles.foodWeightCal}>
+                      <Text style={[styles.foodWeightCal, { color: colors.textSecondary }]}>
                         {f.defaultServingSize || 100}{f.servingUnit || 'g'} •{' '}
-                        <Text style={styles.boldCal}>
+                        <Text style={[styles.boldCal, { color: colors.textPrimary }]}>
                           {Math.round(f.caloriesPer100g)} {energyUnit}
                         </Text>
                       </Text>
@@ -738,7 +705,7 @@ export default function AddFoodManuallyScreen() {
                   </View>
 
                   <TouchableOpacity
-                    style={styles.addBtn}
+                    style={[styles.addBtn, { backgroundColor: isDark ? 'rgba(46,125,50,0.2)' : '#EDF7ED' }]}
                     onPress={() =>
                       openPortionModal({
                         name: f.name,
@@ -766,13 +733,13 @@ export default function AddFoodManuallyScreen() {
             {/* Section 1: Recent Meals */}
             {recentMeals.length > 0 && (
               <View style={styles.sectionWrap}>
-                <Text style={styles.sectionTitle}>Recent Meals</Text>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Meals</Text>
                 {recentMeals
                   .slice(0, showAllRecentMeals ? undefined : 2)
                   .map((m) => (
                     <TouchableOpacity
                       key={m.id}
-                      style={styles.foodRow}
+                      style={[styles.foodRow, { borderBottomColor: colors.border }]}
                       activeOpacity={0.8}
                       onPress={() =>
                         openPortionModal({
@@ -794,12 +761,12 @@ export default function AddFoodManuallyScreen() {
                           style={styles.foodThumb}
                         />
                       ) : (
-                        <View style={styles.foodIconPlaceholder}>
-                          <Utensils size={20} color="#656A60" />
+                        <View style={[styles.foodIconPlaceholder, { backgroundColor: colors.inputBg }]}>
+                          <Utensils size={20} color={colors.textSecondary} />
                         </View>
                       )}
                       <View style={styles.foodInfo}>
-                        <Text style={styles.foodRecentTime}>
+                        <Text style={[styles.foodRecentTime, { color: colors.textSecondary }]}>
                           {m.loggedAt
                             ? new Date(m.loggedAt).toLocaleTimeString('en-US', {
                                 hour: 'numeric',
@@ -808,11 +775,11 @@ export default function AddFoodManuallyScreen() {
                               })
                             : 'Today'}
                         </Text>
-                        <Text style={styles.foodName} numberOfLines={1}>
+                        <Text style={[styles.foodName, { color: colors.textPrimary }]} numberOfLines={1}>
                           {m.name || `${m.mealType} Meal`}
                         </Text>
                         <View style={styles.macroDetailsRow}>
-                          <Text style={styles.boldCal}>
+                          <Text style={[styles.boldCal, { color: colors.textPrimary }]}>
                             {Math.round(m.totalCalories)} {energyUnit}
                           </Text>
                           <View style={styles.macroTagRow}>
@@ -832,7 +799,7 @@ export default function AddFoodManuallyScreen() {
                       </View>
 
                       <TouchableOpacity
-                        style={styles.addBtn}
+                        style={[styles.addBtn, { backgroundColor: isDark ? 'rgba(46,125,50,0.2)' : '#EDF7ED' }]}
                         onPress={() =>
                           openPortionModal({
                             name: m.name || `${m.mealType} Meal`,
@@ -860,10 +827,10 @@ export default function AddFoodManuallyScreen() {
                     onPress={() => setShowAllRecentMeals((prev) => !prev)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.showMoreText}>
+                    <Text style={[styles.showMoreText, { color: colors.textSecondary }]}>
                       {showAllRecentMeals ? 'Show Less' : 'Show More'}
                     </Text>
-                    <ChevronDown size={14} color="#656A60" />
+                    <ChevronDown size={14} color={colors.textSecondary} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -871,11 +838,11 @@ export default function AddFoodManuallyScreen() {
 
             {/* Section 2: Recent Foods */}
             <View style={styles.sectionWrap}>
-              <Text style={styles.sectionTitle}>Recent Foods</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Foods</Text>
               {POPULAR_DEFAULT_FOODS.map((food, idx) => (
                 <TouchableOpacity
                   key={idx}
-                  style={styles.foodRow}
+                  style={[styles.foodRow, { borderBottomColor: colors.border }]}
                   activeOpacity={0.8}
                   onPress={() =>
                     openPortionModal({
@@ -893,11 +860,11 @@ export default function AddFoodManuallyScreen() {
                 >
                   <Image source={{ uri: food.imageUrl }} style={styles.foodThumb} />
                   <View style={styles.foodInfo}>
-                    <Text style={styles.foodName}>{food.name}</Text>
+                    <Text style={[styles.foodName, { color: colors.textPrimary }]}>{food.name}</Text>
                     <View style={styles.macroDetailsRow}>
-                      <Text style={styles.foodWeightCal}>
+                      <Text style={[styles.foodWeightCal, { color: colors.textSecondary }]}>
                         {food.portion} •{' '}
-                        <Text style={styles.boldCal}>{food.calories} {energyUnit}</Text>
+                        <Text style={[styles.boldCal, { color: colors.textPrimary }]}>{food.calories} {energyUnit}</Text>
                       </Text>
                       <View style={styles.macroTagRow}>
                         <Text style={[styles.macroTagText, { color: '#3865D6' }]}>
@@ -916,7 +883,7 @@ export default function AddFoodManuallyScreen() {
                   </View>
 
                   <TouchableOpacity
-                    style={styles.addBtn}
+                    style={[styles.addBtn, { backgroundColor: isDark ? 'rgba(46,125,50,0.2)' : '#EDF7ED' }]}
                     onPress={() =>
                       openPortionModal({
                         name: food.name,
@@ -952,16 +919,16 @@ export default function AddFoodManuallyScreen() {
         onRequestClose={() => setPortionModal(null)}
       >
         <View style={styles.portionModalOverlay}>
-          <View style={styles.portionModalSheet}>
+          <View style={[styles.portionModalSheet, { backgroundColor: colors.surface }]}>
             {/* Header */}
-            <View style={styles.portionModalHeader}>
-              <Text style={styles.portionModalTitle}>Customize Portion</Text>
+            <View style={[styles.portionModalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.portionModalTitle, { color: colors.textPrimary }]}>Customize Portion</Text>
               <TouchableOpacity
                 onPress={() => setPortionModal(null)}
-                style={styles.portionCloseBtn}
+                style={[styles.portionCloseBtn, { backgroundColor: colors.inputBg }]}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <X size={20} color="#1B281B" />
+                <X size={20} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
@@ -971,44 +938,44 @@ export default function AddFoodManuallyScreen() {
                 contentContainerStyle={{ paddingBottom: 24 }}
               >
                 {/* Food summary card */}
-                <View style={styles.portionFoodCard}>
+                <View style={[styles.portionFoodCard, { backgroundColor: colors.inputBg }]}>
                   {portionModal.imageUrl ? (
                     <Image
                       source={{ uri: portionModal.imageUrl }}
                       style={styles.portionFoodThumb}
                     />
                   ) : (
-                    <View style={styles.portionIconPlaceholder}>
-                      <Utensils size={24} color="#656A60" />
+                    <View style={[styles.portionIconPlaceholder, { backgroundColor: colors.surface }]}>
+                      <Utensils size={24} color={colors.textSecondary} />
                     </View>
                   )}
                   <View style={styles.portionFoodInfo}>
-                    <Text style={styles.portionFoodName} numberOfLines={2}>
+                    <Text style={[styles.portionFoodName, { color: colors.textPrimary }]} numberOfLines={2}>
                       {portionModal.name}
                     </Text>
-                    <Text style={styles.portionFoodServing}>
+                    <Text style={[styles.portionFoodServing, { color: colors.textSecondary }]}>
                       Standard: {portionModal.servingDescription}
                     </Text>
                   </View>
                 </View>
 
                 {/* Serving stepper / quantity control */}
-                <View style={styles.portionQuantityCard}>
-                  <Text style={styles.portionQuantityLabel}>Number of Servings</Text>
+                <View style={[styles.portionQuantityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Text style={[styles.portionQuantityLabel, { color: colors.textPrimary }]}>Number of Servings</Text>
                   <View style={styles.stepperContainer}>
                     <TouchableOpacity
-                      style={styles.stepperBtn}
+                      style={[styles.stepperBtn, { backgroundColor: colors.inputBg }]}
                       activeOpacity={0.7}
                       onPress={() => {
                         const newQ = Math.max(0.5, Math.round((portionModal.quantity - 0.5) * 10) / 10);
                         setPortionModal({ ...portionModal, quantity: newQ });
                       }}
                     >
-                      <Minus size={18} color="#1B281B" />
+                      <Minus size={18} color={colors.textPrimary} />
                     </TouchableOpacity>
 
                     <TextInput
-                      style={styles.stepperInput}
+                      style={[styles.stepperInput, { color: colors.textPrimary, borderBottomColor: colors.primary }]}
                       keyboardType="numeric"
                       value={String(portionModal.quantity)}
                       onChangeText={(txt) => {
@@ -1022,14 +989,14 @@ export default function AddFoodManuallyScreen() {
                     />
 
                     <TouchableOpacity
-                      style={styles.stepperBtn}
+                      style={[styles.stepperBtn, { backgroundColor: colors.inputBg }]}
                       activeOpacity={0.7}
                       onPress={() => {
                         const newQ = Math.round((portionModal.quantity + 0.5) * 10) / 10;
                         setPortionModal({ ...portionModal, quantity: newQ });
                       }}
                     >
-                      <Plus size={18} color="#1B281B" />
+                      <Plus size={18} color={colors.textPrimary} />
                     </TouchableOpacity>
                   </View>
 
@@ -1040,7 +1007,10 @@ export default function AddFoodManuallyScreen() {
                         key={val}
                         style={[
                           styles.portionChip,
-                          portionModal.quantity === val && styles.portionChipActive,
+                          {
+                            backgroundColor:
+                              portionModal.quantity === val ? colors.primary : colors.inputBg,
+                          },
                         ]}
                         activeOpacity={0.7}
                         onPress={() => setPortionModal({ ...portionModal, quantity: val })}
@@ -1048,7 +1018,10 @@ export default function AddFoodManuallyScreen() {
                         <Text
                           style={[
                             styles.portionChipText,
-                            portionModal.quantity === val && styles.portionChipTextActive,
+                            {
+                              color:
+                                portionModal.quantity === val ? '#FFFFFF' : colors.textSecondary,
+                            },
                           ]}
                         >
                           {val}x
@@ -1059,42 +1032,42 @@ export default function AddFoodManuallyScreen() {
                 </View>
 
                 {/* Nutrition summary for this quantity */}
-                <View style={styles.portionMacroCard}>
-                  <Text style={styles.portionMacroTitle}>Nutritional Content</Text>
+                <View style={[styles.portionMacroCard, { backgroundColor: colors.inputBg }]}>
+                  <Text style={[styles.portionMacroTitle, { color: colors.textSecondary }]}>Nutritional Content</Text>
                   <View style={styles.portionMacroGrid}>
                     <View style={styles.portionMacroCol}>
-                      <Text style={styles.portionMacroCalVal}>
+                      <Text style={[styles.portionMacroCalVal, { color: colors.textPrimary }]}>
                         {Math.round(portionModal.baseCalories * (portionModal.quantity || 1))}
                       </Text>
-                      <Text style={styles.portionMacroCalLabel}>{energyUnit}</Text>
+                      <Text style={[styles.portionMacroCalLabel, { color: colors.textSecondary }]}>{energyUnit}</Text>
                     </View>
-                    <View style={styles.portionMacroDivider} />
+                    <View style={[styles.portionMacroDivider, { backgroundColor: colors.border }]} />
                     <View style={styles.portionMacroCol}>
                       <Text style={[styles.portionMacroVal, { color: '#3865D6' }]}>
                         {Math.round(portionModal.baseProtein * (portionModal.quantity || 1) * 10) / 10}g
                       </Text>
-                      <Text style={styles.portionMacroLabel}>Protein</Text>
+                      <Text style={[styles.portionMacroLabel, { color: colors.textSecondary }]}>Protein</Text>
                     </View>
-                    <View style={styles.portionMacroDivider} />
+                    <View style={[styles.portionMacroDivider, { backgroundColor: colors.border }]} />
                     <View style={styles.portionMacroCol}>
                       <Text style={[styles.portionMacroVal, { color: '#4D8A27' }]}>
                         {Math.round(portionModal.baseCarbs * (portionModal.quantity || 1) * 10) / 10}g
                       </Text>
-                      <Text style={styles.portionMacroLabel}>Carbs</Text>
+                      <Text style={[styles.portionMacroLabel, { color: colors.textSecondary }]}>Carbs</Text>
                     </View>
-                    <View style={styles.portionMacroDivider} />
+                    <View style={[styles.portionMacroDivider, { backgroundColor: colors.border }]} />
                     <View style={styles.portionMacroCol}>
                       <Text style={[styles.portionMacroVal, { color: '#B39100' }]}>
                         {Math.round(portionModal.baseFat * (portionModal.quantity || 1) * 10) / 10}g
                       </Text>
-                      <Text style={styles.portionMacroLabel}>Fat</Text>
+                      <Text style={[styles.portionMacroLabel, { color: colors.textSecondary }]}>Fat</Text>
                     </View>
                   </View>
                 </View>
 
                 {/* Submit button */}
                 <TouchableOpacity
-                  style={styles.portionSubmitBtn}
+                  style={[styles.portionSubmitBtn, { backgroundColor: colors.primary }]}
                   activeOpacity={0.8}
                   disabled={savingPortion}
                   onPress={handleSavePortionFood}
@@ -1128,16 +1101,16 @@ export default function AddFoodManuallyScreen() {
         onRequestClose={() => setSuccessModal(null)}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
             <View style={styles.modalIconWrap}>
-              <CheckCircle2 size={30} color="#2E7D32" />
+              <CheckCircle2 size={30} color={colors.primary} />
             </View>
 
-            <Text style={styles.modalTitle}>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
               Added to {successModal?.mealType}
             </Text>
-            <Text style={styles.modalSubtitle}>
-              <Text style={styles.modalFoodHighlight}>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+              <Text style={[styles.modalFoodHighlight, { color: colors.textPrimary }]}>
                 {successModal?.foodName}
               </Text>{' '}
               ({successModal?.calories} {energyUnit}) added to your diary.
@@ -1145,15 +1118,15 @@ export default function AddFoodManuallyScreen() {
 
             <View style={styles.modalButtonRow}>
               <TouchableOpacity
-                style={styles.modalSecondaryBtn}
+                style={[styles.modalSecondaryBtn, { backgroundColor: colors.inputBg }]}
                 onPress={() => setSuccessModal(null)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.modalSecondaryText}>Add More</Text>
+                <Text style={[styles.modalSecondaryText, { color: colors.textPrimary }]}>Add More</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.modalPrimaryBtn}
+                style={[styles.modalPrimaryBtn, { backgroundColor: colors.primary }]}
                 onPress={() => {
                   setSuccessModal(null);
                   const targetDate =
@@ -1191,8 +1164,8 @@ export default function AddFoodManuallyScreen() {
           activeOpacity={1}
           onPress={() => setIsMealTypeDropdownOpen(false)}
         >
-          <View style={styles.dropdownModalCard}>
-            <Text style={styles.dropdownModalTitle}>Select Meal</Text>
+          <View style={[styles.dropdownModalCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.dropdownModalTitle, { color: colors.textPrimary }]}>Select Meal</Text>
             {MEAL_TABS.map((tab) => {
               const IconComp = tab.icon;
               const isSelected = selectedType === tab.type;
@@ -1216,18 +1189,19 @@ export default function AddFoodManuallyScreen() {
                         {
                           backgroundColor: isSelected
                             ? 'rgba(255, 145, 20, 0.15)'
-                            : 'rgba(27, 40, 27, 0.05)',
+                            : colors.inputBg,
                         },
                       ]}
                     >
                       <IconComp
                         size={16}
-                        color={isSelected ? '#FF9114' : '#1B281B'}
+                        color={isSelected ? '#FF9114' : colors.textPrimary}
                       />
                     </View>
                     <Text
                       style={[
                         styles.dropdownOptionText,
+                        { color: colors.textPrimary },
                         isSelected && styles.dropdownOptionTextActive,
                       ]}
                     >
@@ -1249,20 +1223,20 @@ export default function AddFoodManuallyScreen() {
         transparent={false}
         onRequestClose={() => setIsQuickLogOpen(false)}
       >
-        <SafeAreaView style={styles.quickLogContainer} edges={['top', 'bottom', 'left', 'right']}>
+        <SafeAreaView style={[styles.quickLogContainer, { backgroundColor: colors.background }]} edges={['top', 'bottom', 'left', 'right']}>
           {/* Header */}
-          <View style={styles.quickLogHeader}>
+          <View style={[styles.quickLogHeader, { backgroundColor: colors.background }]}>
             <TouchableOpacity
               onPress={() => {
                 setIsQuickLogMealDropdownOpen(false);
                 setIsQuickLogOpen(false);
               }}
-              style={styles.quickLogBackBtn}
+              style={[styles.quickLogBackBtn, { backgroundColor: colors.inputBg }]}
               activeOpacity={0.7}
             >
-              <ArrowLeft size={20} color="#1B281B" />
+              <ArrowLeft size={20} color={colors.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.quickLogHeaderTitle}>Quick Log</Text>
+            <Text style={[styles.quickLogHeaderTitle, { color: colors.textPrimary }]}>Quick Log</Text>
             <TouchableOpacity
               onPress={() => {
                 setIsQuickLogMealDropdownOpen(false);
@@ -1302,22 +1276,24 @@ export default function AddFoodManuallyScreen() {
                   style={[
                     styles.quickLogCard,
                     {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
                       zIndex: 50,
                       elevation: isQuickLogMealDropdownOpen ? 15 : 2,
                     },
                   ]}
                 >
-                  <Text style={styles.quickLogCardHeader}>Log Calories</Text>
+                  <Text style={[styles.quickLogCardHeader, { color: colors.textPrimary }]}>Log Calories</Text>
 
                   {/* Row 1: Calories * */}
                   <View style={styles.quickLogRow}>
-                    <Text style={styles.quickLogLabel}>
+                    <Text style={[styles.quickLogLabel, { color: colors.textPrimary }]}>
                       Calories <Text style={{ color: '#E11D48' }}>*</Text>
                     </Text>
                     <TextInput
-                      style={styles.quickLogInput}
+                      style={[styles.quickLogInput, { color: colors.textPrimary }]}
                       placeholder="Required"
-                      placeholderTextColor="#9CA3AF"
+                      placeholderTextColor={colors.textSecondary}
                       keyboardType="numeric"
                       value={quickLogCalories}
                       onChangeText={setQuickLogCalories}
@@ -1326,11 +1302,11 @@ export default function AddFoodManuallyScreen() {
                     />
                   </View>
 
-                  <View style={styles.quickLogDivider} />
+                  <View style={[styles.quickLogDivider, { backgroundColor: colors.border }]} />
 
                   {/* Row 2: Meal * */}
                   <View style={[styles.quickLogRow, { zIndex: 100 }]}>
-                    <Text style={styles.quickLogLabel}>
+                    <Text style={[styles.quickLogLabel, { color: colors.textPrimary }]}>
                       Meal <Text style={{ color: '#E11D48' }}>*</Text>
                     </Text>
                     <View style={styles.quickLogMealSelectorContainer}>
@@ -1356,7 +1332,7 @@ export default function AddFoodManuallyScreen() {
 
                       {/* Dropdown Menu Popover right below Meal label */}
                       {isQuickLogMealDropdownOpen && (
-                        <View style={styles.quickLogDropdownMenu}>
+                        <View style={[styles.quickLogDropdownMenu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                           {MEAL_TABS.map((tab) => {
                             const isSelected = quickLogMealType === tab.type;
                             return (
@@ -1364,7 +1340,7 @@ export default function AddFoodManuallyScreen() {
                                 key={tab.type}
                                 style={[
                                   styles.quickLogDropdownItem,
-                                  isSelected && styles.quickLogDropdownItemActive,
+                                  isSelected && (isDark ? { backgroundColor: 'rgba(37,99,235,0.2)' } : styles.quickLogDropdownItemActive),
                                 ]}
                                 activeOpacity={0.7}
                                 onPress={() => {
@@ -1375,6 +1351,7 @@ export default function AddFoodManuallyScreen() {
                                 <Text
                                   style={[
                                     styles.quickLogDropdownItemText,
+                                    { color: colors.textPrimary },
                                     isSelected && styles.quickLogDropdownItemTextActive,
                                   ]}
                                 >
@@ -1391,15 +1368,15 @@ export default function AddFoodManuallyScreen() {
                     </View>
                   </View>
 
-                  <View style={styles.quickLogDivider} />
+                  <View style={[styles.quickLogDivider, { backgroundColor: colors.border }]} />
 
                   {/* Row 3: Description */}
                   <View style={styles.quickLogRow}>
-                    <Text style={styles.quickLogLabel}>Description</Text>
+                    <Text style={[styles.quickLogLabel, { color: colors.textPrimary }]}>Description</Text>
                     <TextInput
-                      style={styles.quickLogInput}
+                      style={[styles.quickLogInput, { color: colors.textPrimary }]}
                       placeholder="What is it?"
-                      placeholderTextColor="#9CA3AF"
+                      placeholderTextColor={colors.textSecondary}
                       value={quickLogDescription}
                       onChangeText={setQuickLogDescription}
                       onFocus={() => setIsQuickLogMealDropdownOpen(false)}
@@ -1408,18 +1385,18 @@ export default function AddFoodManuallyScreen() {
                 </View>
 
                 {/* Block 2: Nutrition Facts */}
-                <View style={[styles.quickLogCard, { zIndex: 1, elevation: 2 }]}>
-                  <Text style={styles.quickLogCardHeader}>Nutrition Facts</Text>
+                <View style={[styles.quickLogCard, { backgroundColor: colors.surface, borderColor: colors.border, zIndex: 1, elevation: 2 }]}>
+                  <Text style={[styles.quickLogCardHeader, { color: colors.textPrimary }]}>Nutrition Facts</Text>
 
                   {/* Row 1: Carb (g) */}
                   <View style={styles.quickLogRow}>
                     <View style={styles.quickLogLabelWithIcon}>
-                      <Text style={styles.quickLogLabel}>Carb (g)</Text>
+                      <Text style={[styles.quickLogLabel, { color: colors.textPrimary }]}>Carb (g)</Text>
                     </View>
                     <TextInput
-                      style={styles.quickLogInput}
+                      style={[styles.quickLogInput, { color: colors.textPrimary }]}
                       placeholder="0"
-                      placeholderTextColor="#9CA3AF"
+                      placeholderTextColor={colors.textSecondary}
                       keyboardType="numeric"
                       value={quickLogCarbs}
                       onChangeText={setQuickLogCarbs}
@@ -1427,17 +1404,17 @@ export default function AddFoodManuallyScreen() {
                     />
                   </View>
 
-                  <View style={styles.quickLogDivider} />
+                  <View style={[styles.quickLogDivider, { backgroundColor: colors.border }]} />
 
                   {/* Row 2: Protein (g) */}
                   <View style={styles.quickLogRow}>
                     <View style={styles.quickLogLabelWithIcon}>
-                      <Text style={styles.quickLogLabel}>Protein (g)</Text>
+                      <Text style={[styles.quickLogLabel, { color: colors.textPrimary }]}>Protein (g)</Text>
                     </View>
                     <TextInput
-                      style={styles.quickLogInput}
+                      style={[styles.quickLogInput, { color: colors.textPrimary }]}
                       placeholder="0"
-                      placeholderTextColor="#9CA3AF"
+                      placeholderTextColor={colors.textSecondary}
                       keyboardType="numeric"
                       value={quickLogProtein}
                       onChangeText={setQuickLogProtein}
@@ -1445,17 +1422,17 @@ export default function AddFoodManuallyScreen() {
                     />
                   </View>
 
-                  <View style={styles.quickLogDivider} />
+                  <View style={[styles.quickLogDivider, { backgroundColor: colors.border }]} />
 
                   {/* Row 3: Fat (g) */}
                   <View style={styles.quickLogRow}>
                     <View style={styles.quickLogLabelWithIcon}>
-                      <Text style={styles.quickLogLabel}>Fat (g)</Text>
+                      <Text style={[styles.quickLogLabel, { color: colors.textPrimary }]}>Fat (g)</Text>
                     </View>
                     <TextInput
-                      style={styles.quickLogInput}
+                      style={[styles.quickLogInput, { color: colors.textPrimary }]}
                       placeholder="0"
-                      placeholderTextColor="#9CA3AF"
+                      placeholderTextColor={colors.textSecondary}
                       keyboardType="numeric"
                       value={quickLogFat}
                       onChangeText={setQuickLogFat}

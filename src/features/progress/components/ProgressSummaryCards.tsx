@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import theme from '../../../constants/theme';
+import { useAppTheme } from '../../../hooks/useAppTheme';
 
 interface ProgressSummaryCardsProps {
   currentStreakDays: number;
@@ -13,39 +14,41 @@ export const ProgressSummaryCards: React.FC<ProgressSummaryCardsProps> = ({
   onPressGoals,
   onPressStreak,
 }) => {
+  const { colors, isDark } = useAppTheme();
+
   return (
     <View style={styles.container}>
       {/* Goals Card */}
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
         activeOpacity={0.8}
         onPress={onPressGoals}
       >
-        <View style={[styles.iconWrap, { backgroundColor: '#FFF4E6' }]}>
+        <View style={[styles.iconWrap, { backgroundColor: isDark ? 'rgba(255,145,20,0.15)' : '#FFF4E6' }]}>
           <Image
             source={require('../../../../assets/icons/goalicon.png')}
             style={styles.iconImage}
             resizeMode="contain"
           />
         </View>
-        <Text style={styles.cardTitle}>Goals</Text>
-        <Text style={styles.cardSub}>Edit</Text>
+        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Goals</Text>
+        <Text style={[styles.cardSub, { color: colors.textSecondary }]}>Edit</Text>
       </TouchableOpacity>
 
       {/* Streak Card */}
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
         activeOpacity={0.8}
         onPress={onPressStreak}
       >
-        <View style={[styles.iconWrap, { backgroundColor: '#FEE2E2' }]}>
+        <View style={[styles.iconWrap, { backgroundColor: isDark ? 'rgba(220,38,38,0.2)' : '#FEE2E2' }]}>
           <Image
             source={require('../../../../assets/icons/streakicon.png')}
             style={styles.iconImage}
             resizeMode="contain"
           />
         </View>
-        <Text style={styles.cardTitle}>Streak</Text>
+        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Streak</Text>
         <Text style={[styles.cardSub, styles.streakHighlight]}>
           {currentStreakDays} {currentStreakDays === 1 ? 'Day' : 'Days'}
         </Text>
