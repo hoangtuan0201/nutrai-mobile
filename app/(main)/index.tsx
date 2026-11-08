@@ -37,6 +37,7 @@ import {
 import theme from '../../src/constants/theme';
 import { Logo, CalorieRemainingCard, WeeklyCalendarStrip } from '../../src/components';
 import { useAuthStore } from '../../src/store/authStore';
+import { useAccount } from '../../src/features/settings/hooks/useAccount';
 import { useProfile } from '../../src/features/profile/hooks/useProfile';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
 import {
@@ -143,6 +144,8 @@ const TumblerGlass: React.FC<TumblerGlassProps> = React.memo(({ status, onPress 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { avatarUrl } = useAccount();
+  const displayAvatar = avatarUrl || user?.avatarUrl;
   const { profile, updateProfile, isUpdating, refetch: refetchProfile } = useProfile();
   const onboarding = useOnboardingStore();
   const { energyUnit, foodUnit, bodyUnit } = useUnitStore();
@@ -422,12 +425,18 @@ export default function HomeScreen() {
             activeOpacity={0.8}
             onPress={() => router.push('/settings')}
           >
-            <Image
-              source={{
-                uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-              }}
-              style={styles.avatarImg}
-            />
+            {displayAvatar ? (
+              <Image
+                source={{ uri: displayAvatar }}
+                style={styles.avatarImg}
+              />
+            ) : (
+              <View style={[styles.avatarImg, styles.avatarPlaceholder]}>
+                <Text style={styles.avatarText}>
+                  {(user?.name || user?.email || 'N').charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -888,6 +897,16 @@ const styles = StyleSheet.create({
   avatarImg: {
     width: '100%',
     height: '100%',
+  },
+  avatarPlaceholder: {
+    backgroundColor: '#FF9114',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 16,
+    color: '#FFFFFF',
   },
   scrollContent: {
     paddingHorizontal: 20,

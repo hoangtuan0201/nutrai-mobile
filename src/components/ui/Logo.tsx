@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, ImageStyle, StyleProp, StyleSheet } from 'react-native';
+import { useAppTheme } from '../../hooks/useAppTheme';
 
 export type LogoVariant = 'full' | 'mark' | 'original';
 export type LogoSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -8,6 +9,8 @@ export interface LogoProps {
   variant?: LogoVariant;
   size?: LogoSize | number;
   style?: StyleProp<ImageStyle>;
+  /** Explicit dark mode override. Defaults to active app theme `isDark` */
+  dark?: boolean;
 }
 
 // Aspect ratio: width / height
@@ -39,12 +42,18 @@ export const Logo: React.FC<LogoProps> = ({
   variant = 'full',
   size = 'md',
   style,
+  dark,
 }) => {
+  const { isDark } = useAppTheme();
+  const effectiveDark = dark !== undefined ? dark : isDark;
+
   let source;
   let dimensions: { width: number; height: number };
 
   if (variant === 'mark') {
-    source = require('../../../assets/icons/logo-mark.png');
+    source = effectiveDark
+      ? require('../../../assets/icons/logo-mark-dark.png')
+      : require('../../../assets/icons/logo-mark.png');
     if (typeof size === 'number') {
       dimensions = { width: size * 1.38, height: size };
     } else {
@@ -58,8 +67,10 @@ export const Logo: React.FC<LogoProps> = ({
       dimensions = ORIGINAL_DIMENSIONS[size] || ORIGINAL_DIMENSIONS.md;
     }
   } else {
-    // Default: 'full' transparent logo
-    source = require('../../../assets/icons/logo-transparent.png');
+    // Default: 'full' transparent logo (dark ivory in darkmode, dark forest green in lightmode)
+    source = effectiveDark
+      ? require('../../../assets/icons/logo-transparent-dark.png')
+      : require('../../../assets/icons/logo-transparent.png');
     if (typeof size === 'number') {
       dimensions = { width: size * 1.78, height: size };
     } else {

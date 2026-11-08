@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StatusBar,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -15,6 +16,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Camera, RotateCcw, Plus } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
 import { useAuthStore } from '../../../src/store/authStore';
+import { useAccount } from '../../../src/features/settings/hooks/useAccount';
 import { progressApi } from '../../../src/features/progress/api/progress.api';
 import { useProfile, PROFILE_QUERY_KEY } from '../../../src/features/profile/hooks/useProfile';
 import { ProgressOverviewResponse } from '../../../src/features/progress/types';
@@ -34,6 +36,8 @@ export default function ProgressScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const { avatarUrl } = useAccount();
+  const displayAvatar = avatarUrl || user?.avatarUrl;
   const { profile } = useProfile();
 
   const [overview, setOverview] = useState<ProgressOverviewResponse | null>(null);
@@ -107,11 +111,19 @@ export default function ProgressScreen() {
       {/* Top Header */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {(user?.name || user?.email || 'N').charAt(0).toUpperCase()}
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={styles.avatar}
+            activeOpacity={0.8}
+            onPress={() => router.push('/settings')}
+          >
+            {displayAvatar ? (
+              <Image source={{ uri: displayAvatar }} style={styles.avatarImg} />
+            ) : (
+              <Text style={styles.avatarText}>
+                {(user?.name || user?.email || 'N').charAt(0).toUpperCase()}
+              </Text>
+            )}
+          </TouchableOpacity>
           <View>
             <Text style={styles.greeting}>Progress & Analytics</Text>
             <Text style={styles.userName}>{user?.name || 'Health Tracker'}</Text>
@@ -268,6 +280,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 22,
   },
   avatarText: {
     fontFamily: theme.fonts.bold,
