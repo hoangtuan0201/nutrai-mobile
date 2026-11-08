@@ -589,7 +589,12 @@ export default function HomeScreen() {
                 key={meal.id}
                 style={styles.mealCard}
                 activeOpacity={0.8}
-                onPress={() => router.push('/(main)/meals')}
+                onPress={() =>
+                  router.push({
+                    pathname: '/(main)/meals/[id]',
+                    params: { id: meal.id, from: 'home', date: selectedDate },
+                  })
+                }
               >
                 {meal.imageUrl ? (
                   <Image

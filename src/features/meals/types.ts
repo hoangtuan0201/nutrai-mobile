@@ -8,6 +8,12 @@ export type MealSource = 'MANUAL' | 'AI_TEXT' | 'AI_IMAGE';
 export interface MealItem {
   id?: string;
   foodId?: string;
+  food?: {
+    id?: string;
+    name?: string;
+    imageUrl?: string;
+  };
+  imageUrl?: string;
   foodName: string;
   portionDescription?: string;
   quantity?: number;

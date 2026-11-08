@@ -141,6 +141,7 @@ export default function MainLayout() {
         name="meals/[id]"
         options={{
           href: null,
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tabs.Screen

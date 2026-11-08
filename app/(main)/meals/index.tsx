@@ -566,12 +566,19 @@ export default function MealsListScreen() {
                           : `P ${formatFoodWeight(meal.totalProtein, foodUnit).full} • C ${formatFoodWeight(meal.totalCarbs, foodUnit).full} • F ${formatFoodWeight(meal.totalFat, foodUnit).full}`;
 
                       return (
-                        <View
+                        <TouchableOpacity
                           key={meal.id}
                           style={[
                             styles.mealItemContainer,
                             index > 0 && styles.mealItemBorderTop,
                           ]}
+                          activeOpacity={0.7}
+                          onPress={() =>
+                            router.push({
+                              pathname: '/(main)/meals/[id]',
+                              params: { id: meal.id, from: 'log', date: selectedDate },
+                            })
+                          }
                         >
                           <View style={styles.mealMainRow}>
                             {meal.imageUrl ? (
@@ -595,7 +602,10 @@ export default function MealsListScreen() {
                             </View>
 
                             <TouchableOpacity
-                              onPress={() => handleDeleteMeal(meal.id, displayTitle)}
+                              onPress={(e) => {
+                                e?.stopPropagation?.();
+                                handleDeleteMeal(meal.id, displayTitle);
+                              }}
                               style={styles.moreActionBtn}
                               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                               activeOpacity={0.7}
@@ -603,7 +613,7 @@ export default function MealsListScreen() {
                               <MoreHorizontal size={18} color={theme.colors.textSecondary} />
                             </TouchableOpacity>
                           </View>
-                        </View>
+                        </TouchableOpacity>
                       );
                     })}
                   </View>
