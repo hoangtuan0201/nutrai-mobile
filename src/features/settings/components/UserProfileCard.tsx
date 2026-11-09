@@ -56,7 +56,7 @@ export function UserProfileCard({ name, email, avatarUrl, isUploading, onPressCa
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: 'row', alignItems: 'center', borderRadius: 24, padding: 16, marginBottom: 16, borderWidth: 1 },
+  card: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1 },
   avatarWrap: { marginRight: 16 },
   avatar: { width: 64, height: 64, borderRadius: 32 },
   avatarFallback: { alignItems: 'center', justifyContent: 'center' },

@@ -33,7 +33,7 @@ const FAQS: FaqEntry[] = [
 export default function HelpScreen() {
   return (
     <SettingsScreen title="Help & Support">
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
         <SectionLabel>Frequently asked questions</SectionLabel>
         <SettingsCard>
           {FAQS.map((f, i) => (

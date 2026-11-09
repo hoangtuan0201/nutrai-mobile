@@ -115,6 +115,40 @@ function formatToolBadgeLabel(tools?: string[]): string | null {
   return 'Synced with your nutrition data';
 }
 
+function formatMessageTime(isoString?: string): string {
+  if (!isoString) return '';
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '';
+    const now = new Date();
+    const isToday =
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+
+    const timeStr = date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+
+    if (isToday) return timeStr;
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday =
+      date.getDate() === yesterday.getDate() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getFullYear() === yesterday.getFullYear();
+
+    if (isYesterday) return `Yesterday ${timeStr}`;
+
+    return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${timeStr}`;
+  } catch {
+    return '';
+  }
+}
+
 /**
  * Renders markdown-lite text (**bold** and bullet lines) cleanly in React Native
  */
@@ -541,17 +575,26 @@ export default function AiAssistantChatScreen() {
           {hasConversation && (
             <View style={styles.messagesList}>
               {messages.map((msg) => {
+                const timeString = formatMessageTime(msg.createdAt);
+
                 if (msg.role === 'USER') {
                   return (
                     <View key={msg.id} style={styles.userMessageRow}>
-                      <View style={[styles.userBubble, isDark && { backgroundColor: '#2C2C2E' }]}>
-                        {msg.localImageUri && (
-                          <Image
-                            source={{ uri: msg.localImageUri }}
-                            style={styles.userBubbleImage}
-                          />
+                      <View style={styles.userBubbleWrap}>
+                        <View style={[styles.userBubble, isDark && { backgroundColor: '#2C2C2E' }]}>
+                          {msg.localImageUri && (
+                            <Image
+                              source={{ uri: msg.localImageUri }}
+                              style={styles.userBubbleImage}
+                            />
+                          )}
+                          <Text style={styles.userBubbleText}>{msg.content}</Text>
+                        </View>
+                        {Boolean(timeString) && (
+                          <Text style={[styles.messageTimestamp, styles.userTimestamp, { color: colors.textSecondary }]}>
+                            {timeString}
+                          </Text>
                         )}
-                        <Text style={styles.userBubbleText}>{msg.content}</Text>
                       </View>
                     </View>
                   );
@@ -563,14 +606,21 @@ export default function AiAssistantChatScreen() {
                     <View style={styles.assistantAvatar}>
                       <Sparkles size={14} color={PALETTE.saffron} strokeWidth={2.4} />
                     </View>
-                    <View style={[styles.assistantBubble, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                      {toolBadge && (
-                        <View style={styles.toolBadgePill}>
-                          <CheckCircle2 size={13} color="#3D7A1F" strokeWidth={2.3} />
-                          <Text style={styles.toolBadgeText}>{toolBadge}</Text>
-                        </View>
+                    <View style={styles.assistantBubbleWrap}>
+                      <View style={[styles.assistantBubble, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        {toolBadge && (
+                          <View style={styles.toolBadgePill}>
+                            <CheckCircle2 size={13} color="#3D7A1F" strokeWidth={2.3} />
+                            <Text style={styles.toolBadgeText}>{toolBadge}</Text>
+                          </View>
+                        )}
+                        <FormattedAssistantText content={msg.content} />
+                      </View>
+                      {Boolean(timeString) && (
+                        <Text style={[styles.messageTimestamp, styles.assistantTimestamp, { color: colors.textSecondary }]}>
+                          {timeString}
+                        </Text>
                       )}
-                      <FormattedAssistantText content={msg.content} />
                     </View>
                   </View>
                 );
@@ -895,8 +945,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
-  userBubble: {
+  userBubbleWrap: {
     maxWidth: '82%',
+    alignItems: 'flex-end',
+  },
+  userBubble: {
+    width: '100%',
     backgroundColor: PALETTE.onyx,
     borderRadius: RADIUS.md,
     borderBottomRightRadius: 6,
@@ -929,14 +983,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 2,
   },
-  assistantBubble: {
+  assistantBubbleWrap: {
     flex: 1,
+    alignItems: 'flex-start',
+  },
+  assistantBubble: {
+    width: '100%',
     backgroundColor: PALETTE.surfaceWhite,
     borderRadius: RADIUS.md,
     borderTopLeftRadius: 6,
     paddingHorizontal: 15,
     paddingVertical: 12,
+    borderWidth: 1,
     ...SHADOWS.elevation1,
+  },
+  messageTimestamp: {
+    fontSize: 11,
+    fontFamily: FONTS.regular,
+    marginTop: 4,
+    opacity: 0.75,
+  },
+  userTimestamp: {
+    marginRight: 4,
+    alignSelf: 'flex-end',
+  },
+  assistantTimestamp: {
+    marginLeft: 4,
+    alignSelf: 'flex-start',
   },
   toolBadgePill: {
     flexDirection: 'row',

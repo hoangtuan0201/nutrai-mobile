@@ -147,7 +147,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 16, paddingBottom: 48 },
+  content: { paddingHorizontal: 20, paddingBottom: 48 },
   heading: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5, paddingHorizontal: 4 },
   subheading: { fontSize: 14, marginTop: 4, marginBottom: 24, paddingHorizontal: 4 },
   logout: {

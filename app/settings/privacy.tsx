@@ -62,6 +62,6 @@ export default function PrivacyScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 16, paddingBottom: 48 },
+  content: { paddingHorizontal: 20, paddingBottom: 48 },
   note: { fontSize: 12, textAlign: 'center', paddingHorizontal: 16 },
 });
