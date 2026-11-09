@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useSafeNavigate } from '../../src/utils/navigationGuard';
 import Svg, { Path } from 'react-native-svg';
 import {
   Bell,
@@ -38,6 +39,7 @@ import theme from '../../src/constants/theme';
 import { Logo, CalorieRemainingCard, WeeklyCalendarStrip } from '../../src/components';
 import { useAuthStore } from '../../src/store/authStore';
 import { useAccount } from '../../src/features/settings/hooks/useAccount';
+import { useUnreadNotificationsCount } from '../../src/features/notifications/hooks/useNotifications';
 import { useProfile } from '../../src/features/profile/hooks/useProfile';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { useOnboardingStore } from '../../src/store/onboardingStore';
@@ -143,10 +145,11 @@ const TumblerGlass: React.FC<TumblerGlassProps> = React.memo(({ status, onPress 
 });
 
 export default function HomeScreen() {
-  const router = useRouter();
+  const router = useSafeNavigate();
   const { colors, isDark } = useAppTheme();
   const { user } = useAuthStore();
   const { avatarUrl } = useAccount();
+  const { unreadCount } = useUnreadNotificationsCount();
   const displayAvatar = avatarUrl || user?.avatarUrl;
   const { profile, updateProfile, isUpdating, refetch: refetchProfile } = useProfile();
   const onboarding = useOnboardingStore();
@@ -415,10 +418,16 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={[styles.bellBtn, { backgroundColor: colors.iconBg }]}
             activeOpacity={0.7}
-            onPress={() => router.push('/settings')}
+            onPress={() => router.push('/notifications' as any)}
           >
             <Bell size={20} color={colors.textPrimary} />
-            <View style={styles.notificationDot} />
+            {unreadCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           {/* User Profile Avatar -> Clicking navigates to /settings (Unified Profile & Settings) */}
@@ -886,14 +895,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  notificationDot: {
+  notificationBadge: {
     position: 'absolute',
-    top: 7,
-    right: 8,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: '#FF9114',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  notificationBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontFamily: theme.fonts.bold,
+    lineHeight: 12,
   },
   avatarBtn: {
     width: 38,

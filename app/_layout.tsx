@@ -14,6 +14,7 @@ import { theme } from '../src/constants';
 import { QueryProvider } from '../src/lib/queryClient';
 import { useAuthStore } from '../src/store/authStore';
 import { useAppTheme } from '../src/hooks/useAppTheme';
+import { usePushNotificationSetup } from '../src/features/notifications/hooks/usePushNotificationSetup';
 
 /**
  * Auth guard — auto-redirect based on authentication state.
@@ -75,6 +76,7 @@ export default function RootLayout() {
 /** Separated so useProtectedRoute can access router (must be under Stack) */
 function RootNav() {
   useProtectedRoute();
+  usePushNotificationSetup();
   const { colors } = useAppTheme();
 
   return (
@@ -87,8 +89,8 @@ function RootNav() {
       <Stack.Screen name="index" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(main)" />
-      <Stack.Screen name="ai" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="notifications" />
     </Stack>
   );
 }

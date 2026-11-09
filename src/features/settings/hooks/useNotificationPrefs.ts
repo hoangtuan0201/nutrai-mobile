@@ -16,7 +16,10 @@ export function useNotificationPrefs() {
   });
 
   const mutation = useMutation({
-    mutationFn: (dto: Partial<NotificationPreferences>) => accountApi.updatePreferences(dto),
+    mutationFn: (dto: Partial<NotificationPreferences>) => {
+      const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Ho_Chi_Minh';
+      return accountApi.updatePreferences({ timezone: deviceTimezone, ...dto });
+    },
     onMutate: async (dto) => {
       await queryClient.cancelQueries({ queryKey: KEY });
       const prev = queryClient.getQueryData<NotificationPreferences>(KEY);

@@ -54,6 +54,18 @@ export function formatWeight(
   return { value: weightKg.toFixed(1), unit: 'kg', full: `${weightKg.toFixed(1)} kg` };
 }
 
+export function formatWeightDiff(
+  diffKg: number,
+  bodyUnit: BodyUnit = 'metric',
+): string {
+  const sign = diffKg > 0 ? '+' : '';
+  if (bodyUnit === 'imperial') {
+    const diffLbs = Math.round(diffKg * 2.20462 * 10) / 10;
+    return `${sign}${diffLbs.toFixed(1)} lbs`;
+  }
+  return `${sign}${diffKg.toFixed(1)} kg`;
+}
+
 export function formatHeight(
   heightCm: number,
   bodyUnit: BodyUnit = 'metric',
