@@ -140,9 +140,9 @@ const styles = StyleSheet.create({
   card: {
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   headerRow: {
     flexDirection: 'row',
