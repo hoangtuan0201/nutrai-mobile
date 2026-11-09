@@ -51,3 +51,15 @@ export const minutesToTime = (minutes: number | null | undefined) => {
   return `${String(h).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 };
 
+/** 480 → { time24: "08:00", time12: "08:00 AM", ampm: "AM" } */
+export const minutesToTimeWithAmPm = (minutes: number | null | undefined) => {
+  const m = minutes ?? 0;
+  const h24 = Math.floor(m / 60) % 24;
+  const min = m % 60;
+  const ampm = h24 >= 12 ? 'PM' : 'AM';
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  const time24 = `${String(h24).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+  const time12 = `${String(h12).padStart(2, '0')}:${String(min).padStart(2, '0')} ${ampm}`;
+  return { time24, time12, ampm, h12, h24, min };
+};
+

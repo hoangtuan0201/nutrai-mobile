@@ -16,6 +16,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ChevronLeft,
+  ChevronDown,
   Calendar,
   Pencil,
   Flag,
@@ -44,7 +45,7 @@ import { useProfile, PROFILE_QUERY_KEY } from '../../../src/features/profile/hoo
 import { ProgressOverviewResponse, WeightDataPoint } from '../../../src/features/progress/types';
 import { LogWeightModal } from '../../../src/features/progress/components/LogWeightModal';
 import { EditGoalsModal } from '../../../src/features/profile/components/EditGoalsModal';
-import { useUnitStore, formatWeight } from '../../../src/store/unitStore';
+import { useUnitStore, formatWeight, formatWeightDiff } from '../../../src/store/unitStore';
 
 /** Pick a balanced subset of indices to show on X-axis (prevents text collision) */
 function shouldShowDateLabel(idx: number, total: number): boolean {
@@ -120,8 +121,27 @@ export default function WeightDetailScreen() {
   const rawHistory = weight?.history || [];
   // For chart: chronological left-to-right
   const chartHistory = [...rawHistory].reverse();
-  // For history list: newest first
-  const listHistory = rawHistory;
+
+  // For history list: only show days that have a weight change, newest first
+  const changedHistory = useMemo(() => {
+    const withChanges = rawHistory.filter(
+      (item) => item.changeKg !== undefined && Math.abs(item.changeKg) > 0,
+    );
+    // If no changes exist yet but we have recorded logs, show the latest entry
+    if (withChanges.length === 0 && rawHistory.length > 0) {
+      return [rawHistory[0]];
+    }
+    return withChanges;
+  }, [rawHistory]);
+
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState<boolean>(false);
+  const INITIAL_HISTORY_LIMIT = 5;
+
+  const visibleHistory = useMemo(() => {
+    return isHistoryExpanded
+      ? changedHistory
+      : changedHistory.slice(0, INITIAL_HISTORY_LIMIT);
+  }, [changedHistory, isHistoryExpanded]);
 
   const currentKg = weight?.currentKg || 0;
   const targetKg = weight?.targetKg || 0;
@@ -413,7 +433,7 @@ export default function WeightDetailScreen() {
                   return (
                     <View style={[styles.prevDiffPill, { backgroundColor: status.bgColor }]}>
                       <Text style={[styles.prevDiffText, { color: status.color }]}>
-                        {changeVsPrev > 0 ? `+ ${changeVsPrev}` : `${changeVsPrev}`} kg vs {prevDateLabel}{' '}
+                        {formatWeightDiff(changeVsPrev, bodyUnit)} vs {prevDateLabel}{' '}
                         {changeVsPrev > 0 ? '↗' : '↘'}
                       </Text>
                     </View>
@@ -755,19 +775,26 @@ export default function WeightDetailScreen() {
           {/* Card 5: History Card at the bottom (Tap any item to edit/update) */}
           <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <Text style={[styles.cardSectionTitle, { color: colors.textPrimary, marginBottom: 0 }]}>History</Text>
+              <View>
+                <Text style={[styles.cardSectionTitle, { color: colors.textPrimary, marginBottom: 2 }]}>
+                  History
+                </Text>
+                <Text style={{ fontFamily: theme.fonts.regular, fontSize: 11, color: colors.textSecondary }}>
+                  Showing recorded weight changes
+                </Text>
+              </View>
               <Text style={{ fontFamily: theme.fonts.medium, fontSize: 12, color: colors.textSecondary }}>
                 Tap row to edit
               </Text>
             </View>
 
-            {listHistory.length === 0 ? (
+            {changedHistory.length === 0 ? (
               <Text style={[styles.emptyHistoryText, { color: colors.textSecondary }]}>
                 No weight logs yet. Tap "+ Update" on Today card to record your weight!
               </Text>
             ) : (
               <View style={styles.historyList}>
-                {listHistory.map((item, idx) => {
+                {visibleHistory.map((item, idx) => {
                   const hasChange = item.changeKg !== undefined && item.changeKg !== 0;
                   const diff = item.changeKg || 0;
                   const status = getWeightDiffStatus(diff);
@@ -802,7 +829,7 @@ export default function WeightDetailScreen() {
                                   { color: status.color },
                                 ]}
                               >
-                                {diff > 0 ? `+${diff}` : `${diff}`} kg
+                                {formatWeightDiff(diff, bodyUnit)}
                               </Text>
                               {diff > 0 ? (
                                 <ArrowUpRight size={13} color={status.color} />
@@ -816,6 +843,27 @@ export default function WeightDetailScreen() {
                     </TouchableOpacity>
                   );
                 })}
+
+                {changedHistory.length > INITIAL_HISTORY_LIMIT && (
+                  <TouchableOpacity
+                    style={[styles.showMoreBtn, { borderTopColor: colors.border }]}
+                    activeOpacity={0.7}
+                    onPress={() => setIsHistoryExpanded(!isHistoryExpanded)}
+                  >
+                    <Text style={[styles.showMoreText, { color: colors.accent }]}>
+                      {isHistoryExpanded
+                        ? 'Show less'
+                        : `Show all (${changedHistory.length - INITIAL_HISTORY_LIMIT} more)`}
+                    </Text>
+                    <ChevronDown
+                      size={15}
+                      color={colors.accent}
+                      style={{
+                        transform: [{ rotate: isHistoryExpanded ? '180deg' : '0deg' }],
+                      }}
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
             )}
           </View>
@@ -829,8 +877,8 @@ export default function WeightDetailScreen() {
       <LogWeightModal
         visible={isLogModalVisible}
         initialWeight={
-          selectedDateForLog && listHistory.find((h) => h.date === selectedDateForLog)
-            ? listHistory.find((h) => h.date === selectedDateForLog)!.weightKg
+          selectedDateForLog && rawHistory.find((h) => h.date === selectedDateForLog)
+            ? rawHistory.find((h) => h.date === selectedDateForLog)!.weightKg
             : currentKg || 60
         }
         initialDate={selectedDateForLog}
@@ -1261,5 +1309,19 @@ const styles = StyleSheet.create({
   historyDiffText: {
     fontFamily: theme.fonts.bold,
     fontSize: 12,
+  },
+  showMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: 14,
+    paddingBottom: 4,
+    marginTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  showMoreText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 13,
   },
 });

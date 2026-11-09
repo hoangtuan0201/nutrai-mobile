@@ -11,8 +11,7 @@ export interface AccountMe {
 
 export interface NotificationPreferences {
   notificationMealReminder: boolean;
-  notificationGoalAlert: boolean;
-  notificationAiRecommendation: boolean;
+  timezone?: string;
   reminderBreakfastMinutes: number | null;
   reminderLunchMinutes: number | null;
   reminderDinnerMinutes: number | null;
@@ -29,8 +28,6 @@ export const accountApi = {
 
   updatePreferences: async (dto: Partial<NotificationPreferences>) =>
     (await apiClient.patch<NotificationPreferences>('/account/preferences', dto)).data,
-
-  exportData: async () => (await apiClient.get<Record<string, unknown>>('/account/export')).data,
 
   deleteAccount: async () => (await apiClient.delete<{ success: boolean }>('/account')).data,
 };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ScrollView, Alert, Platform, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useSafeNavigate } from '../../src/utils/navigationGuard';
 import { Bell, HelpCircle, Info, LogOut, Moon, Shield, Sliders } from 'lucide-react-native';
 import { UnitsModal } from '../../src/components';
 import { useAuthStore } from '../../src/store/authStore';
@@ -22,7 +23,7 @@ import { useProfileSummary } from '../../src/features/settings/hooks/useProfileS
 import { useAccount } from '../../src/features/settings/hooks/useAccount';
 
 export default function SettingsScreen() {
-  const router = useRouter();
+  const router = useSafeNavigate();
   const { colors, mode } = useAppTheme();
   const { user, logout } = useAuthStore();
   const { energyUnit, foodUnit, bodyUnit } = useUnitStore();

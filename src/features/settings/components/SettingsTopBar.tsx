@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { Logo } from '../../../components';
 import { useAppTheme } from '../../../hooks/useAppTheme';
+import { useSafeNavigate } from '../../../utils/navigationGuard';
 
 interface Props {
   /** Show the app logo (main Settings screen) instead of a page title */
@@ -14,10 +15,20 @@ interface Props {
 
 /** Sticky top bar shared by every Settings screen. */
 export function SettingsTopBar({ showLogo, title }: Props) {
-  const router = useRouter();
+  const router = useSafeNavigate();
   const { colors } = useAppTheme();
 
-  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(main)'));
+  const goBack = () => {
+    if (showLogo) {
+      router.replace('/(main)');
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(main)');
+    }
+  };
 
   return (
     <View style={[styles.bar, { backgroundColor: colors.background }]}>
