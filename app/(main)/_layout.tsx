@@ -1,39 +1,12 @@
-import React, { useEffect } from 'react';
-import { Tabs, useRouter, usePathname } from 'expo-router';
-import { Platform, TouchableOpacity, View, StyleSheet, Text } from 'react-native';
-import { Home, TrendingUp, Sparkles, Plus, Utensils } from 'lucide-react-native';
+import React from 'react';
+import { Tabs } from 'expo-router';
+import { Platform, StyleSheet } from 'react-native';
+import { Home, TrendingUp, Sparkles, Utensils, Settings } from 'lucide-react-native';
 import theme from '../../src/constants/theme';
-import { useOnboardingStore, mapGoalToBackend } from '../../src/store/onboardingStore';
-import { profileApi } from '../../src/features/profile/api/profile.api';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 
 export default function MainLayout() {
-  const router = useRouter();
-  const pathname = usePathname();
   const { colors } = useAppTheme();
-
-  // Background fallback sync for pending onboarding data
-  useEffect(() => {
-    const syncPending = async () => {
-      const onboarding = useOnboardingStore.getState();
-      if (!onboarding.isSynced) {
-        try {
-          await profileApi.updateProfile({
-            gender: onboarding.gender,
-            heightCm: onboarding.heightCm,
-            weightKg: onboarding.weightKg,
-            activityLevel: onboarding.activityLevel,
-            fitnessGoal: mapGoalToBackend(onboarding.fitnessGoal),
-            dateOfBirth: onboarding.dateOfBirth,
-          });
-          onboarding.markSynced();
-        } catch (e) {
-          // If network failed or already synced, ignore
-        }
-      }
-    };
-    syncPending();
-  }, []);
 
   return (
     <Tabs
@@ -73,33 +46,7 @@ export default function MainLayout() {
         }}
       />
 
-      {/* 3. Center FAB — Log Meal (Plus button) */}
-      <Tabs.Screen
-        name="meals/add"
-        options={{
-          title: '',
-          tabBarButton: (props) => (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={[props.style, styles.fabWrap]}
-              onPress={() => {
-                const fromScreen = pathname.includes('meals') ? 'log' : 'home';
-                router.push({
-                  pathname: '/(main)/meals/add',
-                  params: { from: fromScreen },
-                });
-              }}
-              accessibilityLabel="Log Meal"
-            >
-              <View style={[styles.fab, { backgroundColor: colors.fabBg }]}>
-                <Plus size={24} color="#FFFFFF" strokeWidth={2.6} />
-              </View>
-            </TouchableOpacity>
-          ),
-        }}
-      />
-
-      {/* 4. Progress Tab */}
+      {/* 3. Progress Tab */}
       <Tabs.Screen
         name="progress/index"
         options={{
@@ -110,7 +57,7 @@ export default function MainLayout() {
         }}
       />
 
-      {/* 5. AI Coach Tab */}
+      {/* 4. AI Coach Tab */}
       <Tabs.Screen
         name="ai/chat"
         options={{
@@ -122,7 +69,25 @@ export default function MainLayout() {
         }}
       />
 
+      {/* 5. Settings Tab (Far right) */}
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color }) => (
+            <Settings size={22} color={color} strokeWidth={2.2} />
+          ),
+        }}
+      />
+
       {/* ── Sub-screens hidden from bottom tabs ── */}
+      <Tabs.Screen
+        name="meals/add"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
       <Tabs.Screen
         name="ai/index"
         options={{
@@ -172,9 +137,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F6F5EE',
     borderTopWidth: 1,
     borderTopColor: '#ECE9DF',
-    height: Platform.OS === 'ios' ? 92 : 78,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 18,
-    paddingTop: 10,
+    height: Platform.OS === 'ios' ? 88 : 72,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 12,
+    paddingTop: 8,
     elevation: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
@@ -189,24 +154,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
     marginBottom: 2,
-  },
-  fabWrap: {
-    top: Platform.OS === 'ios' ? -18 : -14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flex: 1,
-  },
-  fab: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#1E3120',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.18,
-    shadowRadius: 5,
-    elevation: 5,
   },
 });

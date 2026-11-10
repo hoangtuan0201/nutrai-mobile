@@ -233,9 +233,9 @@ export default function MealsListScreen() {
   const [focusKey, setFocusKey] = useState(0);
 
   // Compute personalized nutrition targets matching Homepage
-  const userWeight = profile?.weightKg || onboarding.weightKg || 60;
-  const userHeight = profile?.heightCm || onboarding.heightCm || 174;
-  const userGender = (profile?.gender || onboarding.gender || 'MALE') as GenderType;
+  const userWeight = profile?.weightKg ?? (onboarding.isSynced ? onboarding.weightKg : 60);
+  const userHeight = profile?.heightCm ?? (onboarding.isSynced ? onboarding.heightCm : 174);
+  const userGender = (profile?.gender ?? (onboarding.isSynced ? onboarding.gender : 'MALE')) as GenderType;
   const userAge = useMemo(() => {
     if (profile?.dateOfBirth) {
       const dob = new Date(profile.dateOfBirth);
@@ -247,12 +247,11 @@ export default function MealsListScreen() {
         if (age > 0) return age;
       }
     }
-    return onboarding.age || 21;
-  }, [profile?.dateOfBirth, onboarding.age]);
+    return (onboarding.isSynced ? onboarding.age : 21) || 21;
+  }, [profile?.dateOfBirth, onboarding.isSynced, onboarding.age]);
 
-  const userActivity = (profile?.activityLevel ||
-    onboarding.activityLevel ||
-    'MODERATE') as ActivityLevelType;
+  const userActivity = (profile?.activityLevel ??
+    (onboarding.isSynced ? onboarding.activityLevel : 'MODERATE')) as ActivityLevelType;
   const userFitnessGoal =
     profile?.fitnessGoal ||
     (onboarding.fitnessGoal === 'LOSE_WEIGHT'
@@ -670,6 +669,21 @@ export default function MealsListScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ── Floating Action Button (FAB) at Bottom Right ── */}
+      <TouchableOpacity
+        style={styles.floatingAddBtn}
+        activeOpacity={0.85}
+        onPress={() =>
+          router.push({
+            pathname: '/(main)/meals/add',
+            params: { from: 'log', date: selectedDate },
+          })
+        }
+        accessibilityLabel="Add Meal"
+      >
+        <Plus size={28} color="#FFFFFF" strokeWidth={2.6} />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -678,6 +692,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.surfaceBase,
+  },
+  floatingAddBtn: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF9114',
+    elevation: 6,
+    shadowColor: '#FF9114',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    zIndex: 99,
   },
   header: {
     flexDirection: 'row',

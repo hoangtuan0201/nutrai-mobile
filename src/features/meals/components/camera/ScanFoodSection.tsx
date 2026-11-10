@@ -29,6 +29,7 @@ import {
 import { theme } from '../../../../constants';
 import { mealsApi } from '../../api/meals.api';
 import { useAiScanStore } from '../../../../store/aiScanStore';
+import { useSubscriptionStore } from '../../../../store/subscriptionStore';
 import { cameraStyles as styles } from './camera.styles';
 
 interface CapturedPhotoData {
@@ -215,6 +216,16 @@ export const ScanFoodSection: React.FC<ScanFoodSectionProps> = ({
       setIsScanning(false);
       setPendingPhoto(null);
       setPreviewUri(null);
+
+      const statusCode = err?.response?.status;
+      const errCode = err?.response?.data?.code;
+      if (statusCode === 403 || errCode === 'DAILY_SCAN_LIMIT_REACHED') {
+        useSubscriptionStore.getState().openQuotaModal('SCAN', () => {
+          router.push('/(main)/meals/add');
+        });
+        return;
+      }
+
       const msg = err?.response?.data?.message || err?.message || 'Failed to scan food with AI. Please try again.';
       Alert.alert('Scan Failed', msg, [
         { text: 'Try Again', style: 'default' },

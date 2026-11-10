@@ -133,13 +133,18 @@ export const WeeklyCalendarStrip: React.FC<WeeklyCalendarStripProps> = React.mem
 
   const handleWeekScrollLayout = useCallback(() => {
     if (!hasInitialScrolled.current && weekScrollRef.current) {
+      hasInitialScrolled.current = true;
+      const targetIdx = weeks.findIndex((w) =>
+        w.days.some((d) => d.fullDate === selectedDate)
+      );
+      const initialIdx = targetIdx !== -1 ? targetIdx : currentWeekIndex;
       weekScrollRef.current.scrollTo({
-        x: currentWeekIndex * containerWidth,
+        x: initialIdx * containerWidth,
         animated: false,
       });
-      hasInitialScrolled.current = true;
+      setVisibleWeekIndex(initialIdx);
     }
-  }, [currentWeekIndex, containerWidth]);
+  }, [currentWeekIndex, containerWidth, selectedDate, weeks]);
 
   const handleJumpToToday = useCallback(() => {
     onSelectDate(todayStr);
@@ -150,19 +155,25 @@ export const WeeklyCalendarStrip: React.FC<WeeklyCalendarStripProps> = React.mem
     setVisibleWeekIndex(currentWeekIndex);
   }, [onSelectDate, todayStr, currentWeekIndex, containerWidth]);
 
-  // Sync scroll position whenever selectedDate is updated outside the visible week
+  const prevSelectedDateRef = useRef(selectedDate);
+
+  // Sync scroll position ONLY when selectedDate is updated from outside or user tapped a date
+  // Do NOT listen to visibleWeekIndex, so user can freely swipe between weeks without snapping back
   useEffect(() => {
-    const targetWeekIdx = weeks.findIndex((w) =>
-      w.days.some((d) => d.fullDate === selectedDate)
-    );
-    if (targetWeekIdx !== -1 && targetWeekIdx !== visibleWeekIndex) {
-      weekScrollRef.current?.scrollTo({
-        x: targetWeekIdx * containerWidth,
-        animated: true,
-      });
-      setVisibleWeekIndex(targetWeekIdx);
+    if (prevSelectedDateRef.current !== selectedDate) {
+      prevSelectedDateRef.current = selectedDate;
+      const targetWeekIdx = weeks.findIndex((w) =>
+        w.days.some((d) => d.fullDate === selectedDate)
+      );
+      if (targetWeekIdx !== -1) {
+        weekScrollRef.current?.scrollTo({
+          x: targetWeekIdx * containerWidth,
+          animated: true,
+        });
+        setVisibleWeekIndex(targetWeekIdx);
+      }
     }
-  }, [selectedDate, containerWidth, weeks, visibleWeekIndex]);
+  }, [selectedDate, containerWidth, weeks]);
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -183,7 +194,7 @@ export const WeeklyCalendarStrip: React.FC<WeeklyCalendarStripProps> = React.mem
         )}
       </View>
 
-      {/* Swipeable Weekly Strip (Paging) */}
+      {/* Swipeable Weekly Strip (Native Paging) */}
       <ScrollView
         ref={weekScrollRef}
         horizontal
@@ -191,13 +202,10 @@ export const WeeklyCalendarStrip: React.FC<WeeklyCalendarStripProps> = React.mem
         nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
-        snapToInterval={containerWidth}
-        snapToAlignment="center"
         bounces={false}
         contentOffset={{ x: currentWeekIndex * containerWidth, y: 0 }}
         onLayout={handleWeekScrollLayout}
         onMomentumScrollEnd={handleScrollEnd}
-        onScrollEndDrag={handleScrollEnd}
         style={{ width: containerWidth }}
       >
         {weeks.map((w, wIdx) => (

@@ -30,6 +30,7 @@ import {
 } from '../../../src/features/progress/components';
 import { CalorieTimeframe } from '../../../src/features/progress/components/CalorieIntakeCard';
 import { EditGoalsModal } from '../../../src/features/profile/components/EditGoalsModal';
+import { DiscoverProCard } from '../../../src/features/subscription/components/DiscoverProCard';
 
 type TabType = 'All' | 'Weight' | 'Calorie Intake';
 
@@ -173,6 +174,9 @@ export default function ProgressScreen() {
           }
         >
     
+
+          {/* Go Premium Banner (Only for Free users) */}
+          <DiscoverProCard source="progress_banner" />
 
           {/* BMI Gauge Card */}
           {overview?.bmi && <BmiGaugeCard bmi={overview.bmi} />}

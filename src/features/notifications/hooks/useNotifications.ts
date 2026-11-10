@@ -23,6 +23,7 @@ export function useUnreadNotificationsCount() {
 
   return {
     unreadCount: query.data?.unreadCount ?? 0,
+    isLoading: query.isLoading,
     refetchUnreadCount: query.refetch,
   };
 }

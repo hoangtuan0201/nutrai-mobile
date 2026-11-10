@@ -29,19 +29,19 @@ export function useProfileSummary() {
     return age > 0 ? age : fallback;
   };
 
-  const age = profile?.dateOfBirth ? calculateAge(profile.dateOfBirth) : onboarding.age || 21;
-  const heightCm = profile?.heightCm || onboarding.heightCm || 174;
-  const weightKg = profile?.weightKg || onboarding.weightKg || 60;
-  const gender = (profile?.gender || onboarding.gender || 'MALE') as GenderType;
-  const activity = (profile?.activityLevel || onboarding.activityLevel || 'MODERATE') as ActivityLevelType;
+  const age = profile?.dateOfBirth ? calculateAge(profile.dateOfBirth) : (onboarding.isSynced ? onboarding.age : 21) || 21;
+  const heightCm = profile?.heightCm ?? (onboarding.isSynced ? onboarding.heightCm : 174);
+  const weightKg = profile?.weightKg ?? (onboarding.isSynced ? onboarding.weightKg : 60);
+  const gender = (profile?.gender ?? (onboarding.isSynced ? onboarding.gender : 'MALE')) as GenderType;
+  const activity = (profile?.activityLevel ?? (onboarding.isSynced ? onboarding.activityLevel : 'MODERATE')) as ActivityLevelType;
   const goal: ProfileGoal =
     profile?.fitnessGoal ||
-    (onboarding.fitnessGoal === 'LOSE_WEIGHT'
+    (onboarding.isSynced && onboarding.fitnessGoal === 'LOSE_WEIGHT'
       ? 'WEIGHT_LOSS'
-      : onboarding.fitnessGoal === 'BUILD_MUSCLE'
+      : onboarding.isSynced && onboarding.fitnessGoal === 'BUILD_MUSCLE'
       ? 'MUSCLE_GAIN'
       : 'MAINTENANCE');
-  const targetWeightKg = profile?.targetWeightKg || onboarding.targetWeightKg || weightKg;
+  const targetWeightKg = profile?.targetWeightKg ?? (onboarding.isSynced ? onboarding.targetWeightKg : weightKg);
 
   const calcGoal: FitnessGoalType =
     goal === 'WEIGHT_LOSS' ? 'LOSE_WEIGHT' : goal === 'MUSCLE_GAIN' ? 'BUILD_MUSCLE' : 'MAINTAIN_WEIGHT';

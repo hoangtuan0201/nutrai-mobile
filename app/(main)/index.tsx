@@ -62,6 +62,9 @@ import {
   formatWater,
 } from '../../src/store/unitStore';
 import { useWaterStore } from '../../src/store/waterStore';
+import { useSubscriptionStore } from '../../src/store/subscriptionStore';
+import { DiscoverProCard } from '../../src/features/subscription/components/DiscoverProCard';
+import { progressApi } from '../../src/features/progress/api/progress.api';
 
 // ── Tumbler Glass SVG Component (Matching Image 1) ───────────────────────────
 interface TumblerGlassProps {
@@ -148,6 +151,8 @@ export default function HomeScreen() {
   const router = useSafeNavigate();
   const { colors, isDark } = useAppTheme();
   const { user } = useAuthStore();
+  const isPro = useSubscriptionStore((s) => s.isPro);
+  const openPaywall = useSubscriptionStore((s) => s.openPaywall);
   const { avatarUrl } = useAccount();
   const { unreadCount } = useUnreadNotificationsCount();
   const displayAvatar = avatarUrl || user?.avatarUrl;
@@ -178,9 +183,9 @@ export default function HomeScreen() {
 
   // User details
   const userName = user?.name ? user.name.split(' ')[0] : 'Tuan';
-  const userWeight = profile?.weightKg || onboarding.weightKg || 60;
-  const userHeight = profile?.heightCm || onboarding.heightCm || 174;
-  const userGender = (profile?.gender || onboarding.gender || 'MALE') as GenderType;
+  const userWeight = profile?.weightKg ?? (onboarding.isSynced ? onboarding.weightKg : 60);
+  const userHeight = profile?.heightCm ?? (onboarding.isSynced ? onboarding.heightCm : 174);
+  const userGender = (profile?.gender ?? (onboarding.isSynced ? onboarding.gender : 'MALE')) as GenderType;
   const userAge = useMemo(() => {
     if (profile?.dateOfBirth) {
       const dob = new Date(profile.dateOfBirth);
@@ -192,11 +197,11 @@ export default function HomeScreen() {
         if (age > 0) return age;
       }
     }
-    return onboarding.age || 21;
-  }, [profile?.dateOfBirth, onboarding.age]);
-  const userActivity = (profile?.activityLevel || onboarding.activityLevel || 'MODERATE') as ActivityLevelType;
+    return (onboarding.isSynced ? onboarding.age : 21) || 21;
+  }, [profile?.dateOfBirth, onboarding.isSynced, onboarding.age]);
+  const userActivity = (profile?.activityLevel ?? (onboarding.isSynced ? onboarding.activityLevel : 'MODERATE')) as ActivityLevelType;
   const userFitnessGoal = profile?.fitnessGoal ||
-    (onboarding.fitnessGoal === 'LOSE_WEIGHT' ? 'WEIGHT_LOSS' : onboarding.fitnessGoal === 'BUILD_MUSCLE' ? 'MUSCLE_GAIN' : 'MAINTENANCE');
+    (onboarding.isSynced && onboarding.fitnessGoal === 'LOSE_WEIGHT' ? 'WEIGHT_LOSS' : onboarding.isSynced && onboarding.fitnessGoal === 'BUILD_MUSCLE' ? 'MUSCLE_GAIN' : 'MAINTENANCE');
 
   const mappedCalcGoal: FitnessGoalType =
     userFitnessGoal === 'WEIGHT_LOSS'
@@ -312,6 +317,18 @@ export default function HomeScreen() {
   const [loadingMeals, setLoadingMeals] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [focusKey, setFocusKey] = useState(0);
+  const [streakDays, setStreakDays] = useState<number>(1);
+
+  const fetchStreak = useCallback(async () => {
+    try {
+      const res = await progressApi.getOverview(7);
+      if (res?.streak?.currentStreakDays !== undefined) {
+        setStreakDays(res.streak.currentStreakDays);
+      }
+    } catch {
+      // Keep default
+    }
+  }, []);
 
   const fetchDateData = useCallback(async (targetDate: string) => {
     const cached = mealsCacheRef.current[targetDate];
@@ -345,14 +362,15 @@ export default function HomeScreen() {
     useCallback(() => {
       setFocusKey((prev) => prev + 1);
       fetchDateData(selectedDate);
-    }, [fetchDateData, selectedDate])
+      fetchStreak();
+    }, [fetchDateData, selectedDate, fetchStreak])
   );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchDateData(selectedDate), refetchProfile()]);
+    await Promise.all([fetchDateData(selectedDate), refetchProfile(), fetchStreak()]);
     setRefreshing(false);
-  }, [fetchDateData, selectedDate, refetchProfile]);
+  }, [fetchDateData, selectedDate, refetchProfile, fetchStreak]);
 
   const handleSelectDay = (targetDate: string) => {
     setSelectedDate(targetDate);
@@ -414,37 +432,65 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.headerRight}>
+          {/* Pro Upgrade Crown Icon (Only for free user) */}
+          {!isPro && (
+            <TouchableOpacity
+              style={[
+                styles.crownBtn,
+                {
+                  backgroundColor: isDark ? 'rgba(220, 38, 38, 0.2)' : '#FEE2E2',
+                },
+              ]}
+              activeOpacity={0.75}
+              onPress={() => openPaywall('header_crown')}
+              accessibilityLabel="Upgrade to NutraAI Pro"
+            >
+              <Image
+                source={require('../../assets/icons/crown-pro.png')}
+                style={styles.crownImg}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* Streak Badge (Matches Progress screen pastel style) */}
+          <TouchableOpacity
+            style={[
+              styles.streakBadge,
+              {
+                backgroundColor: isDark ? 'rgba(220, 38, 38, 0.2)' : '#FEE2E2',
+              },
+            ]}
+            activeOpacity={0.75}
+            onPress={() => router.push('/(main)/progress')}
+            accessibilityLabel={`Streak ${streakDays} days`}
+          >
+            <Image
+              source={require('../../assets/icons/streakicon.png')}
+              style={styles.streakIconImg}
+              resizeMode="contain"
+            />
+            <Text
+              style={[
+                styles.streakCountText,
+                { color: isDark ? '#FFA39E' : '#D03027' },
+              ]}
+            >
+              {streakDays}
+            </Text>
+          </TouchableOpacity>
+
           {/* Notification Bell */}
           <TouchableOpacity
             style={[styles.bellBtn, { backgroundColor: colors.iconBg }]}
             activeOpacity={0.7}
             onPress={() => router.push('/notifications' as any)}
           >
-            <Bell size={20} color={colors.textPrimary} />
+            <Bell size={19} color={colors.textPrimary} />
             {unreadCount > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.notificationBadgeText}>
                   {unreadCount > 9 ? '9+' : unreadCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          {/* User Profile Avatar -> Clicking navigates to /settings (Unified Profile & Settings) */}
-          <TouchableOpacity
-            style={[styles.avatarBtn, { borderColor: colors.border }]}
-            activeOpacity={0.8}
-            onPress={() => router.push('/settings')}
-          >
-            {displayAvatar ? (
-              <Image
-                source={{ uri: displayAvatar }}
-                style={styles.avatarImg}
-              />
-            ) : (
-              <View style={[styles.avatarImg, styles.avatarPlaceholder]}>
-                <Text style={styles.avatarText}>
-                  {(user?.name || user?.email || 'N').charAt(0).toUpperCase()}
                 </Text>
               </View>
             )}
@@ -663,6 +709,9 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
         )}
+
+        {/* ── Discover NutraAI Pro Card (Matching Image 3) ── */}
+        <DiscoverProCard />
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -884,12 +933,41 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
+  },
+  crownBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  crownImg: {
+    width: 22,
+    height: 18,
+  },
+  streakBadge: {
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  streakIconImg: {
+    width: 19,
+    height: 19,
+  },
+  streakCountText: {
+    fontSize: 14,
+    fontWeight: '800',
+    fontFamily: theme.fonts.bold,
   },
   bellBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: 'rgba(27, 40, 27, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
