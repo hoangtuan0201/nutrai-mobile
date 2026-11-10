@@ -7,6 +7,9 @@ export interface AccountMe {
   avatarUrl: string | null;
   role: string;
   createdAt: string;
+  isPro?: boolean;
+  planName?: string;
+  subscriptionExpiresAt?: string | null;
 }
 
 export interface NotificationPreferences {

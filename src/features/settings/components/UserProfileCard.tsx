@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
-import { Camera, ChevronRight, User as UserIcon } from 'lucide-react-native';
+import { Camera, ChevronRight, Sparkles, User as UserIcon } from 'lucide-react-native';
 import { useAppTheme } from '../../../hooks/useAppTheme';
+import { useSubscriptionStore } from '../../../store/subscriptionStore';
 
 interface Props {
   name?: string | null;
@@ -10,10 +11,28 @@ interface Props {
   isUploading: boolean;
   onPressCard: () => void;
   onPressAvatar: () => void;
+  onPressPlan?: () => void;
 }
 
-export function UserProfileCard({ name, email, avatarUrl, isUploading, onPressCard, onPressAvatar }: Props) {
+export function UserProfileCard({
+  name,
+  email,
+  avatarUrl,
+  isUploading,
+  onPressCard,
+  onPressAvatar,
+  onPressPlan,
+}: Props) {
   const { colors } = useAppTheme();
+  const { isPro, planName, openPaywall } = useSubscriptionStore();
+
+  const handlePlanPress = () => {
+    if (onPressPlan) {
+      onPressPlan();
+    } else if (!isPro) {
+      openPaywall('settings');
+    }
+  };
 
   return (
     <TouchableOpacity
@@ -46,9 +65,26 @@ export function UserProfileCard({ name, email, avatarUrl, isUploading, onPressCa
         <Text style={[styles.email, { color: colors.textSecondary }]} numberOfLines={1}>
           {email}
         </Text>
-        <View style={[styles.plan, { backgroundColor: colors.surfaceMuted }]}>
-          <Text style={[styles.planText, { color: colors.textSecondary }]}>Free Plan</Text>
-        </View>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handlePlanPress}
+          style={[
+            styles.plan,
+            isPro
+              ? { backgroundColor: '#FCE7D6' }
+              : { backgroundColor: colors.surfaceMuted },
+          ]}
+        >
+          {isPro && <Sparkles size={11} color="#9A4A17" />}
+          <Text
+            style={[
+              styles.planText,
+              { color: isPro ? '#9A4A17' : colors.textSecondary },
+            ]}
+          >
+            {isPro ? planName || 'NutraAI Pro' : 'Free Plan · Upgrade'}
+          </Text>
+        </TouchableOpacity>
       </View>
       <ChevronRight size={18} color={colors.textMuted} />
     </TouchableOpacity>
@@ -75,7 +111,7 @@ const styles = StyleSheet.create({
   info: { flex: 1 },
   name: { fontSize: 17, fontWeight: '700', marginBottom: 4 },
   email: { fontSize: 13, marginBottom: 8 },
-  plan: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  planText: { fontSize: 11, fontWeight: '600' },
+  plan: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  planText: { fontSize: 11, fontWeight: '700' },
 });
 

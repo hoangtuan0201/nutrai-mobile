@@ -3,10 +3,11 @@ import { ScrollView, Alert, Platform, TouchableOpacity, Text, StyleSheet } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSafeNavigate } from '../../src/utils/navigationGuard';
-import { Bell, HelpCircle, Info, LogOut, Moon, Shield, Sliders } from 'lucide-react-native';
+import { Bell, HelpCircle, Info, LogOut, Moon, Shield, Sliders, Sparkles } from 'lucide-react-native';
 import { UnitsModal } from '../../src/components';
 import { useAuthStore } from '../../src/store/authStore';
 import { useUnitStore } from '../../src/store/unitStore';
+import { useSubscriptionStore } from '../../src/store/subscriptionStore';
 import { useAppTheme } from '../../src/hooks/useAppTheme';
 import { SettingsTopBar } from '../../src/features/settings/components/SettingsTopBar';
 import { UserProfileCard } from '../../src/features/settings/components/UserProfileCard';
@@ -27,6 +28,7 @@ export default function SettingsScreen() {
   const { colors, mode } = useAppTheme();
   const { user, logout } = useAuthStore();
   const { energyUnit, foodUnit, bodyUnit } = useUnitStore();
+  const { isPro, planName } = useSubscriptionStore();
   const summary = useProfileSummary();
   const { account, avatarUrl, isUploadingAvatar, pickAndUploadAvatar } = useAccount();
 
@@ -66,6 +68,7 @@ export default function SettingsScreen() {
           isUploading={isUploadingAvatar}
           onPressCard={() => setEditType('personal')}
           onPressAvatar={pickAndUploadAvatar}
+          onPressPlan={() => router.push('/settings/subscription')}
         />
 
         <PersonalInfoCard
@@ -77,6 +80,13 @@ export default function SettingsScreen() {
 
         <SectionLabel>App Settings</SectionLabel>
         <SettingsCard>
+          <SettingsRow
+            icon={Sparkles}
+            title="NutraAI Pro Subscription"
+            subtitle={isPro ? `${planName} (Active)` : 'Free Plan · Tap to upgrade'}
+            onPress={() => router.push('/settings/subscription')}
+          />
+          <SettingsDivider />
           <SettingsRow
             icon={Sliders}
             title="Units"
@@ -147,7 +157,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingBottom: 48 },
+  content: { paddingHorizontal: 20, paddingBottom: 90 },
   heading: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5, paddingHorizontal: 4 },
   subheading: { fontSize: 14, marginTop: 4, marginBottom: 24, paddingHorizontal: 4 },
   logout: {

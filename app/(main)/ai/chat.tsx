@@ -150,22 +150,54 @@ function formatMessageTime(isoString?: string): string {
 }
 
 /**
- * Renders markdown-lite text (**bold** and bullet lines) cleanly in React Native
+ * Renders markdown-lite text (**bold** and bullet lines) cleanly in React Native,
+ * with support for typewriter streaming cursor.
  */
-function FormattedAssistantText({ content }: { content: string }) {
+function FormattedAssistantText({
+  content,
+  isStreaming = false,
+}: {
+  content: string;
+  isStreaming?: boolean;
+}) {
   const { colors } = useAppTheme();
   const lines = content.split('\n');
 
-  const renderInlineBold = (lineText: string, keyPrefix: string) =>
-    lineText.split(/(\*\*[^*]+\*\*)/g).map((part, idx) =>
-      part.startsWith('**') && part.endsWith('**') ? (
-        <Text key={`${keyPrefix}-b-${idx}`} style={[styles.boldInlineText, { color: colors.textPrimary }]}>
-          {part.slice(2, -2)}
-        </Text>
-      ) : (
-        <Text key={`${keyPrefix}-t-${idx}`} style={{ color: colors.textPrimary }}>{part}</Text>
-      ),
+  const renderInlineBold = (lineText: string, keyPrefix: string, isLastLine: boolean) => {
+    const tokens: Array<{ text: string; isBold: boolean }> = [];
+    const parts = lineText.split(/(\*\*[^*]*\*\*?)/g);
+
+    for (let idx = 0; idx < parts.length; idx++) {
+      const part = parts[idx];
+      if (!part) continue;
+      if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+        tokens.push({ text: part.slice(2, -2), isBold: true });
+      } else if (part.startsWith('**') && isStreaming) {
+        tokens.push({ text: part.slice(2), isBold: true });
+      } else {
+        tokens.push({ text: part, isBold: false });
+      }
+    }
+
+    return (
+      <>
+        {tokens.map((tok, idx) => (
+          <Text
+            key={`${keyPrefix}-t-${idx}`}
+            style={[
+              tok.isBold && styles.boldInlineText,
+              { color: colors.textPrimary },
+            ]}
+          >
+            {tok.text}
+          </Text>
+        ))}
+        {isStreaming && isLastLine && (
+          <Text style={{ color: PALETTE.saffron, fontWeight: '900' }}> ▊</Text>
+        )}
+      </>
     );
+  };
 
   return (
     <View style={styles.formattedContainer}>
@@ -175,13 +207,14 @@ function FormattedAssistantText({ content }: { content: string }) {
 
         const isBullet = /^[-*•]\s+/.test(trimmed);
         const cleanLine = isBullet ? trimmed.replace(/^[-*•]\s+/, '') : trimmed;
+        const isLastLine = lineIdx === lines.length - 1;
 
         if (isBullet) {
           return (
             <View key={`line-${lineIdx}`} style={styles.bulletRow}>
               <View style={styles.bulletDot} />
-              <Text style={[styles.assistantBubbleText, { color: colors.textPrimary }]}>
-                {renderInlineBold(cleanLine, `l-${lineIdx}`)}
+              <Text style={[styles.assistantBubbleText, { color: colors.textPrimary, flex: 1 }]}>
+                {renderInlineBold(cleanLine, `l-${lineIdx}`, isLastLine)}
               </Text>
             </View>
           );
@@ -189,11 +222,71 @@ function FormattedAssistantText({ content }: { content: string }) {
 
         return (
           <Text key={`line-${lineIdx}`} style={[styles.assistantBubbleText, { color: colors.textPrimary }]}>
-            {renderInlineBold(cleanLine, `l-${lineIdx}`)}
+            {renderInlineBold(cleanLine, `l-${lineIdx}`, isLastLine)}
           </Text>
         );
       })}
     </View>
+  );
+}
+
+/**
+ * Animated typewriter effect that outputs ChatGPT-style streaming text chunk-by-chunk
+ */
+function TypewriterAssistantText({
+  fullContent,
+  onComplete,
+  onProgress,
+}: {
+  fullContent: string;
+  onComplete?: () => void;
+  onProgress?: () => void;
+}) {
+  const [displayedLength, setDisplayedLength] = useState(1);
+  const onCompleteRef = useRef(onComplete);
+  const onProgressRef = useRef(onProgress);
+  onCompleteRef.current = onComplete;
+  onProgressRef.current = onProgress;
+
+  useEffect(() => {
+    if (!fullContent) {
+      onCompleteRef.current?.();
+      return;
+    }
+
+    let currentIndex = 1;
+    const totalLength = fullContent.length;
+    // Chunk size: 2 to 6 characters so the animation feels snappy and finishes in ~1.5 - 2.5s
+    const chunkSize = Math.max(2, Math.min(6, Math.ceil(totalLength / 120)));
+    let lastScrollTick = 0;
+
+    const timer = setInterval(() => {
+      currentIndex = Math.min(totalLength, currentIndex + chunkSize);
+      setDisplayedLength(currentIndex);
+
+      const now = Date.now();
+      if (now - lastScrollTick > 90) {
+        lastScrollTick = now;
+        onProgressRef.current?.();
+      }
+
+      if (currentIndex >= totalLength) {
+        clearInterval(timer);
+        onCompleteRef.current?.();
+      }
+    }, 18);
+
+    return () => clearInterval(timer);
+  }, [fullContent]);
+
+  const partialText = fullContent.slice(0, displayedLength);
+  const isStreaming = displayedLength < fullContent.length;
+
+  return (
+    <FormattedAssistantText
+      content={partialText}
+      isStreaming={isStreaming}
+    />
   );
 }
 
@@ -210,6 +303,7 @@ export default function AiAssistantChatScreen() {
   const [pendingImage, setPendingImage] = useState<CapturedChatImage | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
   // In-chat Camera Modal state (never navigates away from AI Coach)
@@ -233,6 +327,7 @@ export default function AiAssistantChatScreen() {
       const data = await aiApi.getAssistantContext();
       setTodayNutrition(data.todayNutrition || null);
       setConversationId(data.activeConversation?.id || null);
+      setStreamingMessageId(null);
       setMessages((prev) => {
         const incoming = data.activeConversation?.messages || [];
         if (prev.length === 0) return incoming;
@@ -329,6 +424,7 @@ export default function AiAssistantChatScreen() {
     setIsDrawerOpen(false);
     if (isSending) return;
     setErrorBanner(null);
+    setStreamingMessageId(null);
     try {
       const data = await aiApi.startNewConversation();
       setTodayNutrition(data.todayNutrition || null);
@@ -344,6 +440,7 @@ export default function AiAssistantChatScreen() {
   const handleSelectConversation = async (id: string) => {
     setIsDrawerOpen(false);
     if (id === conversationId) return;
+    setStreamingMessageId(null);
     try {
       const data = await aiApi.openConversation(id);
       setTodayNutrition(data.todayNutrition || null);
@@ -410,14 +507,24 @@ export default function AiAssistantChatScreen() {
         savedUserMsg,
         res.assistantMessage,
       ]);
+      setStreamingMessageId(res.assistantMessage.id);
       scrollToBottom(true);
     } catch (err: any) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempUserMsg.id));
+
+      const statusCode = err?.response?.status;
+      const errCode = err?.response?.data?.code;
+      if (statusCode === 403 || errCode === 'DAILY_CHAT_LIMIT_REACHED') {
+        const { useSubscriptionStore } = require('../../../src/store/subscriptionStore');
+        useSubscriptionStore.getState().openQuotaModal('CHAT');
+        return;
+      }
+
       setErrorBanner(
         err?.response?.data?.message ||
           err?.message ||
           'Could not reach AI Coach. Please try again.',
       );
-      setMessages((prev) => prev.filter((m) => m.id !== tempUserMsg.id));
       if (!customQuestion) setInputText(rawText);
       if (imageToSend) setPendingImage(imageToSend);
     } finally {
@@ -601,21 +708,36 @@ export default function AiAssistantChatScreen() {
                 }
 
                 const toolBadge = formatToolBadgeLabel(msg.toolsUsed);
+                const isThisStreaming = msg.id === streamingMessageId;
+
                 return (
                   <View key={msg.id} style={styles.assistantMessageRow}>
                     <View style={styles.assistantAvatar}>
                       <Sparkles size={14} color={PALETTE.saffron} strokeWidth={2.4} />
                     </View>
                     <View style={styles.assistantBubbleWrap}>
-                      <View style={[styles.assistantBubble, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      <TouchableOpacity
+                        activeOpacity={0.95}
+                        disabled={!isThisStreaming}
+                        onPress={() => setStreamingMessageId(null)}
+                        style={[styles.assistantBubble, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                      >
                         {toolBadge && (
                           <View style={styles.toolBadgePill}>
                             <CheckCircle2 size={13} color="#3D7A1F" strokeWidth={2.3} />
                             <Text style={styles.toolBadgeText}>{toolBadge}</Text>
                           </View>
                         )}
-                        <FormattedAssistantText content={msg.content} />
-                      </View>
+                        {isThisStreaming ? (
+                          <TypewriterAssistantText
+                            fullContent={msg.content}
+                            onComplete={() => setStreamingMessageId(null)}
+                            onProgress={() => scrollToBottom(false)}
+                          />
+                        ) : (
+                          <FormattedAssistantText content={msg.content} />
+                        )}
+                      </TouchableOpacity>
                       {Boolean(timeString) && (
                         <Text style={[styles.messageTimestamp, styles.assistantTimestamp, { color: colors.textSecondary }]}>
                           {timeString}
