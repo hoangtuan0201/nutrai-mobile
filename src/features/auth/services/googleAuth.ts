@@ -8,8 +8,10 @@ export interface GoogleAuthResult {
   error?: string;
 }
 
-// Configure Google Sign-In with Web Client ID from .env
-const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+// Configure Google Sign-In with Web Client ID from .env or fallback
+const webClientId =
+  process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+  '86356630707-vtv08l3apeej61eg6kq7l329cj6iejoa.apps.googleusercontent.com';
 if (webClientId) {
   try {
     GoogleSignin.configure({

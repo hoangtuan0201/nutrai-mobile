@@ -131,10 +131,10 @@ export default function WelcomeScreen() {
             />
           ))}
 
-          {/* Center brand logo */}
+          {/* Center brand logo - explicitly force dark={false} so darkmode doesn't render white-on-white inside logoCircle */}
           <View style={styles.centerLogo}>
             <View style={styles.logoCircle}>
-              <Logo variant="full" size="lg" />
+              <Logo variant="full" size="lg" dark={false} />
             </View>
           </View>
         </View>
