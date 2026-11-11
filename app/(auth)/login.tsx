@@ -89,7 +89,7 @@ export default function LoginScreen() {
             >
               <ArrowLeft size={20} color={theme.colors.textPrimary} />
             </TouchableOpacity>
-            <Logo variant="full" size="md" />
+            <Logo variant="full" size="md" dark={false} />
           </View>
 
           {/* Title Header */}
