@@ -23,6 +23,8 @@ interface AuthState {
   isLoading: boolean;
   /** Last error from an auth operation */
   error: string | null;
+  /** Whether current session is a new user who must complete onboarding */
+  isNewUser: boolean;
 }
 
 interface AuthActions {
@@ -33,13 +35,15 @@ interface AuthActions {
   /** Register with email + password */
   register: (payload: RegisterPayload) => Promise<void>;
   /** Login with Google (Firebase ID Token) */
-  loginWithGoogle: (idToken: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<{ isNewUser: boolean }>;
   /** Logout — clear tokens and reset state */
   logout: () => Promise<void>;
   /** Called by the 401 interceptor when a token refresh succeeds */
   setAccessToken: (token: string) => void;
   /** Update current user fields (e.g. avatar) and persist to SecureStore */
   updateUser: (fields: Partial<AuthUser>) => void;
+  /** Set or clear isNewUser flag */
+  setIsNewUser: (isNew: boolean) => void;
   /** Clear error */
   clearError: () => void;
 }
@@ -60,6 +64,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   isHydrated: false,
   isLoading: false,
   error: null,
+  isNewUser: false,
 
   // ─── Actions ───────────────────────────────────────
 
@@ -139,8 +144,10 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       set({
         user: response.user,
         accessToken: response.tokens.accessToken,
+        isNewUser: response.isNewUser,
         isLoading: false,
       });
+      return { isNewUser: response.isNewUser };
     } catch (error: unknown) {
       const message = extractErrorMessage(error);
       set({ isLoading: false, error: message });
@@ -150,7 +157,11 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
 
   logout: async () => {
     await storage.clearAll();
-    set({ user: null, accessToken: null, error: null });
+    set({ user: null, accessToken: null, error: null, isNewUser: false });
+  },
+
+  setIsNewUser: (isNew: boolean) => {
+    set({ isNewUser: isNew });
   },
 
   setAccessToken: (token: string) => {

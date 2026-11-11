@@ -77,7 +77,8 @@ export default function RegisterScreen() {
     try {
       await registerUser(data);
       await syncOnboardingProfile();
-      // Auth guard in _layout.tsx will auto-redirect to (main)
+      useAuthStore.getState().setIsNewUser(false);
+      router.replace('/(main)');
     } catch {
       // Error is set in store
     }
@@ -90,6 +91,8 @@ export default function RegisterScreen() {
       const result = await performGoogleAuth();
       if (result.success) {
         await syncOnboardingProfile();
+        useAuthStore.getState().setIsNewUser(false);
+        router.replace('/(main)');
       } else if (result.error) {
         if (Platform.OS === 'web') {
           window.alert(result.error);
