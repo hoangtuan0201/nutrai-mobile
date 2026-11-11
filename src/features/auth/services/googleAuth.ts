@@ -5,6 +5,7 @@ import { useAuthStore } from '../../../store/authStore';
 
 export interface GoogleAuthResult {
   success: boolean;
+  isNewUser?: boolean;
   error?: string;
 }
 
@@ -67,8 +68,8 @@ export async function performGoogleAuth(): Promise<GoogleAuthResult> {
     const firebaseIdToken = await userCredential.user.getIdToken();
 
     // 4. Send Firebase ID Token to NestJS backend for internal JWT issuance
-    await loginWithGoogle(firebaseIdToken);
-    return { success: true };
+    const res = await loginWithGoogle(firebaseIdToken);
+    return { success: true, isNewUser: res?.isNewUser };
 
   } catch (error: any) {
     // Handle standard Google Sign-In status codes

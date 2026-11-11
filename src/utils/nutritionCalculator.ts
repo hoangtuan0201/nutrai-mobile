@@ -41,7 +41,7 @@ export const FT_TO_CM = 30.48;
 /** Configurable macro constants (g/kg/day) */
 export const DEFAULT_PROTEIN_G_PER_KG = 1.8;
 export const DEFAULT_FAT_G_PER_KG = 0.9;
-export const CALORIES_PER_KG_BODY_FAT = 7700;
+export const CALORIES_PER_KG_BODY_FAT = 7000;
 
 export interface GoalPaceOption {
   id: PaceRateId;
@@ -292,10 +292,11 @@ export function calculateClientNutritionPlan(
       : selectedPaceOption.weeklyRateKg;
 
   // 3. Calculate daily calorie adjustment based on pace:
-  // 1 kg body tissue variation ≈ 7,700 kcal -> dailyDelta = (weeklyPaceKg * 7700) / 7
-  const dailyDelta = Math.round(
-    (effectiveWeeklyPaceKg * CALORIES_PER_KG_BODY_FAT) / 7,
-  );
+  // Standard medical rate: 1 kg body tissue variation ≈ 7,000 kcal (500 kcal/day for 0.5 kg/week).
+  // Synchronized with backend GOAL_CALORIE_DELTA (-500 kcal for weight loss, +300 kcal for muscle gain).
+  const dailyDelta = effectiveWeeklyPaceKg === 0.5
+    ? 500
+    : Math.round((effectiveWeeklyPaceKg * 7000) / 7);
 
   let targetCalories: number;
 

@@ -52,14 +52,37 @@ export default function LoginScreen() {
     clearError();
     try {
       const result = await performGoogleAuth();
-      if (!result.success && result.error) {
-        if (Platform.OS === 'web') {
-          window.alert(result.error);
-        } else {
-          Alert.alert('Google Sign-In', result.error);
+      if (!result.success) {
+        if (result.error) {
+          if (Platform.OS === 'web') {
+            window.alert(result.error);
+          } else {
+            Alert.alert('Google Sign-In', result.error);
+          }
+        }
+        return;
+      }
+
+      // Check if user is newly created OR has incomplete profile metrics
+      let needsOnboarding = Boolean(result.isNewUser);
+      if (!needsOnboarding) {
+        try {
+          const { profileApi } = await import('../../src/features/profile/api/profile.api');
+          const profile = await profileApi.getProfile();
+          if (!profile?.fitnessGoal || !profile?.heightCm) {
+            needsOnboarding = true;
+          }
+        } catch {
+          // Ignore profile check error
         }
       }
-      // If success, auth guard in _layout.tsx will auto-redirect to (main)
+
+      if (needsOnboarding) {
+        useAuthStore.getState().setIsNewUser(true);
+        router.replace('/(auth)/goals' as any);
+      } else {
+        router.replace('/(main)');
+      }
     } finally {
       setGoogleLoading(false);
     }

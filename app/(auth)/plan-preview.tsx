@@ -95,6 +95,7 @@ export default function PlanPreviewScreen() {
       } catch (err) {
         console.warn('Profile sync on continue warning:', err);
       }
+      useAuthStore.getState().setIsNewUser(false);
       router.replace('/(main)');
     } else {
       router.push('/(auth)/register');

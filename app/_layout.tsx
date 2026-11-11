@@ -16,13 +16,26 @@ import { useAuthStore } from '../src/store/authStore';
 import { useAppTheme } from '../src/hooks/useAppTheme';
 import { usePushNotificationSetup } from '../src/features/notifications/hooks/usePushNotificationSetup';
 import { SubscriptionModalsHost } from '../src/features/subscription/components/SubscriptionModalsHost';
+import { useOnboardingStore } from '../src/store/onboardingStore';
+
+const ONBOARDING_ROUTES = [
+  'goals',
+  'gender',
+  'birth-year',
+  'height',
+  'weight',
+  'goal-preferences',
+  'activity-level',
+  'plan-preview',
+  'user-metrics',
+];
 
 /**
  * Auth guard — auto-redirect based on authentication state.
  * Runs after hydration completes.
  */
 function useProtectedRoute() {
-  const { user, isHydrated } = useAuthStore();
+  const { user, isHydrated, isNewUser } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
 
@@ -30,15 +43,26 @@ function useProtectedRoute() {
     if (!isHydrated) return; // wait for SecureStore read
 
     const inAuthGroup = segments[0] === '(auth)';
+    const currentScreen = segments[1] || '';
+    const isOnboarding = ONBOARDING_ROUTES.includes(currentScreen);
 
     if (!user && !inAuthGroup) {
       // Not logged in and not on auth screen → redirect to welcome
       router.replace('/(auth)/welcome');
-    } else if (user && inAuthGroup) {
-      // Logged in but still on auth screen → redirect to main app
-      router.replace('/(main)');
+    } else if (user) {
+      const hasOnboardingPlan = Boolean(useOnboardingStore.getState().calculatedPlan);
+
+      if (isNewUser && !hasOnboardingPlan) {
+        // Brand new user without completed onboarding plan must complete it first
+        if (!isOnboarding) {
+          router.replace('/(auth)/goals' as any);
+        }
+      } else if (inAuthGroup && !isOnboarding) {
+        // Logged in user with plan or existing user → redirect to main app
+        router.replace('/(main)');
+      }
     }
-  }, [user, isHydrated, segments]);
+  }, [user, isHydrated, isNewUser, segments]);
 }
 
 export default function RootLayout() {
