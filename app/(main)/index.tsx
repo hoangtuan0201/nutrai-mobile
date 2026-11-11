@@ -181,11 +181,11 @@ export default function HomeScreen() {
     return 'Good evening';
   };
 
-  // User details
+  // User details — fallback to onboarding store when profile is fetching over network
   const userName = user?.name ? user.name.split(' ')[0] : 'Tuan';
-  const userWeight = profile?.weightKg ?? (onboarding.isSynced ? onboarding.weightKg : 60);
-  const userHeight = profile?.heightCm ?? (onboarding.isSynced ? onboarding.heightCm : 174);
-  const userGender = (profile?.gender ?? (onboarding.isSynced ? onboarding.gender : 'MALE')) as GenderType;
+  const userWeight = profile?.weightKg ?? onboarding.weightKg ?? 70;
+  const userHeight = profile?.heightCm ?? onboarding.heightCm ?? 170;
+  const userGender = (profile?.gender ?? onboarding.gender ?? 'MALE') as GenderType;
   const userAge = useMemo(() => {
     if (profile?.dateOfBirth) {
       const dob = new Date(profile.dateOfBirth);
@@ -197,11 +197,11 @@ export default function HomeScreen() {
         if (age > 0) return age;
       }
     }
-    return (onboarding.isSynced ? onboarding.age : 21) || 21;
-  }, [profile?.dateOfBirth, onboarding.isSynced, onboarding.age]);
-  const userActivity = (profile?.activityLevel ?? (onboarding.isSynced ? onboarding.activityLevel : 'MODERATE')) as ActivityLevelType;
+    return onboarding.age || 26;
+  }, [profile?.dateOfBirth, onboarding.age]);
+  const userActivity = (profile?.activityLevel ?? onboarding.activityLevel ?? 'MODERATE') as ActivityLevelType;
   const userFitnessGoal = profile?.fitnessGoal ||
-    (onboarding.isSynced && onboarding.fitnessGoal === 'LOSE_WEIGHT' ? 'WEIGHT_LOSS' : onboarding.isSynced && onboarding.fitnessGoal === 'BUILD_MUSCLE' ? 'MUSCLE_GAIN' : 'MAINTENANCE');
+    (onboarding.fitnessGoal === 'LOSE_WEIGHT' ? 'WEIGHT_LOSS' : onboarding.fitnessGoal === 'BUILD_MUSCLE' ? 'MUSCLE_GAIN' : 'WEIGHT_LOSS');
 
   const mappedCalcGoal: FitnessGoalType =
     userFitnessGoal === 'WEIGHT_LOSS'
@@ -220,10 +220,26 @@ export default function HomeScreen() {
     fitnessGoal: mappedCalcGoal,
   });
 
-  const targetCalories = profile?.activeTarget?.dailyCalories || computedPlan.calories || 2500;
-  const targetProtein = profile?.activeTarget?.dailyProtein || computedPlan.protein || 120;
-  const targetCarbs = profile?.activeTarget?.dailyCarbs || computedPlan.carbs || 290;
-  const targetFat = profile?.activeTarget?.dailyFat || computedPlan.fat || 70;
+  const targetCalories =
+    profile?.activeTarget?.dailyCalories ||
+    onboarding.calculatedPlan?.calories ||
+    computedPlan.calories ||
+    2187;
+  const targetProtein =
+    profile?.activeTarget?.dailyProtein ||
+    onboarding.calculatedPlan?.protein ||
+    computedPlan.protein ||
+    133;
+  const targetCarbs =
+    profile?.activeTarget?.dailyCarbs ||
+    onboarding.calculatedPlan?.carbs ||
+    computedPlan.carbs ||
+    263;
+  const targetFat =
+    profile?.activeTarget?.dailyFat ||
+    onboarding.calculatedPlan?.fat ||
+    computedPlan.fat ||
+    67;
 
   // Weight & Unit computations
   const targetWeight =

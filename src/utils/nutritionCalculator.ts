@@ -92,7 +92,7 @@ export function calculateBMR(
   }
   const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
   const offset = gender === 'MALE' ? 5 : gender === 'FEMALE' ? -161 : -78;
-  return Math.round(base + offset);
+  return Math.round((base + offset) * 100) / 100;
 }
 
 /**
