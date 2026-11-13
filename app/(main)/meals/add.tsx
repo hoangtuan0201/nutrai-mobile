@@ -280,7 +280,7 @@ export default function AddFoodManuallyScreen() {
         totalProtein: computedProtein,
         totalCarbs: computedCarbs,
         totalFat: computedFat,
-        imageUrl: portionModal.imageUrl,
+        imageUrl: undefined, // Manual logs must not copy catalog food image to meal.imageUrl
         loggedDate: todayStr,
         source: 'MANUAL',
         items: [

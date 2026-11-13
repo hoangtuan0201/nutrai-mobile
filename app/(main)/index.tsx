@@ -405,40 +405,6 @@ export default function HomeScreen() {
   const consumedCarbs = dailyData?.summary ? Math.round(dailyData.summary.totalCarbs) : 0;
   const consumedFat = dailyData?.summary ? Math.round(dailyData.summary.totalFat) : 0;
 
-  const getMealThumbnail = (meal: Meal): string => {
-    if (meal.items && meal.items[0]?.foodName) {
-      const name = meal.items[0].foodName.toLowerCase();
-      if (name.includes('burger')) {
-        return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&auto=format&fit=crop&q=80';
-      }
-      if (name.includes('fry') || name.includes('fries')) {
-        return 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=200&auto=format&fit=crop&q=80';
-      }
-      if (name.includes('salad')) {
-        return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&auto=format&fit=crop&q=80';
-      }
-      if (name.includes('chicken')) {
-        return 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=200&auto=format&fit=crop&q=80';
-      }
-      if (name.includes('rice')) {
-        return 'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=200&auto=format&fit=crop&q=80';
-      }
-      if (name.includes('smoothie') || name.includes('berry')) {
-        return 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=200&auto=format&fit=crop&q=80';
-      }
-    }
-    if (meal.mealType === 'BREAKFAST') {
-      return 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=200&auto=format&fit=crop&q=80';
-    }
-    if (meal.mealType === 'LUNCH') {
-      return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=80';
-    }
-    if (meal.mealType === 'DINNER') {
-      return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&auto=format&fit=crop&q=80';
-    }
-    return 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=200&auto=format&fit=crop&q=80';
-  };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ── Top Header Bar ───────────────────────────────────────── */}

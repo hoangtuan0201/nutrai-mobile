@@ -38,40 +38,6 @@ import { mealsApi } from '../../../src/features/meals/api/meals.api';
 import { Meal, MealItem, MealType } from '../../../src/features/meals/types';
 import { useUnitStore, formatFoodWeight } from '../../../src/store/unitStore';
 
-// ── Common Food Image Dictionary (Fallback for matching food names) ─────────
-const POPULAR_FOOD_IMAGES: Record<string, string> = {
-  chicken: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=200&auto=format&fit=crop&q=80',
-  salmon: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=200&auto=format&fit=crop&q=80',
-  fish: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=200&auto=format&fit=crop&q=80',
-  egg: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=200&auto=format&fit=crop&q=80',
-  beef: 'https://images.unsplash.com/photo-1558030006-450675393462?w=200&auto=format&fit=crop&q=80',
-  steak: 'https://images.unsplash.com/photo-1558030006-450675393462?w=200&auto=format&fit=crop&q=80',
-  rice: 'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=200&auto=format&fit=crop&q=80',
-  oat: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=200&auto=format&fit=crop&q=80',
-  banana: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=200&auto=format&fit=crop&q=80',
-  apple: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=200&auto=format&fit=crop&q=80',
-  avocado: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=200&auto=format&fit=crop&q=80',
-  bread: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200&auto=format&fit=crop&q=80',
-  toast: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200&auto=format&fit=crop&q=80',
-  milk: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=200&auto=format&fit=crop&q=80',
-  yogurt: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=200&auto=format&fit=crop&q=80',
-  salad: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=200&auto=format&fit=crop&q=80',
-  broccoli: 'https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=200&auto=format&fit=crop&q=80',
-  almond: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=200&auto=format&fit=crop&q=80',
-  nut: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=200&auto=format&fit=crop&q=80',
-  peanut: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=200&auto=format&fit=crop&q=80',
-  potato: 'https://images.unsplash.com/photo-1596097635121-14b63b7a0c19?w=200&auto=format&fit=crop&q=80',
-  pasta: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=200&auto=format&fit=crop&q=80',
-  whey: 'https://images.unsplash.com/photo-1568651316335-e6f6630f14dc?w=200&auto=format&fit=crop&q=80',
-  protein: 'https://images.unsplash.com/photo-1568651316335-e6f6630f14dc?w=200&auto=format&fit=crop&q=80',
-  tuna: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=200&auto=format&fit=crop&q=80',
-  shrimp: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=200&auto=format&fit=crop&q=80',
-  pork: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=80',
-  spinach: 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=200&auto=format&fit=crop&q=80',
-  orange: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=200&auto=format&fit=crop&q=80',
-  cheese: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=200&auto=format&fit=crop&q=80',
-};
-
 // ── Custom Meal Type Icons ──────────────────────────────────────────────────
 const MealSectionIcon: React.FC<{ type: MealType; size?: number; color?: string }> = ({
   type,
@@ -212,26 +178,18 @@ export default function MealDetailScreen() {
   // ── Helper to resolve image for a food item ─────────────────────────────
   const getItemImage = useCallback(
     (item: MealItem): string | undefined => {
-      // 1. Direct item imageUrl or food.imageUrl from backend
+      // 1. Explicit item imageUrl if directly provided
       if (item.imageUrl) return item.imageUrl;
-      if (item.food?.imageUrl) return item.food.imageUrl;
 
-      // 2. If single item and meal has an image
-      if (meal?.imageUrl && displayItems.length === 1) {
+      // 2. Only if the meal itself was a verified photo scan (AI_IMAGE) with a real user photo and this is the single item
+      if (meal?.source === 'AI_IMAGE' && meal.imageUrl && displayItems.length === 1) {
         return meal.imageUrl;
       }
 
-      // 3. Fallback matching dictionary of common foods
-      const nameLower = (item.foodName || '').toLowerCase();
-      for (const [key, url] of Object.entries(POPULAR_FOOD_IMAGES)) {
-        if (nameLower.includes(key)) {
-          return url;
-        }
-      }
-
+      // Never auto-assign images from catalog or fallback string dictionaries
       return undefined;
     },
-    [meal?.imageUrl, displayItems.length]
+    [meal?.imageUrl, meal?.source, displayItems.length]
   );
 
   // ── Macro Distribution & Percentages ────────────────────────────────────
@@ -508,10 +466,16 @@ export default function MealDetailScreen() {
                 <Text style={[styles.heroBadgeText, { color: colors.textPrimary }]}>{meal.mealType}</Text>
               </View>
 
-              {(meal.source === 'AI_IMAGE' || meal.source === 'AI_TEXT') && (
+              {meal.source === 'AI_IMAGE' && (
                 <View style={[styles.heroBadgePill, styles.aiScanBadge, { backgroundColor: isDark ? 'rgba(124,58,237,0.25)' : 'rgba(245, 243, 255, 0.94)' }]}>
                   <Sparkles size={14} color="#7C3AED" />
                   <Text style={[styles.heroBadgeText, { color: '#7C3AED' }]}>AI Scan</Text>
+                </View>
+              )}
+              {meal.source === 'AI_TEXT' && (
+                <View style={[styles.heroBadgePill, styles.aiScanBadge, { backgroundColor: isDark ? 'rgba(124,58,237,0.25)' : 'rgba(245, 243, 255, 0.94)' }]}>
+                  <Sparkles size={14} color="#7C3AED" />
+                  <Text style={[styles.heroBadgeText, { color: '#7C3AED' }]}>AI Assistant</Text>
                 </View>
               )}
             </View>
