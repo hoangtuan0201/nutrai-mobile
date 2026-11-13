@@ -409,18 +409,15 @@ export default function MealsListScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* ── Top Editorial Header ──────────────────────────────────── */}
       <View style={styles.header}>
-        <View>
-          <View style={styles.headerBadgeRow}>
-            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>DAILY LOG</Text>
-            {totalLoggedItems > 0 && (
-              <View style={styles.loggedCountPill}>
-                <Text style={styles.loggedCountText}>
-                  {totalLoggedItems} {totalLoggedItems === 1 ? 'meal' : 'meals'}
-                </Text>
-              </View>
-            )}
-          </View>
+        <View style={styles.headerTitleRow}>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Nutrition Diary</Text>
+          {totalLoggedItems > 0 && (
+            <View style={styles.loggedCountPill}>
+              <Text style={styles.loggedCountText}>
+                {totalLoggedItems} {totalLoggedItems === 1 ? 'meal' : 'meals'}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.headerActions}>
@@ -717,6 +714,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.screenMargin,
     paddingTop: theme.spacing.sm,
     paddingBottom: theme.spacing.sm,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   headerBadgeRow: {
     flexDirection: 'row',

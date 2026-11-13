@@ -78,7 +78,7 @@ export async function ensureAndroidNotificationChannel() {
   if (!Notifications) return;
 
   await Notifications.setNotificationChannelAsync('nutraai-default', {
-    name: 'NutraAI Reminders & Alerts',
+    name: 'NutrAI Reminders & Alerts',
     importance: Notifications.AndroidImportance.MAX,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#FF9114',
@@ -183,7 +183,7 @@ export async function syncLocalMealReminders(prefs: NotificationPreferences | un
       {
         minutes: prefs.reminderBreakfastMinutes ?? 480,
         title: 'Good Morning! Time for Breakfast 🍳',
-        body: "Start your day strong! Don't forget to log your breakfast in NutraAI.",
+        body: "Start your day strong! Don't forget to log your breakfast in NutrAI.",
         mealType: 'BREAKFAST',
       },
       {

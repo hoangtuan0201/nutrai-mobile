@@ -212,7 +212,7 @@ export default function RegisterScreen() {
                 {agreeTerms && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
               </View>
               <Text style={styles.termsText}>
-                I agree to NutraAI's{' '}
+                I agree to NutrAI's{' '}
                 <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
                 <Text style={styles.termsLink}>Privacy Policy</Text>
               </Text>
