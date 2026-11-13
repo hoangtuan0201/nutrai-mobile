@@ -113,25 +113,9 @@ export default function ProgressScreen() {
 
       {/* Top Header */}
       <View style={styles.header}>
-        <View style={styles.userInfo}>
-          <TouchableOpacity
-            style={[styles.avatar, { borderColor: colors.border }]}
-            activeOpacity={0.8}
-            onPress={() => router.push('/settings')}
-          >
-            {displayAvatar ? (
-              <Image source={{ uri: displayAvatar }} style={styles.avatarImg} />
-            ) : (
-              <Text style={styles.avatarText}>
-                {(user?.name || user?.email || 'N').charAt(0).toUpperCase()}
-              </Text>
-            )}
-          </TouchableOpacity>
-          <View>
-            <Text style={[styles.greeting, { color: colors.textSecondary }]}>Progress & Analytics</Text>
-            <Text style={[styles.userName, { color: colors.textPrimary }]}>{user?.name || 'Health Tracker'}</Text>
-          </View>
-        </View>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+          Progress & Analytics
+        </Text>
 
         <TouchableOpacity
           style={[styles.headerAction, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -281,43 +265,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
   },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.saffron,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    overflow: 'hidden',
-  },
-  avatarImg: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 22,
-  },
-  avatarText: {
+  headerTitle: {
     fontFamily: theme.fonts.bold,
-    fontSize: 18,
-    color: '#FFFFFF',
-  },
-  greeting: {
-    fontFamily: theme.fonts.medium,
-    fontSize: 12,
-    color: '#8E9388',
-  },
-  userName: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 18,
-    color: '#131313',
+    fontSize: 24,
+    color: theme.colors.textPrimary,
+    letterSpacing: -0.4,
   },
   headerAction: {
     width: 38,

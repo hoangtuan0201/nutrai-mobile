@@ -459,7 +459,7 @@ export default function HomeScreen() {
               ]}
               activeOpacity={0.75}
               onPress={() => openPaywall('header_crown')}
-              accessibilityLabel="Upgrade to NutraAI Pro"
+              accessibilityLabel="Upgrade to NutrAI Pro"
             >
               <Image
                 source={require('../../assets/icons/crown-pro.png')}

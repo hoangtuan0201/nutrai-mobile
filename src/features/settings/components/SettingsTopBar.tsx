@@ -11,10 +11,12 @@ interface Props {
   /** Show the app logo (main Settings screen) instead of a page title */
   showLogo?: boolean;
   title?: string;
+  /** Force hide the back button (automatically hidden on main Settings when showLogo is true) */
+  hideBackBtn?: boolean;
 }
 
 /** Sticky top bar shared by every Settings screen. */
-export function SettingsTopBar({ showLogo, title }: Props) {
+export function SettingsTopBar({ showLogo, title, hideBackBtn }: Props) {
   const router = useSafeNavigate();
   const { colors } = useAppTheme();
 
@@ -30,6 +32,8 @@ export function SettingsTopBar({ showLogo, title }: Props) {
     }
   };
 
+  const shouldShowBack = !showLogo && !hideBackBtn;
+
   return (
     <View style={[styles.bar, { backgroundColor: colors.background }]}>
       {showLogo ? (
@@ -39,14 +43,16 @@ export function SettingsTopBar({ showLogo, title }: Props) {
       ) : (
         <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
       )}
-      <TouchableOpacity
-        onPress={goBack}
-        activeOpacity={0.7}
-        style={[styles.backBtn, { backgroundColor: colors.iconBg }]}
-        accessibilityLabel="Go back"
-      >
-        <ArrowLeft size={18} color={colors.textPrimary} />
-      </TouchableOpacity>
+      {shouldShowBack && (
+        <TouchableOpacity
+          onPress={goBack}
+          activeOpacity={0.7}
+          style={[styles.backBtn, { backgroundColor: colors.iconBg }]}
+          accessibilityLabel="Go back"
+        >
+          <ArrowLeft size={18} color={colors.textPrimary} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

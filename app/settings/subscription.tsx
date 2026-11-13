@@ -48,7 +48,7 @@ export default function SubscriptionSettingsScreen() {
       <SettingsTopBar title="Subscription" />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.heading, { color: colors.textPrimary }]}>NutraAI Pro</Text>
+        <Text style={[styles.heading, { color: colors.textPrimary }]}>NutrAI Pro</Text>
         <Text style={[styles.subheading, { color: colors.textSecondary }]}>
           Understand, improve and optimize your nutrition with AI.
         </Text>
@@ -126,7 +126,7 @@ export default function SubscriptionSettingsScreen() {
           >
             <Sparkles size={16} color="#FFFFFF" />
             <Text style={styles.upgradeBtnText}>
-              {isPro ? 'Extend Pro Subscription' : 'Upgrade to NutraAI Pro'}
+              {isPro ? 'Extend Pro Subscription' : 'Upgrade to NutrAI Pro'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -153,7 +153,7 @@ export default function SubscriptionSettingsScreen() {
                   <View style={styles.paymentRow}>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.paymentTitle, { color: colors.textPrimary }]}>
-                        {payment.plan?.name || 'NutraAI Pro'} (
+                        {payment.plan?.name || 'NutrAI Pro'} (
                         {payment.paymentCode || payment.transactionId})
                       </Text>
                       <Text style={[styles.paymentDate, { color: colors.textSecondary }]}>

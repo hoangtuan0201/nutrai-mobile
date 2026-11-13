@@ -45,7 +45,7 @@ export default function SettingsScreen() {
       if (window.confirm('Are you sure you want to sign out?')) doLogout();
       return;
     }
-    Alert.alert('Sign Out', 'Are you sure you want to sign out of NutraAI?', [
+    Alert.alert('Sign Out', 'Are you sure you want to sign out of NutrAI?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign Out', style: 'destructive', onPress: doLogout },
     ]);
@@ -82,7 +82,7 @@ export default function SettingsScreen() {
         <SettingsCard>
           <SettingsRow
             icon={Sparkles}
-            title="NutraAI Pro Subscription"
+            title="NutrAI Pro Subscription"
             subtitle={isPro ? `${planName} (Active)` : 'Free Plan · Tap to upgrade'}
             onPress={() => router.push('/settings/subscription')}
           />
@@ -126,9 +126,9 @@ export default function SettingsScreen() {
           <SettingsDivider />
           <SettingsRow
             icon={Info}
-            title="About NutraAI"
+            title="About NutrAI"
             subtitle="Version 1.0.0"
-            onPress={() => Alert.alert('NutraAI', 'Version 1.0.0\nAI-powered nutrition tracking.')}
+            onPress={() => Alert.alert('NutrAI', 'Version 1.0.0\nAI-powered nutrition tracking.')}
           />
         </SettingsCard>
 

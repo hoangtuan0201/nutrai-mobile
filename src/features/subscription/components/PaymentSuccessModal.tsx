@@ -46,7 +46,7 @@ export function PaymentSuccessModal() {
           <Text style={[styles.title, { color: colors.textPrimary }]}>
             {isExtensionCheckout
               ? 'Pro Subscription Extended! 🎉'
-              : 'Welcome to NutraAI Pro! ⭐'}
+              : 'Welcome to NutrAI Pro! ⭐'}
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             {isExtensionCheckout

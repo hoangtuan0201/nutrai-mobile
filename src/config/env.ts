@@ -20,5 +20,5 @@ function resolveApiUrl(): string {
 export const ENV = {
   API_URL: resolveApiUrl(),
   API_TIMEOUT_MS: 15_000,
-  APP_NAME: 'NutraAI',
+  APP_NAME: 'NutrAI',
 } as const;

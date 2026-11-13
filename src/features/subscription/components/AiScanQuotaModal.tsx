@@ -79,7 +79,7 @@ export function AiScanQuotaModal() {
             <View style={styles.unlockHeader}>
               <Sparkles size={18} color="#D9822B" strokeWidth={2.2} />
               <Text style={[styles.unlockTitle, { color: colors.textPrimary }]}>
-                Unlock NutraAI Pro
+                Unlock NutrAI Pro
               </Text>
             </View>
 

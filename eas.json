@@ -18,7 +18,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://roamer-arrogant-mace.ngrok-free.dev",
-        "EXPO_PUBLIC_FIREBASE_API_KEY": "[GCP_API_KEY]",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDOHXoT4udUjudjxcVo5jSgPTzFkthv15g",
         "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "nutrai-b2bdd.firebaseapp.com",
         "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "nutrai-b2bdd",
         "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "nutrai-b2bdd.firebasestorage.app",
