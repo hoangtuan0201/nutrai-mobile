@@ -18,7 +18,6 @@ const PRO_FEATURES = [
   'Advanced AI Food Analysis',
   'Personalized AI Nutrition Coach',
   'Detailed Progress Analytics',
-  'Weekly Nutrition Reports',
   'More AI scans and messages',
 ];
 

@@ -17,7 +17,6 @@ const PRO_ITEMS = [
   'Personalized AI Coach (50 chats/day)',
   'Detailed nutrition insights',
   'Long-term analytics',
-  'Weekly nutrition reports',
 ];
 
 export function ProFeatureComparison() {

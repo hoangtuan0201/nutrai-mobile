@@ -85,7 +85,7 @@ export function PaymentSuccessModal() {
                 <Check size={11} color="#FFFFFF" strokeWidth={3} />
               </View>
               <Text style={[styles.perkText, { color: colors.textPrimary }]}>
-                Full Long-Term Analytics & Weekly Reports
+                Long-Term Progress Analytics & Insights
               </Text>
             </View>
           </View>

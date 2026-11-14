@@ -86,12 +86,4 @@ export const mealsApi = {
     const response = await apiClient.get<FoodSearchResult>(`/foods/barcode/${encodeURIComponent(barcode)}`);
     return response.data;
   },
-
-  /**
-   * Import or cache a USDA food item into internal database
-   */
-  async importUsdaFood(food: FoodSearchResult): Promise<any> {
-    const response = await apiClient.post('/foods/import-usda', food);
-    return response.data;
-  },
 };
