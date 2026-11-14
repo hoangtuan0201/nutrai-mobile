@@ -22,6 +22,7 @@ import {
   Sparkles,
   RotateCcw,
   Plus,
+  Utensils,
 } from 'lucide-react-native';
 import { theme } from '../../../src/constants';
 import { mealsApi } from '../../../src/features/meals/api/meals.api';
@@ -191,9 +192,7 @@ export default function AIScanConfirmationScreen() {
     }, [router])
   );
 
-  const previewImage =
-    imageUri ||
-    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80';
+  const hasPreviewImage = Boolean(imageUri);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right', 'bottom']}>
@@ -236,7 +235,13 @@ export default function AIScanConfirmationScreen() {
         <View style={[styles.scanCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {/* Top Row: Thumbnail + Summary */}
           <View style={styles.cardTopRow}>
-            <Image source={{ uri: previewImage }} style={styles.thumbnailImage} />
+            {hasPreviewImage ? (
+              <Image source={{ uri: imageUri! }} style={styles.thumbnailImage} />
+            ) : (
+              <View style={[styles.thumbnailImage, styles.thumbnailPlaceholder, { backgroundColor: colors.inputBg }]}>
+                <Utensils size={28} color={colors.textSecondary} />
+              </View>
+            )}
 
             <View style={styles.cardTopDetails}>
               <View style={styles.aiBadgeRow}>
@@ -545,6 +550,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: '#EEE',
     resizeMode: 'cover',
+  },
+  thumbnailPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardTopDetails: {
     flex: 1,
