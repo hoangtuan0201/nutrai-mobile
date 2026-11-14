@@ -61,48 +61,46 @@ export const SPACING = {
 } as const;
 
 export const RADIUS = {
-  sm: 12,    // Chips, small buttons
-  md: 20,    // Cards
-  lg: 28,    // Sheets, nav bar
+  sm: 10,    // Controls, inputs, chips, small buttons (Admin borderRadius: 10)
+  md: 14,    // Cards, containers (Admin borderRadiusLG: 14)
+  lg: 18,    // Sheets, modals, nav bar
   full: 999, // Pills, badges, circular buttons
 } as const;
 
 export const TYPOGRAPHY = {
   displayNumber: {
-    fontFamily: FONTS.bold,
+    fontFamily: FONTS.extraBold,
     fontSize: 36,
     lineHeight: 40,
-    fontWeight: '700' as const,
+    letterSpacing: -0.6,
+    fontVariant: ['tabular-nums'] as ('tabular-nums')[],
   },
   h1: {
     fontFamily: FONTS.bold,
     fontSize: 22,
     lineHeight: 28,
-    fontWeight: '700' as const,
+    letterSpacing: -0.4,
   },
   h2: {
     fontFamily: FONTS.semiBold,
     fontSize: 18,
     lineHeight: 24,
-    fontWeight: '600' as const,
+    letterSpacing: -0.2,
   },
   body: {
     fontFamily: FONTS.medium,
     fontSize: 15,
     lineHeight: 20,
-    fontWeight: '500' as const,
   },
   bodySecondary: {
     fontFamily: FONTS.regular,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: '400' as const,
   },
   caption: {
     fontFamily: FONTS.medium,
     fontSize: 11,
     lineHeight: 14,
-    fontWeight: '500' as const,
   },
 } as const;
 

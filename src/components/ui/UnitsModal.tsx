@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
   },
   closeBtn: {
     width: 44,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   radioRow: {
     flexDirection: 'row',
@@ -225,10 +225,10 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   pillTextActive: {
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   saveBtn: {
     borderRadius: 16,
@@ -238,6 +238,6 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
 });

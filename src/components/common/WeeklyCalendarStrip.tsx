@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   },
   monthLabel: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     letterSpacing: -0.2,
   },
   todayPillBtn: {
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   },
   todayPillText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   weekRow: {
     flexDirection: 'row',
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   },
   dayName: {
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     marginBottom: 2,
     letterSpacing: 0.2,
   },
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   },
   dayNumber: {
     fontSize: 17,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
   },
   dayNumberActive: {
     color: '#FFFFFF',

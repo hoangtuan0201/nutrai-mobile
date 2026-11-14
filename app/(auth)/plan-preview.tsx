@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   calorieCard: {
     backgroundColor: '#1E2F25',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 22,
     marginBottom: 24,
     shadowColor: '#1E2F25',
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   macroCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(19,19,19,0.06)',

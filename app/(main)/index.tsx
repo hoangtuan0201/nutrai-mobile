@@ -931,7 +931,7 @@ const styles = StyleSheet.create({
   streakBadge: {
     height: 36,
     paddingHorizontal: 12,
-    borderRadius: 18,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -943,7 +943,6 @@ const styles = StyleSheet.create({
   },
   streakCountText: {
     fontSize: 14,
-    fontWeight: '800',
     fontFamily: theme.fonts.bold,
   },
   bellBtn: {
@@ -1031,12 +1030,12 @@ const styles = StyleSheet.create({
   greetingTime: {
     fontSize: 16,
     color: '#656A60',
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
 
   userNameText: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#1B281B',
     letterSpacing: -0.5,
   },
@@ -1047,7 +1046,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6E7369',
     marginTop: 4,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   // ── Date Selector
   dateSelectorContainer: {
@@ -1062,7 +1061,7 @@ const styles = StyleSheet.create({
   },
   dateSelectorMonth: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#656A60',
     letterSpacing: -0.2,
   },
@@ -1077,7 +1076,7 @@ const styles = StyleSheet.create({
   },
   todayPillText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#285880',
   },
   dateSelectorRow: {
@@ -1108,7 +1107,7 @@ const styles = StyleSheet.create({
   },
   dayName: {
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#285880', // Soft blue text matching Image 1
     marginBottom: 2,
     letterSpacing: 0.2,
@@ -1118,7 +1117,7 @@ const styles = StyleSheet.create({
   },
   dayNumber: {
     fontSize: 17,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#1B281B',
   },
   dayNumberActive: {
@@ -1135,7 +1134,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#1B281B',
     letterSpacing: -0.3,
   },
@@ -1144,7 +1143,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#EAE7DD',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 16,
     borderWidth: 1,
@@ -1164,14 +1163,14 @@ const styles = StyleSheet.create({
   },
   aiTitle: {
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#1B281B',
     marginBottom: 1,
   },
   aiSubtitle: {
     fontSize: 11,
     color: '#656A60',
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   aiArrowBtn: {
     width: 32,
@@ -1195,14 +1194,14 @@ const styles = StyleSheet.create({
   },
   seeAllText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     color: '#656A60',
   },
   mealCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 12,
     marginBottom: 10,
     borderWidth: 1,
@@ -1236,27 +1235,27 @@ const styles = StyleSheet.create({
   },
   mealName: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#1B281B',
     marginBottom: 3,
   },
   mealMacros: {
     fontSize: 11,
     color: '#656A60',
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     marginBottom: 2,
   },
   mealTime: {
     fontSize: 10,
     color: '#8A8F85',
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   emptyMealsCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 10,
     borderWidth: 1,
@@ -1269,14 +1268,14 @@ const styles = StyleSheet.create({
   },
   emptyMealsTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#1B281B',
     marginBottom: 4,
   },
   emptyMealsSub: {
     fontSize: 12,
     color: '#656A60',
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   emptyMealsAddBtn: {
     backgroundColor: '#2E7D32',
@@ -1287,7 +1286,7 @@ const styles = StyleSheet.create({
   emptyMealsAddText: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   // ── Tracker Headers & Cards (Water & Weight)
   sectionHeaderRow: {
@@ -1305,12 +1304,12 @@ const styles = StyleSheet.create({
   },
   moreLinkText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     color: '#797E74',
   },
   trackerCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,
@@ -1324,7 +1323,7 @@ const styles = StyleSheet.create({
   trackerSubLabel: {
     fontSize: 13,
     color: '#767B71',
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     marginBottom: 4,
   },
   trackerValueRow: {
@@ -1334,13 +1333,13 @@ const styles = StyleSheet.create({
   },
   trackerBigNumber: {
     fontSize: 28,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#1B281B',
     letterSpacing: -0.5,
   },
   trackerUnitText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#1B281B',
   },
   // ── Tumbler Row
@@ -1356,7 +1355,7 @@ const styles = StyleSheet.create({
   },
   trackerGoalText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     color: '#767B71',
   },
   // ── Weight Specific
@@ -1379,7 +1378,7 @@ const styles = StyleSheet.create({
   },
   bmiPillText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     color: '#767B71',
   },
   updateWeightBtn: {
@@ -1393,7 +1392,7 @@ const styles = StyleSheet.create({
   updateWeightBtnText: {
     color: '#2563EB',
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   weightFooterDivider: {
     height: 1,
@@ -1409,11 +1408,11 @@ const styles = StyleSheet.create({
   weightFooterItem: {
     fontSize: 12,
     color: '#767B71',
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   weightFooterBold: {
     color: '#1B281B',
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   // ── Modal Styles
   modalOverlay: {
@@ -1425,7 +1424,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 22,
     width: '100%',
     maxWidth: 380,
@@ -1443,7 +1442,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#1B281B',
   },
   modalCloseBtn: {
@@ -1451,7 +1450,7 @@ const styles = StyleSheet.create({
   },
   modalLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     color: '#656A60',
     marginBottom: 8,
   },
@@ -1463,7 +1462,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#1B281B',
     marginBottom: 18,
   },
@@ -1477,7 +1476,7 @@ const styles = StyleSheet.create({
   modalSaveBtnText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
   },
   // ── Synchronized Water Modal Styles
   modalHeaderTitleRow: {
@@ -1508,17 +1507,17 @@ const styles = StyleSheet.create({
   waterStatusLabel: {
     fontSize: 13,
     color: '#656A60',
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   waterStatusVal: {
     fontSize: 14,
     color: '#1B281B',
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
   },
   waterStatusGoal: {
     fontSize: 13,
     color: '#767B71',
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   waterProgressBarTrack: {
     height: 6,
@@ -1564,7 +1563,7 @@ const styles = StyleSheet.create({
   },
   waterActionText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#1B281B',
   },
 });

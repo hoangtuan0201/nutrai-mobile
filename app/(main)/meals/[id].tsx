@@ -1033,7 +1033,7 @@ const styles = StyleSheet.create({
   heroImageWrapper: {
     width: '100%',
     height: 230,
-    borderRadius: 22,
+    borderRadius: 18,
     overflow: 'hidden',
     backgroundColor: '#EAE6DB',
     marginBottom: 16,
@@ -1078,7 +1078,7 @@ const styles = StyleSheet.create({
   /* ── Primary Card ────────────────────────────────────────────────────── */
   primaryCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,
@@ -1129,7 +1129,7 @@ const styles = StyleSheet.create({
   /* ── Macro Card ──────────────────────────────────────────────────────── */
   macroCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,
@@ -1220,7 +1220,7 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
@@ -1439,7 +1439,7 @@ const styles = StyleSheet.create({
   },
   portionQuantityCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#ECEAE1',
     padding: 16,
@@ -1501,7 +1501,7 @@ const styles = StyleSheet.create({
   },
   portionMacroCard: {
     backgroundColor: '#F8F7F2',
-    borderRadius: 18,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 20,
   },
@@ -1550,7 +1550,7 @@ const styles = StyleSheet.create({
   },
   portionSubmitBtn: {
     backgroundColor: '#2E7D32',
-    borderRadius: 18,
+    borderRadius: 14,
     paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1571,7 +1571,7 @@ const styles = StyleSheet.create({
   deleteModalCard: {
     width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 24,
     alignItems: 'center',
   },

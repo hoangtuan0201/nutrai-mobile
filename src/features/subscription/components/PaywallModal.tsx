@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     maxHeight: '94%',
-    borderRadius: 24,
+    borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -265,14 +265,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     letterSpacing: -0.4,
     textAlign: 'center',
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     textAlign: 'center',
   },
   featuresList: {
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 15,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   planCard: {
     borderRadius: 16,
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   },
   planTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   flexibleBadge: {
     backgroundColor: '#F3F4F6',
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   },
   flexibleBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#1F2937',
   },
   bestValueBadge: {
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   },
   bestValueBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#9A4A17',
   },
   priceRow: {
@@ -340,16 +340,16 @@ const styles = StyleSheet.create({
   },
   priceValue: {
     fontSize: 24,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     letterSpacing: -0.5,
   },
   pricePeriod: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   equivalentText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     marginTop: 6,
   },
   ctaButton: {
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
   ctaButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   footerRow: {
     flexDirection: 'row',
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   footerDot: {
     fontSize: 12,

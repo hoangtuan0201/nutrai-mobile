@@ -39,7 +39,7 @@ export const cameraStyles = StyleSheet.create({
   modeSwitcher: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 3,
   },
   modeTab: {
@@ -133,7 +133,7 @@ export const cameraStyles = StyleSheet.create({
     backgroundColor: 'rgba(19, 19, 19, 0.88)',
     paddingHorizontal: 22,
     paddingVertical: 18,
-    borderRadius: 20,
+    borderRadius: 14,
     alignItems: 'center',
     gap: 8,
   },
@@ -432,7 +432,7 @@ export const cameraStyles = StyleSheet.create({
     backgroundColor: '#F7F7F7',
     borderWidth: 1,
     borderColor: '#E2E2E2',
-    borderRadius: 20,
+    borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 4,
     minWidth: 80,
@@ -493,7 +493,7 @@ export const cameraStyles = StyleSheet.create({
   successCard: {
     width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 24,
     alignItems: 'center',
   },

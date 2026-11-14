@@ -158,16 +158,16 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingBottom: 90 },
-  heading: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5, paddingHorizontal: 4 },
+  heading: { fontSize: 28, fontFamily: 'Manrope_800ExtraBold', letterSpacing: -0.5, paddingHorizontal: 4 },
   subheading: { fontSize: 14, marginTop: 4, marginBottom: 24, paddingHorizontal: 4 },
   logout: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
+    borderRadius: 14,
     paddingVertical: 16,
     borderWidth: 1,
     gap: 8,
   },
-  logoutText: { fontSize: 15, fontWeight: '700' },
+  logoutText: { fontSize: 15, fontFamily: 'Manrope_700Bold' },
 });

@@ -101,12 +101,12 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
   iconCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  cardTitle: { fontSize: 15, fontWeight: '700' },
+  cardTitle: { fontSize: 15, fontFamily: 'Manrope_700Bold' },
   cardSubtitle: { fontSize: 12, marginTop: 2 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   stat: { flex: 1 },
   statLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
-  statLabel: { fontSize: 11, fontWeight: '600' },
-  statValue: { fontSize: 13, fontWeight: '700', lineHeight: 18 },
+  statLabel: { fontSize: 11, fontFamily: 'Manrope_600SemiBold' },
+  statValue: { fontSize: 13, fontFamily: 'Manrope_700Bold', lineHeight: 18 },
 });
 

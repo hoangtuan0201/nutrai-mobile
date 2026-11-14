@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   card: {
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: 20,
+    borderRadius: 14,
     borderWidth: 1,
     marginBottom: 12,
   },

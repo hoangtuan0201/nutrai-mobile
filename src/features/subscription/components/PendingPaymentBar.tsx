@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 18,
+    borderRadius: 14,
     borderWidth: 1,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   },
   titleText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#FFFFFF',
   },
   timerBadge: {
@@ -211,13 +211,13 @@ const styles = StyleSheet.create({
   },
   timerText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#F59E0B',
   },
   subtitleText: {
     fontSize: 11,
     color: '#94A3B8',
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   actionsRow: {
     flexDirection: 'row',
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   payBtnText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#FFFFFF',
   },
   cancelBtn: {
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   },
   confirmCard: {
     width: '100%',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 24,
     borderWidth: 1,
     alignItems: 'center',
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   },
   confirmTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   },
   confirmBtnSecondaryText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   confirmBtnDestructive: {
     flex: 1,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   confirmBtnDestructiveText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#FFFFFF',
   },
 });

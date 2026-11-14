@@ -193,7 +193,7 @@ function FormattedAssistantText({
           </Text>
         ))}
         {isStreaming && isLastLine && (
-          <Text style={{ color: PALETTE.saffron, fontWeight: '900' }}> ▊</Text>
+          <Text style={{ color: PALETTE.saffron, fontFamily: 'Manrope_800ExtraBold' }}> ▊</Text>
         )}
       </>
     );

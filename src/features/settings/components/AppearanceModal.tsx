@@ -62,10 +62,10 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   overlay: { flex: 1, justifyContent: 'flex-end' },
   sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 32 },
-  title: { fontSize: 18, fontWeight: '800', marginBottom: 16 },
+  title: { fontSize: 18, fontFamily: 'Manrope_800ExtraBold', marginBottom: 16 },
   option: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
   iconCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  label: { fontSize: 15, fontWeight: '700' },
+  label: { fontSize: 15, fontFamily: 'Manrope_700Bold' },
   hint: { fontSize: 12, marginTop: 2 },
 });
 

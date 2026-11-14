@@ -782,7 +782,7 @@ const styles = StyleSheet.create({
   /* ── Sleek Meal Section Cards (Reference Image 2 Layout) ───────── */
   sectionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     paddingHorizontal: 18,
     paddingVertical: 15,
     borderWidth: 1,
@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 24,
     alignItems: 'center',
     ...theme.shadows.elevation2,

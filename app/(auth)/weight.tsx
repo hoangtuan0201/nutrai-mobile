@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 18,
     paddingVertical: 28,
     paddingHorizontal: 20,
     borderWidth: 1.5,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   bmiCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    borderRadius: 18,
     padding: 20,
     borderWidth: 1,
     borderColor: 'rgba(19, 19, 19, 0.07)',

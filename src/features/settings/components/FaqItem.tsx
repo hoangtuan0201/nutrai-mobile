@@ -27,7 +27,7 @@ export function FaqItem({ q, a }: FaqEntry) {
 const styles = StyleSheet.create({
   item: { paddingVertical: 4, minHeight: 44, justifyContent: 'center' },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  q: { flex: 1, fontSize: 14, fontWeight: '700' },
+  q: { flex: 1, fontSize: 14, fontFamily: 'Manrope_700Bold' },
   a: { fontSize: 13, lineHeight: 20, marginTop: 8 },
 });
 

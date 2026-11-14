@@ -489,7 +489,7 @@ export const BarcodeSection: React.FC<BarcodeSectionProps> = ({
             </View>
             <Text style={styles.successTitle}>Packaged Food Logged!</Text>
             <Text style={styles.successSubtitle}>
-              <Text style={{ fontWeight: '700', color: '#1B281B' }}>
+              <Text style={{ fontFamily: 'Manrope_700Bold', color: '#1B281B' }}>
                 {barcodeSuccessModal?.name}
               </Text>{' '}
               ({barcodeSuccessModal?.calories} {energyUnit}) added to your daily diary.

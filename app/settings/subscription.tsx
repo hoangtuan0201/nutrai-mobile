@@ -201,10 +201,10 @@ export default function SubscriptionSettingsScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingBottom: 48 },
-  heading: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5, paddingHorizontal: 4 },
+  heading: { fontSize: 28, fontFamily: 'Manrope_800ExtraBold', letterSpacing: -0.5, paddingHorizontal: 4 },
   subheading: { fontSize: 14, marginTop: 4, marginBottom: 20, paddingHorizontal: 4 },
   statusCard: {
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 18,
     borderWidth: 1.2,
     marginBottom: 20,
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   },
   proBadgeText: {
     fontSize: 10,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#9A4A17',
   },
   freeBadge: {
@@ -238,17 +238,17 @@ const styles = StyleSheet.create({
   },
   freeBadgeText: {
     fontSize: 10,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#15803D',
   },
   planTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     marginBottom: 2,
   },
   expiryText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   quotaBox: {
     flexDirection: 'row',
@@ -267,12 +267,12 @@ const styles = StyleSheet.create({
   },
   quotaLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     marginBottom: 4,
   },
   quotaVal: {
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
   },
   upgradeBtn: {
     flexDirection: 'row',
@@ -286,10 +286,10 @@ const styles = StyleSheet.create({
   upgradeBtnText: {
     color: '#FFFFFF',
     fontSize: 14.5,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   paymentsCard: {
-    borderRadius: 20,
+    borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderWidth: 1,
@@ -303,19 +303,19 @@ const styles = StyleSheet.create({
   },
   paymentTitle: {
     fontSize: 13.5,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     marginBottom: 2,
   },
   paymentDate: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   paymentRight: {
     alignItems: 'flex-end',
   },
   paymentAmount: {
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     marginBottom: 2,
   },
   paymentStatusRow: {
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   },
   paymentStatusText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   divider: {
     height: 1,

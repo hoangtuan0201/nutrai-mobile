@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 380,
-    borderRadius: 24,
+    borderRadius: 18,
     paddingHorizontal: 22,
     paddingTop: 24,
     paddingBottom: 20,
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     textAlign: 'center',
     marginBottom: 8,
     letterSpacing: -0.3,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   btnSecondaryText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   btnDestructive: {
     flex: 1,
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   },
   btnDestructiveText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#FFFFFF',
   },
   btnPrimaryFull: {
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   },
   btnPrimaryFullText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
 });
 
