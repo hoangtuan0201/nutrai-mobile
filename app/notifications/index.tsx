@@ -22,6 +22,7 @@ import { FONTS } from '../../src/constants/theme';
 import { useNotificationsList } from '../../src/features/notifications/hooks/useNotifications';
 import { NotificationItemCard } from '../../src/features/notifications/components/NotificationItemCard';
 import { AppNotification } from '../../src/features/notifications/api/notifications.api';
+import { resolveNotificationRoute } from '../../src/features/notifications/utils/notificationRoute';
 
 export default function NotificationsScreen() {
   const router = useSafeNavigate();
@@ -56,16 +57,11 @@ export default function NotificationsScreen() {
       }
     }
 
-    const route =
-      item.data && typeof item.data === 'object' && typeof item.data.route === 'string'
-        ? item.data.route
-        : item.type === 'MEAL_REMINDER'
-          ? '/(main)/meals'
-          : item.type === 'GOAL_ALERT'
-            ? '/(main)/progress/calorie'
-            : item.type === 'AI_RECOMMENDATION'
-              ? '/(main)/ai'
-              : null;
+    const route = resolveNotificationRoute(
+      item.data && typeof item.data === 'object' ? item.data.route : undefined,
+      item.type,
+      null,
+    );
 
     if (route) {
       router.push(route as any);
