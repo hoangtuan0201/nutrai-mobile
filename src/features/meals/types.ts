@@ -76,7 +76,6 @@ export interface FoodSearchResult {
   name: string;
   source: 'LOCAL' | 'USDA' | 'BARCODE';
   brand?: string;
-  categoryName?: string;
   caloriesPer100g: number;
   proteinPer100g: number;
   carbsPer100g: number;

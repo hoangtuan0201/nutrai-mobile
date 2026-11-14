@@ -47,78 +47,37 @@ import {
 } from '../../../src/features/meals/types';
 import { useUnitStore } from '../../../src/store/unitStore';
 
-interface PopularFood {
-  name: string;
-  calories: number;
-  portion: string;
-  p: number;
-  c: number;
-  f: number;
-  imageUrl: string;
-}
+function getFoodServingSummary(f: FoodSearchResult) {
+  const servingGrams = f.defaultServingSize || 100;
+  const portionLabel =
+    f.servingSizeDescription ||
+    (f.servingUnit && f.servingUnit !== 'g'
+      ? `1 ${f.servingUnit} (${servingGrams}g)`
+      : `${servingGrams}g`);
 
-const POPULAR_DEFAULT_FOODS: PopularFood[] = [
-  {
-    name: 'Cookie',
-    calories: 295,
-    portion: '1 whole cookie (25gr)',
-    p: 3,
-    c: 38,
-    f: 14,
-    imageUrl:
-      'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=200&auto=format&fit=crop&q=80',
-  },
-  {
-    name: 'Red Apple',
-    calories: 95,
-    portion: '1 medium apple (182g)',
-    p: 0.5,
-    c: 25,
-    f: 0.3,
-    imageUrl:
-      'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=200&auto=format&fit=crop&q=80',
-  },
-  {
-    name: 'Almonds',
-    calories: 160,
-    portion: '1 serving (28g)',
-    p: 6,
-    c: 6,
-    f: 14,
-    imageUrl:
-      'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=200&auto=format&fit=crop&q=80',
-  },
-  {
-    name: 'Chocolate Muffin',
-    calories: 380,
-    portion: '1 muffin (115g)',
-    p: 5,
-    c: 48,
-    f: 19,
-    imageUrl:
-      'https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=200&auto=format&fit=crop&q=80',
-  },
-  {
-    name: 'Grilled Chicken Breast',
-    calories: 165,
-    portion: '1 fillet (100g)',
-    p: 31,
-    c: 0,
-    f: 3.6,
-    imageUrl:
-      'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=200&auto=format&fit=crop&q=80',
-  },
-  {
-    name: 'Steamed Rice',
-    calories: 130,
-    portion: '1 cup cooked (100g)',
-    p: 2.7,
-    c: 28,
-    f: 0.3,
-    imageUrl:
-      'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=200&auto=format&fit=crop&q=80',
-  },
-];
+  if (f.servingCalories != null) {
+    return {
+      calories: Math.round(f.servingCalories),
+      protein: Math.round((f.servingProtein || 0) * 10) / 10,
+      carbs: Math.round((f.servingCarbs || 0) * 10) / 10,
+      fat: Math.round((f.servingFat || 0) * 10) / 10,
+      portionLabel,
+      servingUnit: f.servingUnit || 'g',
+      servingSize: servingGrams,
+    };
+  }
+
+  const factor = servingGrams / 100;
+  return {
+    calories: Math.round(f.caloriesPer100g * factor),
+    protein: Math.round(f.proteinPer100g * factor * 10) / 10,
+    carbs: Math.round(f.carbsPer100g * factor * 10) / 10,
+    fat: Math.round(f.fatPer100g * factor * 10) / 10,
+    portionLabel,
+    servingUnit: f.servingUnit || 'g',
+    servingSize: servingGrams,
+  };
+}
 
 const MEAL_TABS: Array<{ type: MealType; label: string; icon: any }> = [
   { type: 'BREAKFAST', label: 'Breakfast', icon: Coffee },
@@ -191,9 +150,10 @@ export default function AddFoodManuallyScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([]);
+  const [catalogFoods, setCatalogFoods] = useState<FoodSearchResult[]>([]);
+  const [loadingCatalogFoods, setLoadingCatalogFoods] = useState(true);
   const [recentMeals, setRecentMeals] = useState<Meal[]>([]);
   const [showAllRecentMeals, setShowAllRecentMeals] = useState(false);
-  const [addingFoodName, setAddingFoodName] = useState<string | null>(null);
 
   // Modern In-App Notification Modal State (replaces clunky Alert.alert)
   const [successModal, setSuccessModal] = useState<{
@@ -211,6 +171,7 @@ export default function AddFoodManuallyScreen() {
   // Portion Customizer Modal State (Allows customizing servings / amount before adding)
   const [portionModal, setPortionModal] = useState<{
     visible: boolean;
+    foodId?: string;
     name: string;
     imageUrl?: string;
     servingDescription: string;
@@ -226,6 +187,7 @@ export default function AddFoodManuallyScreen() {
   const [savingPortion, setSavingPortion] = useState(false);
 
   const openPortionModal = (food: {
+    foodId?: string;
     name: string;
     imageUrl?: string;
     portionDescription?: string;
@@ -238,6 +200,7 @@ export default function AddFoodManuallyScreen() {
   }) => {
     setPortionModal({
       visible: true,
+      foodId: food.foodId,
       name: food.name,
       imageUrl: food.imageUrl,
       servingDescription: food.portionDescription || '1 serving',
@@ -285,6 +248,7 @@ export default function AddFoodManuallyScreen() {
         source: 'MANUAL',
         items: [
           {
+            foodId: portionModal.foodId,
             foodName: portionModal.name,
             portionDescription: `${qty} x ${portionModal.servingDescription}`,
             quantity: Math.round(portionModal.baseServingSize * qty),
@@ -410,20 +374,35 @@ export default function AddFoodManuallyScreen() {
     }
   };
 
-  // Load recent meals for today
-  useEffect(() => {
-    async function loadRecent() {
-      try {
-        const res = await mealsApi.getTodayMeals();
-        if (res.meals && res.meals.length > 0) {
-          setRecentMeals(res.meals.slice(0, 4));
+  // Load recent meals and database food catalog on focus so Admin/DB changes appear immediately
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      async function loadInitialData() {
+        setLoadingCatalogFoods(true);
+        try {
+          const [mealsRes, foodsRes] = await Promise.all([
+            mealsApi.getTodayMeals().catch(() => null),
+            mealsApi.searchFoods('', 'local').catch(() => null),
+          ]);
+          if (!active) return;
+
+          if (mealsRes?.meals) {
+            setRecentMeals(mealsRes.meals.slice(0, 4));
+          }
+          setCatalogFoods((foodsRes?.localItems || []).slice(0, 10));
+        } finally {
+          if (active) setLoadingCatalogFoods(false);
         }
-      } catch {
-        // Fallback silently
       }
-    }
-    loadRecent();
-  }, []);
+
+      loadInitialData();
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   // Debounced search query
   useEffect(() => {
@@ -458,64 +437,86 @@ export default function AddFoodManuallyScreen() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const quickLogFood = async (item: {
-    name: string;
-    calories: number;
-    portion?: string;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-  }) => {
-    setAddingFoodName(item.name);
-    setErrorMessage(null);
-
-    try {
-      const todayStr =
-        params.date ||
-        new Intl.DateTimeFormat('en-CA', {
-          timeZone: 'Asia/Ho_Chi_Minh',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        }).format(new Date());
-
-      await mealsApi.createMeal({
-        mealType: selectedType,
-        name: item.name,
-        totalCalories: Math.round(item.calories),
-        totalProtein: Math.round((item.protein || 0) * 10) / 10,
-        totalCarbs: Math.round((item.carbs || 0) * 10) / 10,
-        totalFat: Math.round((item.fat || 0) * 10) / 10,
-        loggedDate: todayStr,
-        items: [
-          {
-            foodName: item.name,
-            portionDescription: item.portion || '1 serving',
-            quantity: 100,
-            unit: 'serving',
-            calories: Math.round(item.calories),
-            protein: Math.round((item.protein || 0) * 10) / 10,
-            carbs: Math.round((item.carbs || 0) * 10) / 10,
-            fat: Math.round((item.fat || 0) * 10) / 10,
-          },
-        ],
+  const renderFoodResultRow = (f: FoodSearchResult, keyPrefix: string, idx: number) => {
+    const serving = getFoodServingSummary(f);
+    const openItemModal = () =>
+      openPortionModal({
+        foodId: f.id,
+        name: f.name,
+        imageUrl: f.imageUrl,
+        portionDescription: serving.portionLabel,
+        servingUnit: serving.servingUnit,
+        servingSize: serving.servingSize,
+        calories: serving.calories,
+        protein: serving.protein,
+        carbs: serving.carbs,
+        fat: serving.fat,
       });
 
-      // Show modern sleek in-app feedback dialog
-      const mealTypeName =
-        selectedType.charAt(0) + selectedType.slice(1).toLowerCase();
+    return (
+      <TouchableOpacity
+        key={`${keyPrefix}-${f.id || f.name}-${idx}`}
+        style={[styles.foodRow, { borderBottomColor: colors.border }]}
+        activeOpacity={0.8}
+        onPress={openItemModal}
+      >
+        {f.imageUrl ? (
+          <Image source={{ uri: f.imageUrl }} style={styles.foodThumb} />
+        ) : (
+          <View style={[styles.foodIconPlaceholder, { backgroundColor: colors.inputBg }]}>
+            <Utensils size={20} color={colors.textSecondary} />
+          </View>
+        )}
+        <View style={styles.foodInfo}>
+          <View style={styles.badgeRow}>
+            {f.source === 'USDA' ? (
+              <View style={styles.usdaBadge}>
+                <Globe size={10} color="#0B4E8C" />
+                <Text style={styles.usdaBadgeText}>USDA</Text>
+              </View>
+            ) : (
+              <View style={styles.localBadge}>
+                <Database size={10} color="#1E6B20" />
+                <Text style={styles.localBadgeText}>VERIFIED</Text>
+              </View>
+            )}
+            <Text style={[styles.foodName, { color: colors.textPrimary }]} numberOfLines={1}>
+              {f.name}
+            </Text>
+          </View>
+          <View style={styles.macroDetailsRow}>
+            <Text style={[styles.foodWeightCal, { color: colors.textSecondary }]}>
+              {serving.portionLabel} •{' '}
+              <Text style={[styles.boldCal, { color: colors.textPrimary }]}>
+                {serving.calories} {energyUnit}
+              </Text>
+            </Text>
+            <View style={styles.macroTagRow}>
+              <Text style={[styles.macroTagText, { color: '#3865D6' }]}>
+                P {Math.round(serving.protein)}g
+              </Text>
+              <Text style={styles.macroDotSep}>•</Text>
+              <Text style={[styles.macroTagText, { color: '#4D8A27' }]}>
+                C {Math.round(serving.carbs)}g
+              </Text>
+              <Text style={styles.macroDotSep}>•</Text>
+              <Text style={[styles.macroTagText, { color: '#B39100' }]}>
+                F {Math.round(serving.fat)}g
+              </Text>
+            </View>
+          </View>
+        </View>
 
-      setSuccessModal({
-        visible: true,
-        foodName: item.name,
-        calories: Math.round(item.calories),
-        mealType: mealTypeName,
-      });
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Failed to log food. Please try again.');
-    } finally {
-      setAddingFoodName(null);
-    }
+        <TouchableOpacity
+          style={[styles.addBtn, { backgroundColor: isDark ? 'rgba(46,125,50,0.2)' : '#EDF7ED' }]}
+          onPress={openItemModal}
+          activeOpacity={0.7}
+        >
+          <Plus size={14} color="#2E7D32" />
+          <Text style={styles.addBtnText}>Add</Text>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -638,94 +639,7 @@ export default function AddFoodManuallyScreen() {
                 </Text>
               </View>
             ) : (
-              searchResults.map((f, idx) => (
-                <TouchableOpacity
-                  key={`sr-${f.id || f.name}-${idx}`}
-                  style={[styles.foodRow, { borderBottomColor: colors.border }]}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    openPortionModal({
-                      name: f.name,
-                      imageUrl: f.imageUrl,
-                      portionDescription: `${f.defaultServingSize || 100}${f.servingUnit || 'g'}`,
-                      servingUnit: f.servingUnit || 'g',
-                      servingSize: f.defaultServingSize || 100,
-                      calories: f.caloriesPer100g,
-                      protein: f.proteinPer100g,
-                      carbs: f.carbsPer100g,
-                      fat: f.fatPer100g,
-                    })
-                  }
-                >
-                  {f.imageUrl ? (
-                    <Image source={{ uri: f.imageUrl }} style={styles.foodThumb} />
-                  ) : (
-                    <View style={[styles.foodIconPlaceholder, { backgroundColor: colors.inputBg }]}>
-                      <Utensils size={20} color={colors.textSecondary} />
-                    </View>
-                  )}
-                  <View style={styles.foodInfo}>
-                    <View style={styles.badgeRow}>
-                      {f.source === 'USDA' ? (
-                        <View style={styles.usdaBadge}>
-                          <Globe size={10} color="#0B4E8C" />
-                          <Text style={styles.usdaBadgeText}>USDA</Text>
-                        </View>
-                      ) : (
-                        <View style={styles.localBadge}>
-                          <Database size={10} color="#1E6B20" />
-                          <Text style={styles.localBadgeText}>VERIFIED</Text>
-                        </View>
-                      )}
-                      <Text style={[styles.foodName, { color: colors.textPrimary }]} numberOfLines={1}>
-                        {f.name}
-                      </Text>
-                    </View>
-                    <View style={styles.macroDetailsRow}>
-                      <Text style={[styles.foodWeightCal, { color: colors.textSecondary }]}>
-                        {f.defaultServingSize || 100}{f.servingUnit || 'g'} •{' '}
-                        <Text style={[styles.boldCal, { color: colors.textPrimary }]}>
-                          {Math.round(f.caloriesPer100g)} {energyUnit}
-                        </Text>
-                      </Text>
-                      <View style={styles.macroTagRow}>
-                        <Text style={[styles.macroTagText, { color: '#3865D6' }]}>
-                          P {Math.round(f.proteinPer100g)}g
-                        </Text>
-                        <Text style={styles.macroDotSep}>•</Text>
-                        <Text style={[styles.macroTagText, { color: '#4D8A27' }]}>
-                          C {Math.round(f.carbsPer100g)}g
-                        </Text>
-                        <Text style={styles.macroDotSep}>•</Text>
-                        <Text style={[styles.macroTagText, { color: '#B39100' }]}>
-                          F {Math.round(f.fatPer100g)}g
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  <TouchableOpacity
-                    style={[styles.addBtn, { backgroundColor: isDark ? 'rgba(46,125,50,0.2)' : '#EDF7ED' }]}
-                    onPress={() =>
-                      openPortionModal({
-                        name: f.name,
-                        imageUrl: f.imageUrl,
-                        portionDescription: `${f.defaultServingSize || 100}${f.servingUnit || 'g'}`,
-                        servingUnit: f.servingUnit || 'g',
-                        servingSize: f.defaultServingSize || 100,
-                        calories: f.caloriesPer100g,
-                        protein: f.proteinPer100g,
-                        carbs: f.carbsPer100g,
-                        fat: f.fatPer100g,
-                      })
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <Plus size={14} color="#2E7D32" />
-                    <Text style={styles.addBtnText}>Add</Text>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))
+              searchResults.map((f, idx) => renderFoodResultRow(f, 'sr', idx))
             )}
           </View>
         ) : (
@@ -836,74 +750,23 @@ export default function AddFoodManuallyScreen() {
               </View>
             )}
 
-            {/* Section 2: Recent Foods */}
+            {/* Section 2: Database Food Catalog */}
             <View style={styles.sectionWrap}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Foods</Text>
-              {POPULAR_DEFAULT_FOODS.map((food, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={[styles.foodRow, { borderBottomColor: colors.border }]}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    openPortionModal({
-                      name: food.name,
-                      imageUrl: food.imageUrl,
-                      portionDescription: food.portion,
-                      servingUnit: 'serving',
-                      servingSize: 1,
-                      calories: food.calories,
-                      protein: food.p,
-                      carbs: food.c,
-                      fat: food.f,
-                    })
-                  }
-                >
-                  <Image source={{ uri: food.imageUrl }} style={styles.foodThumb} />
-                  <View style={styles.foodInfo}>
-                    <Text style={[styles.foodName, { color: colors.textPrimary }]}>{food.name}</Text>
-                    <View style={styles.macroDetailsRow}>
-                      <Text style={[styles.foodWeightCal, { color: colors.textSecondary }]}>
-                        {food.portion} •{' '}
-                        <Text style={[styles.boldCal, { color: colors.textPrimary }]}>{food.calories} {energyUnit}</Text>
-                      </Text>
-                      <View style={styles.macroTagRow}>
-                        <Text style={[styles.macroTagText, { color: '#3865D6' }]}>
-                          P {food.p}g
-                        </Text>
-                        <Text style={styles.macroDotSep}>•</Text>
-                        <Text style={[styles.macroTagText, { color: '#4D8A27' }]}>
-                          C {food.c}g
-                        </Text>
-                        <Text style={styles.macroDotSep}>•</Text>
-                        <Text style={[styles.macroTagText, { color: '#B39100' }]}>
-                          F {food.f}g
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  <TouchableOpacity
-                    style={[styles.addBtn, { backgroundColor: isDark ? 'rgba(46,125,50,0.2)' : '#EDF7ED' }]}
-                    onPress={() =>
-                      openPortionModal({
-                        name: food.name,
-                        imageUrl: food.imageUrl,
-                        portionDescription: food.portion,
-                        servingUnit: 'serving',
-                        servingSize: 1,
-                        calories: food.calories,
-                        protein: food.p,
-                        carbs: food.c,
-                        fat: food.f,
-                      })
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <Plus size={14} color="#2E7D32" />
-                    <Text style={styles.addBtnText}>Add</Text>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))}
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Food Database</Text>
+              {loadingCatalogFoods && catalogFoods.length === 0 ? (
+                <View style={styles.emptyWrap}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              ) : catalogFoods.length === 0 ? (
+                <View style={styles.emptyWrap}>
+                  <Utensils size={28} color={colors.textSecondary} />
+                  <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
+                    No foods in catalog yet. Try searching above to find USDA items.
+                  </Text>
+                </View>
+              ) : (
+                catalogFoods.map((f, idx) => renderFoodResultRow(f, 'cat', idx))
+              )}
             </View>
           </>
         )}
