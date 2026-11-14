@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   sheet: {
     width: '100%',
     maxWidth: 340,
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 20,
     borderWidth: 1,
     alignItems: 'center',

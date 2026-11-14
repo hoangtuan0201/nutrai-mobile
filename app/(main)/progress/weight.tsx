@@ -940,7 +940,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,

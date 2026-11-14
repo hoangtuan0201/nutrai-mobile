@@ -92,7 +92,7 @@ export function UserProfileCard({
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1 },
+  card: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1 },
   avatarWrap: { marginRight: 16 },
   avatar: { width: 64, height: 64, borderRadius: 32 },
   avatarFallback: { alignItems: 'center', justifyContent: 'center' },
@@ -109,9 +109,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   info: { flex: 1 },
-  name: { fontSize: 17, fontWeight: '700', marginBottom: 4 },
+  name: { fontSize: 17, fontFamily: 'Manrope_700Bold', marginBottom: 4 },
   email: { fontSize: 13, marginBottom: 8 },
   plan: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  planText: { fontSize: 11, fontWeight: '700' },
+  planText: { fontSize: 11, fontFamily: 'Manrope_700Bold' },
 });
 

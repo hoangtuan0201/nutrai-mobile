@@ -384,7 +384,7 @@ export const CalorieRemainingCard: React.FC<CalorieRemainingCardProps> = React.m
 const styles = StyleSheet.create({
   summaryCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 18,
     borderWidth: 1,
     borderColor: '#EFECE2',

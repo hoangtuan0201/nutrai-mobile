@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,
@@ -793,7 +793,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 22,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },

@@ -451,7 +451,7 @@ export default function AIScanConfirmationScreen() {
             </View>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Meal Logged Successfully!</Text>
             <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-              <Text style={{ fontWeight: '700', color: colors.textPrimary }}>
+              <Text style={{ fontFamily: 'Manrope_700Bold', color: colors.textPrimary }}>
                 {successModal?.mealName}
               </Text>{' '}
               ({successModal?.calories} {energyUnit}) has been recorded to your nutrition diary.
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
   },
   scanCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 18,
     borderWidth: 1,
     borderColor: '#E8E8E8',
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F7F7',
     borderWidth: 1,
     borderColor: '#E2E2E2',
-    borderRadius: 22,
+    borderRadius: 18,
     paddingHorizontal: 12,
     paddingVertical: 4,
     minWidth: 80,
@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 24,
     alignItems: 'center',
     shadowColor: '#000',

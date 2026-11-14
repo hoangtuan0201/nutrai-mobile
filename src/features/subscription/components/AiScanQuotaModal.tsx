@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   card: {
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 20,
     borderWidth: 1,
   },
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   },
   limitBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#9A4A17',
   },
   closeBtn: {
@@ -166,13 +166,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 17,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     marginBottom: 6,
     letterSpacing: -0.2,
   },
   subtitle: {
     fontSize: 13.5,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     lineHeight: 19,
     marginBottom: 16,
   },
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   },
   unlockTitle: {
     fontSize: 15,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
   },
   bulletList: {
     gap: 6,
@@ -203,12 +203,12 @@ const styles = StyleSheet.create({
   },
   bulletDot: {
     fontSize: 15,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     lineHeight: 20,
   },
   bulletText: {
     fontSize: 13.5,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     lineHeight: 20,
     flex: 1,
   },
@@ -223,11 +223,11 @@ const styles = StyleSheet.create({
   ctaButtonText: {
     color: '#FFFFFF',
     fontSize: 14.5,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   fallbackText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     textAlign: 'center',
   },
 });

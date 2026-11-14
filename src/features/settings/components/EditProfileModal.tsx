@@ -201,10 +201,10 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
   sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '88%' },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  sheetTitle: { fontSize: 18, fontWeight: '800' },
+  sheetTitle: { fontSize: 18, fontFamily: 'Manrope_800ExtraBold' },
   closeBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 16 },
-  input: { borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, fontWeight: '600', borderWidth: 1 },
+  label: { fontSize: 13, fontFamily: 'Manrope_700Bold', marginBottom: 8, marginTop: 16 },
+  input: { borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, fontFamily: 'Manrope_600SemiBold', borderWidth: 1 },
   radioRow: { flexDirection: 'row', gap: 12 },
   radio: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1 },
   option: {
@@ -217,9 +217,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
   },
-  optionText: { fontSize: 14, fontWeight: '600' },
-  bold: { fontWeight: '700' },
+  optionText: { fontSize: 14, fontFamily: 'Manrope_600SemiBold' },
+  bold: { fontFamily: 'Manrope_700Bold' },
   saveBtn: { borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 24, marginBottom: 24 },
-  saveText: { fontSize: 15, fontWeight: '700' },
+  saveText: { fontSize: 15, fontFamily: 'Manrope_700Bold' },
 });
 

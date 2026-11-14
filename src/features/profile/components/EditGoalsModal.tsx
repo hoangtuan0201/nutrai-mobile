@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxHeight: '85%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 22,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },

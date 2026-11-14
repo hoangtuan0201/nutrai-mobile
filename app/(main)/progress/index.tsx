@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#1E3120',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 16,
   },
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   tabChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#ECEAE1',

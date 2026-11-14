@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 24,
     borderWidth: 1,
     alignItems: 'center',
@@ -131,14 +131,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     letterSpacing: -0.4,
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 20,
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   },
   perkText: {
     fontSize: 13.5,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   ctaButton: {
     width: '100%',
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   ctaButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
 });
 

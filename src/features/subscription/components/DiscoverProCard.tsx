@@ -105,7 +105,7 @@ export function DiscoverProCard({ source = 'home_banner' }: DiscoverProCardProps
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#352417',
-    borderRadius: 20,
+    borderRadius: 14,
     paddingVertical: 16,
     paddingHorizontal: 20,
     marginBottom: 16,
@@ -137,13 +137,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 19,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#F4D5B4',
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     color: '#BA9A7D',
     marginTop: 3,
   },
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   },
   upgradeText: {
     fontSize: 13.5,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#2D1B0E',
     letterSpacing: -0.1,
   },

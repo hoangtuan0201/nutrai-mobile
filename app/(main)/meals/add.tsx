@@ -1591,7 +1591,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 24,
     alignItems: 'center',
     shadowColor: '#000',
@@ -1717,7 +1717,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 18,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -1815,7 +1815,7 @@ const styles = StyleSheet.create({
   },
   quickLogCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,
@@ -1989,7 +1989,7 @@ const styles = StyleSheet.create({
   },
   portionQuantityCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#ECEAE1',
     padding: 16,
@@ -2084,7 +2084,7 @@ const styles = StyleSheet.create({
   },
   portionMacroCard: {
     backgroundColor: '#F8F7F2',
-    borderRadius: 18,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 20,
   },
@@ -2133,7 +2133,7 @@ const styles = StyleSheet.create({
   },
   portionSubmitBtn: {
     backgroundColor: '#2E7D32',
-    borderRadius: 18,
+    borderRadius: 14,
     paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',

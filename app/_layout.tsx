@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Text, TextInput } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -86,6 +87,22 @@ export default function RootLayout() {
   // Show nothing until fonts + auth state are loaded (splash screen covers this)
   if (!fontsLoaded || !isHydrated) {
     return null;
+  }
+
+  // Ensure every unstyled <Text> / <TextInput> defaults to Manrope_400Regular
+  const TextWithDefaults = Text as unknown as { defaultProps?: { style?: unknown } };
+  if (!TextWithDefaults.defaultProps?.style) {
+    TextWithDefaults.defaultProps = {
+      ...TextWithDefaults.defaultProps,
+      style: { fontFamily: theme.fonts.regular },
+    };
+  }
+  const TextInputWithDefaults = TextInput as unknown as { defaultProps?: { style?: unknown } };
+  if (!TextInputWithDefaults.defaultProps?.style) {
+    TextInputWithDefaults.defaultProps = {
+      ...TextInputWithDefaults.defaultProps,
+      style: { fontFamily: theme.fonts.regular },
+    };
   }
 
   return (

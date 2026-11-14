@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   },
   tabBarLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     marginTop: 2,
     marginBottom: 2,
   },

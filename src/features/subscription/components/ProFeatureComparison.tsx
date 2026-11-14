@@ -94,7 +94,7 @@ export function ProFeatureComparison() {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 18,
     borderWidth: 1,
     marginBottom: 16,
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   },
   freeBadgeText: {
     fontSize: 10,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#15803D',
   },
   proBadge: {
@@ -129,28 +129,28 @@ const styles = StyleSheet.create({
   },
   proBadgeText: {
     fontSize: 10,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#9A4A17',
   },
   colTitle: {
     fontSize: 13.5,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     minHeight: 36,
     marginBottom: 4,
   },
   freePrice: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#15803D',
   },
   proPrice: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#D9822B',
   },
   priceSub: {
     fontSize: 11,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     marginBottom: 12,
   },
   list: {
@@ -163,12 +163,12 @@ const styles = StyleSheet.create({
   },
   dot: {
     fontSize: 13,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     lineHeight: 18,
   },
   itemText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     lineHeight: 17,
     flex: 1,
   },
@@ -178,12 +178,12 @@ const styles = StyleSheet.create({
   },
   principleHeading: {
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     marginBottom: 6,
   },
   principleText: {
     fontSize: 12.5,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     lineHeight: 19,
   },
 });

@@ -55,9 +55,9 @@ export function SettingsRow({ icon: Icon, title, subtitle, onPress, right, destr
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1 },
+  card: { borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1 },
   divider: { height: 1, marginVertical: 12 },
-  sectionLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 4, marginLeft: 4 },
+  sectionLabel: { fontSize: 13, fontFamily: 'Manrope_700Bold', marginBottom: 8, marginTop: 4, marginLeft: 4 },
   row: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
   iconCircle: {
     width: 36,
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   textCol: { flex: 1 },
-  title: { fontSize: 14, fontWeight: '700' },
+  title: { fontSize: 14, fontFamily: 'Manrope_700Bold' },
   subtitle: { fontSize: 12, marginTop: 2 },
 });
 

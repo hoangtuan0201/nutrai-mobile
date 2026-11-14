@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
   },
-  title: { fontSize: 20, fontWeight: '800' },
+  title: { fontSize: 20, fontFamily: 'Manrope_800ExtraBold' },
   backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 });
 

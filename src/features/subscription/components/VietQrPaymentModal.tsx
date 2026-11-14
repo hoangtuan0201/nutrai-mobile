@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     maxHeight: '95%',
-    borderRadius: 24,
+    borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
   },
   closeBtn: {
     width: 34,
@@ -461,13 +461,13 @@ const styles = StyleSheet.create({
   },
   timerText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#9A4A17',
   },
   qrContainer: {
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
   },
   qrLoadingText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     color: '#6B7280',
   },
   qrImage: {
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
   qrHint: {
     fontSize: 12,
     color: '#6B7280',
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     marginTop: 8,
     textAlign: 'center',
   },
@@ -518,13 +518,13 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 9,
     paddingHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: 14,
     borderWidth: 1,
     marginTop: 12,
   },
   saveQrBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#D9822B',
   },
   detailsCard: {
@@ -541,20 +541,20 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     marginBottom: 2,
   },
   detailValue: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   detailValueBold: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
   },
   transferCodeText: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#D9822B',
     letterSpacing: 0.5,
   },
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
   },
   copyBtnText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#9A4A17',
   },
   pollingRow: {
@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
   },
   pollingText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   secureNoteRow: {
     flexDirection: 'row',
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
   },
   secureNoteText: {
     fontSize: 11,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   cancelLink: {
     marginTop: 18,
@@ -606,7 +606,7 @@ const styles = StyleSheet.create({
   },
   cancelLinkText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     textDecorationLine: 'underline',
   },
 });
