@@ -87,6 +87,7 @@ export default function PlanPreviewScreen() {
           gender: s.gender,
           heightCm: s.heightCm,
           weightKg: s.weightKg,
+          targetWeightKg: s.targetWeightKg,
           activityLevel: s.activityLevel,
           fitnessGoal: mapGoalToBackend(s.fitnessGoal),
           dateOfBirth: s.dateOfBirth,

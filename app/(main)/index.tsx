@@ -93,7 +93,7 @@ export default function HomeScreen() {
   };
 
   // User details — fallback to onboarding store when profile is fetching over network
-  const userName = user?.name ? user.name.split(' ')[0] : 'Tuan';
+  const userName = user?.name ? user.name.split(' ')[0] : 'there';
   const userWeight = profile?.weightKg ?? onboarding.weightKg ?? 70;
   const userHeight = profile?.heightCm ?? onboarding.heightCm ?? 170;
   const userGender = (profile?.gender ?? onboarding.gender ?? 'MALE') as GenderType;
@@ -112,7 +112,11 @@ export default function HomeScreen() {
   }, [profile?.dateOfBirth, onboarding.age]);
   const userActivity = (profile?.activityLevel ?? onboarding.activityLevel ?? 'MODERATE') as ActivityLevelType;
   const userFitnessGoal = profile?.fitnessGoal ||
-    (onboarding.fitnessGoal === 'LOSE_WEIGHT' ? 'WEIGHT_LOSS' : onboarding.fitnessGoal === 'BUILD_MUSCLE' ? 'MUSCLE_GAIN' : 'WEIGHT_LOSS');
+    (onboarding.fitnessGoal === 'LOSE_WEIGHT'
+      ? 'WEIGHT_LOSS'
+      : onboarding.fitnessGoal === 'BUILD_MUSCLE'
+      ? 'MUSCLE_GAIN'
+      : 'MAINTENANCE');
 
   const mappedCalcGoal: FitnessGoalType =
     userFitnessGoal === 'WEIGHT_LOSS'
@@ -200,6 +204,15 @@ export default function HomeScreen() {
     if (bodyUnit === 'imperial') {
       parsed = lbToKg(parsed);
     }
+    if (parsed < 20 || parsed > 300) {
+      Alert.alert(
+        'Invalid Weight',
+        bodyUnit === 'imperial'
+          ? 'Please enter a weight between 44 and 660 lbs.'
+          : 'Please enter a weight between 20 and 300 kg.',
+      );
+      return;
+    }
     try {
       await updateProfile({ weightKg: parsed });
       onboarding.setMetrics({
@@ -223,7 +236,7 @@ export default function HomeScreen() {
   const [loadingMeals, setLoadingMeals] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [focusKey, setFocusKey] = useState(0);
-  const [streakDays, setStreakDays] = useState<number>(1);
+  const [streakDays, setStreakDays] = useState<number>(0);
 
   const fetchStreak = useCallback(async () => {
     try {

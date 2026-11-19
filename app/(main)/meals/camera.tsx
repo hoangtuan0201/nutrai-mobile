@@ -173,6 +173,8 @@ export default function AICameraScanScreen() {
           permission={permission}
           flashOn={flashOn}
           onToggleFlash={() => setFlashOn((prev) => !prev)}
+          mealType={mealTypeParam}
+          date={dateParam}
         />
       )}
     </SafeAreaView>

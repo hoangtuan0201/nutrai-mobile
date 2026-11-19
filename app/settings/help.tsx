@@ -35,15 +35,15 @@ const NUTRITION_FORMULA_FAQS: FaqEntry[] = [
 const GENERAL_FAQS: FaqEntry[] = [
   {
     q: 'What are the Free vs NutrAI Pro quotas?',
-    a: '• Free Plan:\n  Includes 5 AI food scans per day and 5 AI Coach chat messages per day, along with full manual meal tracking and standard charts.\n\n• NutrAI Pro:\n  Unlocks 20 AI food scans per day, 50 AI Coach messages per day, complete 30-day nutrition analytics, and priority Gemini AI processing.',
+    a: '• Free Plan:\n  Includes 3 AI food scans per day and 5 AI Coach chat messages per day, along with full manual meal tracking and standard charts.\n\n• NutrAI Pro:\n  Unlocks 20 AI food scans per day, 50 AI Coach messages per day, complete 30-day nutrition analytics, and priority Gemini AI processing.',
   },
   {
     q: 'Can I change measurement units and app appearance?',
-    a: 'Yes! Go to Settings → Units to switch between Metric (cm, kg, g) and Imperial (ft/in, lbs, oz), or kcal and kJ. Go to Settings → Appearance to choose Light, Dark, or System theme.',
+    a: 'Yes! Go to Settings → Units to switch between Metric (cm, kg, g) and Imperial (ft/in, lbs, oz), or Cal and kcal. Go to Settings → Appearance to choose Light, Dark, or System theme.',
   },
   {
-    q: 'How do I delete or export my data?',
-    a: 'All health metrics, profile data, and photos are encrypted in transit via SSL/TLS and stored securely. We do not sell your personal data.\n\nYou can export your complete history or permanently delete your account and all associated records anytime in Settings → Privacy & Data.',
+    q: 'How is my data protected and how do I delete my account?',
+    a: 'All health metrics, profile data, and photos are encrypted in transit via SSL/TLS and stored securely. We do not sell your personal data.\n\nYou can permanently delete your account and all associated records anytime in Settings → Privacy & Data.',
   },
 ];
 

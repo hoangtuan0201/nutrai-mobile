@@ -57,6 +57,7 @@ export default function RegisterScreen() {
           gender: onboarding.gender,
           heightCm: onboarding.heightCm,
           weightKg: onboarding.weightKg,
+          targetWeightKg: onboarding.targetWeightKg,
           activityLevel: onboarding.activityLevel,
           fitnessGoal: mapGoalToBackend(onboarding.fitnessGoal),
           dateOfBirth: onboarding.dateOfBirth,
