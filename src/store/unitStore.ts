@@ -110,15 +110,3 @@ export function formatFoodWeight(
   }
   return { value: `${g}`, unit: 'g', full: `${g} g` };
 }
-
-export function formatWater(
-  ml: number,
-  foodUnit: FoodUnit = 'metric',
-): { value: string; unit: string; full: string } {
-  const amount = Math.round(ml || 0);
-  if (foodUnit === 'imperial') {
-    const flOz = Math.round(amount / 29.5735);
-    return { value: `${flOz}`, unit: 'fl oz', full: `${flOz} fl oz` };
-  }
-  return { value: `${amount}`, unit: 'ml', full: `${amount} ml` };
-}

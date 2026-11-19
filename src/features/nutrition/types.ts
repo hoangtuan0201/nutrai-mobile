@@ -19,8 +19,6 @@ export interface DailySummary {
   carbsTarget: number;
   fatConsumed: number;
   fatTarget: number;
-  waterGlasses: number;
-  waterTarget: number;
 }
 
 export interface WeeklyStats {

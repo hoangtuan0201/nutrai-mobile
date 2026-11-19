@@ -6,7 +6,7 @@ const FREE_ITEMS = [
   'Daily nutrition tracking',
   'Food database',
   'Meal management',
-  'Water & weight tracking',
+  'Weight & progress tracking',
   'Basic AI assistance (3 scans, 5 chats/day)',
   'Basic progress charts',
 ];

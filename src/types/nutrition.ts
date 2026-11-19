@@ -22,8 +22,6 @@ export interface DailyNutrition {
     protein: MacroProgress;
     fat: MacroProgress;
   };
-  waterGlasses: number;
-  waterTarget: number;
 }
 
 export interface MealItem {
