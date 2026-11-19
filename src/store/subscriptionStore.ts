@@ -59,6 +59,7 @@ interface SubscriptionActions {
   openQuotaModal: (type?: QuotaLimitType, fallbackAction?: () => void) => void;
   closeQuotaModal: () => void;
   checkPendingPayment: () => Promise<boolean>;
+  reset: () => Promise<void>;
 }
 
 const DEFAULT_FEATURES: SubscriptionPlanFeatures = {
@@ -252,5 +253,28 @@ export const useSubscriptionStore = create<SubscriptionState & SubscriptionActio
   },
 
   closeQuotaModal: () => set({ isQuotaModalVisible: false, onQuotaFallbackAction: null }),
+
+  reset: async () => {
+    await AsyncStorage.removeItem('nutraai_pending_checkout_id').catch(() => {});
+    set({
+      isPro: false,
+      planName: 'Free Plan',
+      subscription: null,
+      features: DEFAULT_FEATURES,
+      aiQuota: null,
+      recentPayments: [],
+      isLoading: false,
+      isCreatingCheckout: false,
+      isPaywallVisible: false,
+      paywallSource: 'general',
+      activeCheckout: null,
+      isQrModalVisible: false,
+      isSuccessModalVisible: false,
+      isExtensionCheckout: false,
+      isQuotaModalVisible: false,
+      quotaModalType: 'SCAN',
+      onQuotaFallbackAction: null,
+    });
+  },
 }));
 

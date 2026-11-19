@@ -10,6 +10,7 @@ export interface WaterState {
   setIntake: (dateStr: string, ml: number) => void;
   setGoal: (goalMl: number) => void;
   resetDate: (dateStr: string) => void;
+  resetAll: () => void;
 }
 
 export const useWaterStore = create<WaterState>()(
@@ -54,6 +55,11 @@ export const useWaterStore = create<WaterState>()(
             ...state.intakeByDate,
             [dateStr]: 0,
           },
+        })),
+      resetAll: () =>
+        set(() => ({
+          dailyGoalMl: 2000,
+          intakeByDate: {},
         })),
     }),
     {

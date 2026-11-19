@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import Constants from 'expo-constants';
 import { notificationsApi } from '../api/notifications.api';
@@ -7,8 +8,11 @@ import { NotificationPreferences } from '../../settings/api/account.api';
 type ExpoNotificationsModule = typeof import('expo-notifications');
 type ExpoDeviceModule = typeof import('expo-device');
 
+const LAST_PUSH_TOKEN_KEY = 'nutraai_last_push_token';
+
 let isHandlerInitialized = false;
 let cachedNotificationsModule: ExpoNotificationsModule | null | undefined;
+let lastRegisteredPushToken: string | null = null;
 
 /**
  * Safely load `expo-notifications` only if the native module `ExpoPushTokenManager`
@@ -146,11 +150,40 @@ export async function requestPushPermissionAndRegisterToken(): Promise<boolean> 
         platform,
         deviceModel,
       });
+      lastRegisteredPushToken = pushToken;
+      await AsyncStorage.setItem(LAST_PUSH_TOKEN_KEY, pushToken).catch(() => {});
     }
 
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Unregister the current device push token from backend and cancel all local
+ * scheduled meal reminders on logout so the next account on this device does
+ * not receive the previous user's notifications.
+ */
+export async function unregisterPushTokenAndClearReminders(): Promise<void> {
+  if (Platform.OS === 'web') return;
+
+  try {
+    const token =
+      lastRegisteredPushToken ||
+      (await AsyncStorage.getItem(LAST_PUSH_TOKEN_KEY).catch(() => null));
+
+    if (token) {
+      await notificationsApi.removeDeviceToken(token).catch(() => {});
+    }
+  } finally {
+    lastRegisteredPushToken = null;
+    await AsyncStorage.removeItem(LAST_PUSH_TOKEN_KEY).catch(() => {});
+
+    const Notifications = getNotificationsModule();
+    if (Notifications) {
+      await Notifications.cancelAllScheduledNotificationsAsync().catch(() => {});
+    }
   }
 }
 
