@@ -6,7 +6,6 @@ import { authApi, AuthResponse } from '../features/auth/api/auth.api';
 import { unregisterPushTokenAndClearReminders } from '../features/notifications/services/pushNotification.service';
 import { useSubscriptionStore } from './subscriptionStore';
 import { useOnboardingStore } from './onboardingStore';
-import { useWaterStore } from './waterStore';
 import type { RegisterPayload, LoginPayload } from '../features/auth/types';
 
 interface AuthUser {
@@ -171,7 +170,6 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     queryClient.clear();
     await useSubscriptionStore.getState().reset();
     useOnboardingStore.getState().resetOnboarding();
-    useWaterStore.getState().resetAll();
 
     set({ user: null, accessToken: null, error: null, isNewUser: false });
   },

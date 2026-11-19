@@ -26,10 +26,6 @@ const NUTRITION_FORMULA_FAQS: FaqEntry[] = [
     a: 'NutrAI calculates your daily macro split based on your body mass and fitness objective:\n\n• Protein (4 kcal/g):\n  1.8–2.2 g per kg of body weight for muscle growth and retaining lean tissue during fat loss.\n\n• Dietary Fat (9 kcal/g):\n  25%–30% of total daily calories (minimum 0.8 g/kg) to support hormonal balance, brain function, and joint health.\n\n• Carbohydrates (4 kcal/g):\n  Remaining calories after protein and fat are allocated to carbohydrates, supplying workout glycogen and cognitive energy.',
   },
   {
-    q: 'How is daily Water Target calculated?',
-    a: 'Your baseline daily hydration goal is calculated as:\n\nWater (ml) = Body Weight (kg) × 35 ml\n\nFor example, an individual weighing 70 kg has a baseline hydration goal of 70 × 35 = 2,450 ml (~2.5 liters). On days with intense workouts, add 350–500 ml to compensate for sweat loss.',
-  },
-  {
     q: 'How is BMI (Body Mass Index) evaluated?',
     a: 'BMI measures body fat based on height and weight:\n\nBMI = Weight (kg) ÷ [Height (m)]²\n\n• Underweight: < 18.5\n• Healthy Weight: 18.5 – 24.9\n• Overweight: 25.0 – 29.9\n• Obese: ≥ 30.0\n\nNutrAI tracks your BMI alongside body weight logs in Progress Analytics.',
   },

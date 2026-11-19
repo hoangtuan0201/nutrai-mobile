@@ -22,7 +22,7 @@ export const PALETTE = {
   // Macro Semantic Colors (Synchronized across Home, Log, and Progress)
   green: '#7BC754',   // Macro: Carbs, success state
   yellow: '#F5A623',  // Macro: Fat, points/rewards
-  blue: '#5D80E6',    // Macro: Protein, water intake
+  blue: '#5D80E6',    // Macro: Protein
 
   // Neutral & Surfaces
   surfaceBase: '#F4F2E7',

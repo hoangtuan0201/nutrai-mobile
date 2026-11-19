@@ -31,8 +31,6 @@ export interface AppColors {
   // Feature Cards & Highlights
   card: string;
   cardBorder: string;
-  waterCardBg: string;
-  waterCardBorder: string;
   aiBannerBg: string;
   aiBannerBorder: string;
   tagBg: string;
@@ -65,8 +63,6 @@ export const LIGHT_COLORS: AppColors = {
 
   card: '#FFFFFF',
   cardBorder: '#EFECE2',
-  waterCardBg: '#F2F8FA',
-  waterCardBorder: '#D8EAF2',
   aiBannerBg: '#F4F7ED',
   aiBannerBorder: '#E2EBD5',
   tagBg: '#F3F2EB',
@@ -99,8 +95,6 @@ export const DARK_COLORS: AppColors = {
 
   card: '#1C211C',
   cardBorder: '#2B322B',
-  waterCardBg: '#162228',
-  waterCardBorder: '#213742',
   aiBannerBg: '#1A261D',
   aiBannerBorder: '#283D2D',
   tagBg: '#262C26',

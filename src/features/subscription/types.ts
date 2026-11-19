@@ -1,5 +1,5 @@
 export type BillingPeriod = 'MONTHLY' | 'YEARLY';
-export type PaymentMethodType = 'SEPAY' | 'STRIPE';
+export type PaymentMethodType = 'SEPAY';
 export type PaymentStatusType = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED' | 'EXPIRED';
 
 export interface SubscriptionPlanFeatures {
@@ -88,13 +88,6 @@ export interface CreateCheckoutResponse {
   expiresAt: string;
   plan: SubscriptionPlan;
   sepay?: SePayQrDetails;
-  stripe?: {
-    sessionId: string;
-    checkoutUrl: string;
-    paymentCode: string;
-    amount: number;
-    currency: string;
-  };
 }
 
 export interface PaymentStatusResponse {
