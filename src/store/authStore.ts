@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 import { storage } from '../lib/storage';
 import { setApiAuthHandlers } from '../lib/api';
+import { queryClient } from '../lib/queryClient';
 import { authApi, AuthResponse } from '../features/auth/api/auth.api';
+import { unregisterPushTokenAndClearReminders } from '../features/notifications/services/pushNotification.service';
+import { useSubscriptionStore } from './subscriptionStore';
+import { useOnboardingStore } from './onboardingStore';
+import { useWaterStore } from './waterStore';
 import type { RegisterPayload, LoginPayload } from '../features/auth/types';
 
 interface AuthUser {
@@ -156,7 +161,18 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   },
 
   logout: async () => {
+    // 1. Unregister push token & local reminders while access token is still valid
+    if (get().accessToken) {
+      await unregisterPushTokenAndClearReminders().catch(() => {});
+    }
+
+    // 2. Clear persisted credentials, React Query cache, and all per-user stores
     await storage.clearAll();
+    queryClient.clear();
+    await useSubscriptionStore.getState().reset();
+    useOnboardingStore.getState().resetOnboarding();
+    useWaterStore.getState().resetAll();
+
     set({ user: null, accessToken: null, error: null, isNewUser: false });
   },
 
