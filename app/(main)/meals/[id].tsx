@@ -16,7 +16,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import {
   ArrowLeft,
   Trash2,
@@ -125,14 +125,16 @@ export default function MealDetailScreen() {
     }
   }, [from, date, router]);
 
-  // Handle hardware back on Android
-  useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      handleBack();
-      return true;
-    });
-    return () => subscription.remove();
-  }, [handleBack]);
+  // Handle hardware back on Android only while this screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        handleBack();
+        return true;
+      });
+      return () => subscription.remove();
+    }, [handleBack]),
+  );
 
   // ── Fetch Meal Detail ───────────────────────────────────────────────────
   const fetchMealDetail = useCallback(async () => {

@@ -34,12 +34,16 @@ interface BarcodeSectionProps {
   permission: PermissionResponse | null;
   flashOn: boolean;
   onToggleFlash: () => void;
+  mealType?: string;
+  date?: string;
 }
 
 export const BarcodeSection: React.FC<BarcodeSectionProps> = ({
   permission,
   flashOn,
   onToggleFlash,
+  mealType,
+  date,
 }) => {
   const router = useRouter();
   const { energyUnit } = useUnitStore();
@@ -145,15 +149,21 @@ export const BarcodeSection: React.FC<BarcodeSectionProps> = ({
         },
       ];
 
+      const resolvedMealType = (
+        mealType === 'BREAKFAST' || mealType === 'LUNCH' || mealType === 'DINNER' || mealType === 'SNACK'
+          ? mealType
+          : 'LUNCH'
+      ) as 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
+
       await mealsApi.createMeal({
-        mealType: 'LUNCH',
+        mealType: resolvedMealType,
         name: barcodeProductModal.name,
         totalCalories: computedCalories,
         totalProtein: computedProtein,
         totalCarbs: computedCarbs,
         totalFat: computedFat,
         source: 'MANUAL',
-        loggedDate: todayStr,
+        loggedDate: date || todayStr,
         items: mealItems,
       });
 
