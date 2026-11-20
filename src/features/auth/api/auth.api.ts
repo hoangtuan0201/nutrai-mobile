@@ -9,11 +9,17 @@ export interface AuthResponse {
     email: string;
     name: string | null;
     role: string;
+    emailVerified?: boolean;
   };
 }
 
 export interface ForgotPasswordResponse {
   message: string;
+}
+
+export interface VerifyEmailResponse {
+  message: string;
+  emailVerified: boolean;
 }
 
 /**
@@ -47,9 +53,45 @@ export const authApi = {
     return data;
   },
 
-  /** POST /auth/forgot-password — initiate password reset */
+  /** POST /auth/forgot-password — initiate password reset (6-digit OTP) */
   forgotPassword: async (email: string): Promise<ForgotPasswordResponse> => {
     const { data } = await apiClient.post<ForgotPasswordResponse>('/auth/forgot-password', {
+      email,
+    });
+    return data;
+  },
+
+  /** POST /auth/verify-reset-code — verify 6-digit reset OTP before setting new password */
+  verifyResetCode: async (payload: {
+    email: string;
+    code: string;
+  }): Promise<{ valid: boolean; message: string }> => {
+    const { data } = await apiClient.post<{ valid: boolean; message: string }>(
+      '/auth/verify-reset-code',
+      payload,
+    );
+    return data;
+  },
+
+  /** POST /auth/reset-password — confirm OTP & set new password */
+  resetPassword: async (payload: {
+    email: string;
+    code: string;
+    newPassword: string;
+  }): Promise<ForgotPasswordResponse> => {
+    const { data } = await apiClient.post<ForgotPasswordResponse>('/auth/reset-password', payload);
+    return data;
+  },
+
+  /** POST /auth/verify-email — verify email with 6-digit OTP */
+  verifyEmail: async (payload: { email: string; code: string }): Promise<VerifyEmailResponse> => {
+    const { data } = await apiClient.post<VerifyEmailResponse>('/auth/verify-email', payload);
+    return data;
+  },
+
+  /** POST /auth/resend-verification — resend 6-digit verification OTP */
+  resendVerification: async (email: string): Promise<ForgotPasswordResponse> => {
+    const { data } = await apiClient.post<ForgotPasswordResponse>('/auth/resend-verification', {
       email,
     });
     return data;

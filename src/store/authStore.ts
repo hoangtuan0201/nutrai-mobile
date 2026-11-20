@@ -14,6 +14,7 @@ interface AuthUser {
   name: string | null;
   role: string;
   avatarUrl?: string | null;
+  emailVerified?: boolean;
 }
 
 interface AuthState {
@@ -29,6 +30,8 @@ interface AuthState {
   error: string | null;
   /** Whether current session is a new user who must complete onboarding */
   isNewUser: boolean;
+  /** True right after email/password registration until user verifies or skips */
+  needsEmailVerification: boolean;
 }
 
 interface AuthActions {
@@ -48,6 +51,8 @@ interface AuthActions {
   updateUser: (fields: Partial<AuthUser>) => void;
   /** Set or clear isNewUser flag */
   setIsNewUser: (isNew: boolean) => void;
+  /** Clear pending email verification gate */
+  clearNeedsEmailVerification: () => void;
   /** Clear error */
   clearError: () => void;
 }
@@ -69,6 +74,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   isLoading: false,
   error: null,
   isNewUser: false,
+  needsEmailVerification: false,
 
   // ─── Actions ───────────────────────────────────────
 
@@ -131,6 +137,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       set({
         user: response.user,
         accessToken: response.tokens.accessToken,
+        needsEmailVerification: true,
         isLoading: false,
       });
     } catch (error: unknown) {
@@ -171,11 +178,21 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     await useSubscriptionStore.getState().reset();
     useOnboardingStore.getState().resetOnboarding();
 
-    set({ user: null, accessToken: null, error: null, isNewUser: false });
+    set({
+      user: null,
+      accessToken: null,
+      error: null,
+      isNewUser: false,
+      needsEmailVerification: false,
+    });
   },
 
   setIsNewUser: (isNew: boolean) => {
     set({ isNewUser: isNew });
+  },
+
+  clearNeedsEmailVerification: () => {
+    set({ needsEmailVerification: false });
   },
 
   setAccessToken: (token: string) => {

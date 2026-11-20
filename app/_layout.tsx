@@ -29,6 +29,7 @@ const ONBOARDING_ROUTES = [
   'activity-level',
   'plan-preview',
   'user-metrics',
+  'verify-email',
 ];
 
 /**
@@ -36,7 +37,7 @@ const ONBOARDING_ROUTES = [
  * Runs after hydration completes.
  */
 function useProtectedRoute() {
-  const { user, isHydrated, isNewUser } = useAuthStore();
+  const { user, isHydrated, isNewUser, needsEmailVerification } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
 
@@ -51,6 +52,17 @@ function useProtectedRoute() {
       // Not logged in and not on auth screen → redirect to welcome
       router.replace('/(auth)/welcome');
     } else if (user) {
+      if (needsEmailVerification) {
+        // Stay on register while profile sync finishes, or go straight to verify-email (never flash homepage)
+        if (currentScreen !== 'verify-email' && currentScreen !== 'register') {
+          router.replace({
+            pathname: '/(auth)/verify-email' as any,
+            params: { email: user.email },
+          });
+        }
+        return;
+      }
+
       const hasOnboardingPlan = Boolean(useOnboardingStore.getState().calculatedPlan);
 
       if (isNewUser && !hasOnboardingPlan) {
@@ -63,7 +75,7 @@ function useProtectedRoute() {
         router.replace('/(main)');
       }
     }
-  }, [user, isHydrated, isNewUser, segments]);
+  }, [user, isHydrated, isNewUser, needsEmailVerification, segments]);
 }
 
 export default function RootLayout() {
