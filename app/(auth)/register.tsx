@@ -79,7 +79,10 @@ export default function RegisterScreen() {
       await registerUser(data);
       await syncOnboardingProfile();
       useAuthStore.getState().setIsNewUser(false);
-      router.replace('/(main)');
+      router.replace({
+        pathname: '/(auth)/verify-email' as any,
+        params: { email: data.email.trim().toLowerCase() },
+      });
     } catch {
       // Error is set in store
     }

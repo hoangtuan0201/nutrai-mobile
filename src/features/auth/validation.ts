@@ -10,6 +10,15 @@ export const loginSchema = z.object({
     .min(1, 'Password is required'),
 });
 
+export const strongPasswordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(64, 'Password is too long')
+  .regex(/[a-z]/, 'Must contain a lowercase letter')
+  .regex(/[A-Z]/, 'Must contain an uppercase letter')
+  .regex(/\d/, 'Must contain a number')
+  .regex(/[\W_]/, 'Must contain a special character');
+
 export const registerSchema = z.object({
   name: z
     .string()
@@ -19,14 +28,7 @@ export const registerSchema = z.object({
     .string()
     .min(1, 'Email is required')
     .email('Please enter a valid email address'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(64, 'Password is too long')
-    .regex(/[a-z]/, 'Must contain a lowercase letter')
-    .regex(/[A-Z]/, 'Must contain an uppercase letter')
-    .regex(/\d/, 'Must contain a number')
-    .regex(/[\W_]/, 'Must contain a special character'),
+  password: strongPasswordSchema,
 });
 
 export const forgotPasswordSchema = z.object({

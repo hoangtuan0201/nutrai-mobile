@@ -41,7 +41,10 @@ export default function ForgotPasswordScreen() {
     setServerError(null);
     try {
       await authApi.forgotPassword(data.email);
-      setIsSubmitted(true);
+      router.push({
+        pathname: '/(auth)/verify-reset-code' as any,
+        params: { email: data.email.trim().toLowerCase() },
+      });
     } catch {
       setServerError('Something went wrong. Please try again.');
     } finally {
@@ -132,7 +135,7 @@ export default function ForgotPasswordScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>Reset Password</Text>
             <Text style={styles.subtitle}>
-              Enter the email address associated with your account and we'll send you a link to reset your password.
+              Enter the email address associated with your account and we'll send you a 6-digit verification code to reset your password.
             </Text>
           </View>
 
@@ -163,7 +166,7 @@ export default function ForgotPasswordScreen() {
             />
 
             <Button
-              title={isLoading ? 'Sending...' : 'Send Reset Link'}
+              title={isLoading ? 'Sending...' : 'Send Reset Code'}
               size="lg"
               variant="primary"
               fullWidth
