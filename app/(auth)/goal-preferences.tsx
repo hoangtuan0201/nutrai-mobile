@@ -28,12 +28,8 @@ import {
 } from 'lucide-react-native';
 import { theme } from '../../src/constants';
 import { Button, OnboardingHeader } from '../../src/components';
+import { useOnboardingStore } from '../../src/store/onboardingStore';
 import {
-  useOnboardingStore,
-  PaceRateId,
-} from '../../src/store/onboardingStore';
-import {
-  getPaceOptionsForGoal,
   validateTargetWeight,
   kgToLb,
   lbToKg,
@@ -75,16 +71,6 @@ export default function GoalPreferencesScreen() {
     const parsed = parseFloat(valString) || currentWeightKg;
     return unit === 'kg' ? parsed : lbToKg(parsed);
   }, [valString, unit, currentWeightKg]);
-
-  const paceOptions = useMemo(
-    () => getPaceOptionsForGoal(fitnessGoal),
-    [fitnessGoal],
-  );
-
-  const [paceId, setPaceId] = useState<PaceRateId>(() => {
-    if (fitnessGoal === 'BUILD_MUSCLE') return 'slow';
-    return 'moderate';
-  });
 
   const handleUnitToggle = (newUnit: WeightUnit) => {
     if (newUnit === unit) return;
@@ -131,13 +117,9 @@ export default function GoalPreferencesScreen() {
     if (!validation.isValid) return;
 
     const store = useOnboardingStore.getState();
-    const selectedPaceOption =
-      paceOptions.find((p) => p.id === paceId) || paceOptions[0];
 
     store.setGoalPreferences({
       targetWeightKg: Math.round(targetWeightKg * 10) / 10,
-      pace: paceId,
-      weeklyPaceKg: selectedPaceOption.weeklyRateKg,
     });
 
     router.push('/(auth)/activity-level' as any);
@@ -290,85 +272,25 @@ export default function GoalPreferencesScreen() {
                 )}
               </View>
 
-              {/* Goal-Specific Preferred Pace Selection */}
-              {fitnessGoal === 'MAINTAIN_WEIGHT' ? (
-                <View style={styles.maintenanceCard}>
-                  <ShieldCheck size={24} color={theme.colors.saffron} />
-                  <View style={styles.maintenanceTextWrap}>
-                    <Text style={styles.maintenanceTitle}>
-                      Weight Maintenance Strategy
-                    </Text>
-                    <Text style={styles.maintenanceDesc}>
-                      No calorie surplus or deficit is required. Your energy targets
-                      will match your total daily expenditure (TDEE) to keep your
-                      weight stable.
-                    </Text>
-                  </View>
-                </View>
-              ) : (
-                <View style={styles.paceSection}>
-                  <Text style={styles.sectionTitle}>
-                    {fitnessGoal === 'BUILD_MUSCLE'
-                      ? 'Preferred muscle-building rate'
-                      : 'Preferred pace'}
+              {/* Goal Strategy Summary Card */}
+              <View style={styles.maintenanceCard}>
+                <ShieldCheck size={24} color={theme.colors.saffron} />
+                <View style={styles.maintenanceTextWrap}>
+                  <Text style={styles.maintenanceTitle}>
+                    {fitnessGoal === 'LOSE_WEIGHT' && 'Weight Loss Strategy'}
+                    {fitnessGoal === 'BUILD_MUSCLE' && 'Lean Muscle Gain Strategy'}
+                    {fitnessGoal === 'MAINTAIN_WEIGHT' && 'Weight Maintenance Strategy'}
                   </Text>
-                  <View style={styles.paceList}>
-                    {paceOptions.map((item) => {
-                      const isSelected = paceId === item.id;
-                      return (
-                        <TouchableOpacity
-                          key={item.id}
-                          activeOpacity={0.8}
-                          onPress={() => setPaceId(item.id)}
-                          style={[
-                            styles.paceCard,
-                            isSelected && styles.paceCardActive,
-                          ]}
-                        >
-                          <View style={styles.paceLeft}>
-                            <Text
-                              style={[
-                                styles.paceLabel,
-                                isSelected && styles.paceLabelActive,
-                              ]}
-                            >
-                              {item.label}
-                            </Text>
-                            <Text style={styles.paceRate}>{item.rateDisplay}</Text>
-                          </View>
-                          <View style={styles.paceRight}>
-                            <View
-                              style={[
-                                styles.paceBadge,
-                                item.badge === 'Recommended' &&
-                                  styles.paceBadgeHighlight,
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.paceBadgeText,
-                                  item.badge === 'Recommended' &&
-                                    styles.paceBadgeTextHighlight,
-                                ]}
-                              >
-                                {item.badge}
-                              </Text>
-                            </View>
-                            <View
-                              style={[
-                                styles.radio,
-                                isSelected && styles.radioActive,
-                              ]}
-                            >
-                              {isSelected && <View style={styles.radioDot} />}
-                            </View>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
+                  <Text style={styles.maintenanceDesc}>
+                    {fitnessGoal === 'LOSE_WEIGHT' &&
+                      'Your daily target applies a steady 500 kcal deficit from your TDEE (~0.5 kg/week) for sustainable fat loss.'}
+                    {fitnessGoal === 'BUILD_MUSCLE' &&
+                      'Your daily target applies a controlled 300 kcal surplus above your TDEE to support lean muscle growth.'}
+                    {fitnessGoal === 'MAINTAIN_WEIGHT' &&
+                      'No calorie surplus or deficit is required. Your energy targets will match your total daily expenditure (TDEE) to keep your weight stable.'}
+                  </Text>
                 </View>
-              )}
+              </View>
             </ScrollView>
 
             <View style={styles.footer}>

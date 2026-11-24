@@ -14,8 +14,6 @@ export type ActivityLevelType =
   | 'VERY_ACTIVE'
   | 'EXTRA_ACTIVE';
 
-export type PaceRateId = 'slow' | 'moderate' | 'aggressive';
-
 export interface CalculatedPlan {
   bmr: number;
   tdee: number;
@@ -34,8 +32,6 @@ export interface OnboardingState {
   weightKg: number;
   targetWeightKg: number;
   activityLevel: ActivityLevelType;
-  pace: PaceRateId;
-  weeklyPaceKg: number;
   calculatedPlan: CalculatedPlan | null;
   isSynced: boolean;
 
@@ -55,8 +51,6 @@ export interface OnboardingState {
   setActivityLevel: (level: ActivityLevelType) => void;
   setGoalPreferences: (data: {
     targetWeightKg: number;
-    pace: PaceRateId;
-    weeklyPaceKg?: number;
   }) => void;
   setCalculatedPlan: (plan: CalculatedPlan) => void;
   markSynced: () => void;
@@ -91,8 +85,6 @@ const DEFAULT_STATE = {
   weightKg: 70,
   targetWeightKg: 65,
   activityLevel: 'MODERATE' as ActivityLevelType,
-  pace: 'moderate' as PaceRateId,
-  weeklyPaceKg: 0.5,
   calculatedPlan: null,
   isSynced: false,
 };
@@ -175,13 +167,11 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   setActivityLevel: (activityLevel) =>
     set({ activityLevel, calculatedPlan: null }),
 
-  setGoalPreferences: ({ targetWeightKg, pace, weeklyPaceKg }) =>
-    set((state) => ({
+  setGoalPreferences: ({ targetWeightKg }) =>
+    set({
       targetWeightKg,
-      pace,
-      weeklyPaceKg: weeklyPaceKg !== undefined ? weeklyPaceKg : state.weeklyPaceKg,
       calculatedPlan: null,
-    })),
+    }),
 
   setCalculatedPlan: (calculatedPlan) => set({ calculatedPlan }),
 

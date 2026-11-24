@@ -53,8 +53,6 @@ export default function PlanPreviewScreen() {
         age: s.age,
         activityLevel: s.activityLevel,
         fitnessGoal: s.fitnessGoal,
-        pace: s.pace,
-        weeklyPaceKg: s.weeklyPaceKg,
       })
     );
   }, []);

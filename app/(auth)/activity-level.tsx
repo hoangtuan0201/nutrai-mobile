@@ -117,8 +117,6 @@ export default function ActivityLevelScreen() {
       age: store.age,
       activityLevel: levelEnum,
       fitnessGoal: store.fitnessGoal,
-      pace: store.pace,
-      weeklyPaceKg: store.weeklyPaceKg,
     });
 
     setCalculatedPlan(plan);

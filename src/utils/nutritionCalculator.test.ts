@@ -5,7 +5,6 @@ import {
   calculateTDEE,
   calculateClientNutritionPlan,
   validateTargetWeight,
-  getPaceOptionsForGoal,
   calculateBMI,
   kgToLb,
   lbToKg,
@@ -36,15 +35,14 @@ test('calculateClientNutritionPlan: calculates 1.8g/kg protein and 0.9g/kg fat',
     age: 25,
     activityLevel: 'MODERATE',
     fitnessGoal: 'LOSE_WEIGHT',
-    pace: 'moderate', // 0.5 kg/week -> 550 deficit
   });
 
   // Protein = 70 * 1.8 = 126g
   assert.equal(plan.protein, 126);
   // Fat = 70 * 0.9 = 63g
   assert.equal(plan.fat, 63);
-  // Total calories check
-  assert.ok(plan.calories > 0);
+  // Total calories check: TDEE - 500
+  assert.equal(plan.calories, plan.tdee - 500);
   assert.ok(plan.carbs >= 30);
 });
 
@@ -66,14 +64,22 @@ test('unit conversions: kg to lb and back', () => {
   assert.equal(lbToKg(154.3), 70);
 });
 
-test('getPaceOptionsForGoal: returns goal-specific options', () => {
-  const loseOptions = getPaceOptionsForGoal('LOSE_WEIGHT');
-  assert.equal(loseOptions.length, 3);
-  assert.equal(loseOptions[1].weeklyRateKg, 0.5);
+test('calculateClientNutritionPlan: applies backend-synced goal deltas', () => {
+  const base = {
+    gender: 'MALE' as const,
+    weightKg: 70,
+    heightCm: 175,
+    age: 25,
+    activityLevel: 'MODERATE' as const,
+  };
 
-  const muscleOptions = getPaceOptionsForGoal('BUILD_MUSCLE');
-  assert.equal(muscleOptions.length, 3);
-  assert.equal(muscleOptions[0].weeklyRateKg, 0.1);
+  const maintain = calculateClientNutritionPlan({ ...base, fitnessGoal: 'MAINTAIN_WEIGHT' });
+  const lose = calculateClientNutritionPlan({ ...base, fitnessGoal: 'LOSE_WEIGHT' });
+  const gain = calculateClientNutritionPlan({ ...base, fitnessGoal: 'BUILD_MUSCLE' });
+
+  assert.equal(maintain.calories, maintain.tdee);
+  assert.equal(lose.calories, lose.tdee - 500);
+  assert.equal(gain.calories, gain.tdee + 300);
 });
 
 test('calculateBMR: calculates other/non-binary gender using average offset', () => {
