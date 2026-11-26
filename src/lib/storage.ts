@@ -11,7 +11,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEYS = {
   ACCESS_TOKEN: 'nutraai_access_token',
-  REFRESH_TOKEN: 'nutraai_refresh_token',
   USER: 'nutraai_user',
 } as const;
 
@@ -47,14 +46,6 @@ export const storage = {
     await setItem(KEYS.ACCESS_TOKEN, token);
   },
 
-  // ─── Refresh Token ─────────────────────────────────
-  async getRefreshToken(): Promise<string | null> {
-    return getItem(KEYS.REFRESH_TOKEN);
-  },
-  async setRefreshToken(token: string): Promise<void> {
-    await setItem(KEYS.REFRESH_TOKEN, token);
-  },
-
   // ─── User data (JSON) ─────────────────────────────
   async getUser<T = Record<string, unknown>>(): Promise<T | null> {
     const raw = await getItem(KEYS.USER);
@@ -73,7 +64,6 @@ export const storage = {
   async clearAll(): Promise<void> {
     await Promise.all([
       removeItem(KEYS.ACCESS_TOKEN),
-      removeItem(KEYS.REFRESH_TOKEN),
       removeItem(KEYS.USER),
     ]);
   },

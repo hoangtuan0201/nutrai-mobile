@@ -43,10 +43,8 @@ interface AuthActions {
   register: (payload: RegisterPayload) => Promise<void>;
   /** Login with Google (Firebase ID Token) */
   loginWithGoogle: (idToken: string) => Promise<{ isNewUser: boolean }>;
-  /** Logout — clear tokens and reset state */
+  /** Logout — clear token and reset state */
   logout: () => Promise<void>;
-  /** Called by the 401 interceptor when a token refresh succeeds */
-  setAccessToken: (token: string) => void;
   /** Update current user fields (e.g. avatar) and persist to SecureStore */
   updateUser: (fields: Partial<AuthUser>) => void;
   /** Set or clear isNewUser flag */
@@ -61,10 +59,10 @@ interface AuthActions {
  * Zustand auth store — single source of truth for authentication state.
  *
  * Flow:
- *   1. App launches → hydrate() reads tokens from SecureStore
+ *   1. App launches → hydrate() reads accessToken and user from SecureStore
  *   2. If accessToken exists → user is logged in, redirect to (main)
- *   3. Login/Register → calls API → persists tokens → updates state
- *   4. 401 interceptor → tries refresh → on failure calls logout()
+ *   3. Login/Register → calls API → persists accessToken → updates state
+ *   4. 401 interceptor → clears session via logout()
  */
 export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   // ─── State ─────────────────────────────────────────
@@ -80,30 +78,13 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
 
   hydrate: async () => {
     try {
-      const [accessToken, refreshToken, userData] = await Promise.all([
+      const [accessToken, userData] = await Promise.all([
         storage.getToken(),
-        storage.getRefreshToken(),
         storage.getUser<AuthUser>(),
       ]);
 
       if (accessToken && userData) {
         set({ user: userData, accessToken, isHydrated: true });
-      } else if (refreshToken) {
-        // Has refresh token but no access token — try to refresh
-        try {
-          const result = await authApi.refreshToken(refreshToken);
-          await storage.setToken(result.accessToken);
-          // We still need user data — if not cached, clear and force re-login
-          if (userData) {
-            set({ user: userData, accessToken: result.accessToken, isHydrated: true });
-          } else {
-            set({ isHydrated: true });
-          }
-        } catch {
-          // Refresh failed — clear stale tokens
-          await storage.clearAll();
-          set({ isHydrated: true });
-        }
       } else {
         set({ isHydrated: true });
       }
@@ -195,12 +176,6 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     set({ needsEmailVerification: false });
   },
 
-  setAccessToken: (token: string) => {
-    set({ accessToken: token });
-    // Persist in background — don't await
-    storage.setToken(token).catch(() => {});
-  },
-
   updateUser: (fields: Partial<AuthUser>) => {
     const current = get().user;
     if (!current) return;
@@ -212,9 +187,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   clearError: () => set({ error: null }),
 }));
 
-// Connect API refresh interceptor handlers to auth store without circular dependency
+// Connect API 401 logout handler to auth store without circular dependency
 setApiAuthHandlers({
-  onTokenRefreshed: (token) => useAuthStore.getState().setAccessToken(token),
   onLogout: () => {
     useAuthStore.getState().logout();
   },
@@ -225,7 +199,6 @@ setApiAuthHandlers({
 async function persistAuthResponse(response: AuthResponse) {
   await Promise.all([
     storage.setToken(response.tokens.accessToken),
-    storage.setRefreshToken(response.tokens.refreshToken),
     storage.setUser(response.user),
   ]);
 }

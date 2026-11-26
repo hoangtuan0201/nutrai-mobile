@@ -45,14 +45,6 @@ export const authApi = {
     return data;
   },
 
-  /** POST /auth/refresh — exchange refresh token for new access token */
-  refreshToken: async (refreshToken: string): Promise<{ accessToken: string }> => {
-    const { data } = await apiClient.post<{ accessToken: string }>('/auth/refresh', {
-      refreshToken,
-    });
-    return data;
-  },
-
   /** POST /auth/forgot-password — initiate password reset (6-digit OTP) */
   forgotPassword: async (email: string): Promise<ForgotPasswordResponse> => {
     const { data } = await apiClient.post<ForgotPasswordResponse>('/auth/forgot-password', {
