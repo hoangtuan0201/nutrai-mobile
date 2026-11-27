@@ -26,11 +26,12 @@
 
 NutraAI Mobile is an AI-powered nutrition tracking app that enables users to:
 
-- 📸 **Analyze meals** via photo or text description
+- 📸 **Analyze meals** via camera/photo scan or text description
 - 🍱 **Track calories & macros** (Carbs, Protein, Fat) daily
-- 🤖 **Chat with AI Nutritionist** for personalized advice
-- 📊 **Dashboard & Progress** to monitor weekly/monthly trends
-- 🎯 **Set fitness goals** — Muscle Gain / Weight Loss / Maintenance
+- 🤖 **Chat with AI Coach** for personalized nutrition guidance, photo logging, and weight updates
+- 📊 **Dashboard & Progress** to monitor weight, BMI, and calorie intake trends
+- 🎯 **7-step Onboarding & Goals** — Weight Loss / Maintenance / Muscle Gain with Mifflin-St Jeor BMR/TDEE calculation
+- 🔔 **Push & Meal Reminders** via Expo Notifications
 
 ---
 
@@ -41,12 +42,15 @@ NutraAI Mobile is an AI-powered nutrition tracking app that enables users to:
 | Framework | [Expo](https://expo.dev) ~57.0 (SDK 57) |
 | Language | TypeScript ~6.0 |
 | Navigation | [Expo Router](https://expo.github.io/router) ~57.0 (File-based routing) |
-| UI | React Native + Vanilla StyleSheet |
+| State & Data Fetching | Zustand v5 + TanStack React Query v5 |
+| Forms & Validation | React Hook Form + Zod |
+| UI & Styling | React Native StyleSheet + NativeWind / Tailwind CSS |
 | Icons | [Lucide React Native](https://lucide.dev) |
 | Fonts | Manrope via `@expo-google-fonts/manrope` |
-| SVG | `react-native-svg` (Calorie Ring component) |
+| SVG | `react-native-svg` (`ProgressRing` & charts) |
 | HTTP Client | Axios (configured in `src/lib/api.ts`) |
-| Storage | AsyncStorage (`src/lib/storage.ts`) |
+| Storage | `expo-secure-store` (Native) / `AsyncStorage` (Web fallback) (`src/lib/storage.ts`) |
+| Auth & Push | Firebase Auth, `@react-native-google-signin/google-signin`, `expo-notifications` |
 | Web Support | `react-native-web` + `react-dom` |
 
 ---
@@ -56,94 +60,127 @@ NutraAI Mobile is an AI-powered nutrition tracking app that enables users to:
 ```
 mobile-nutraai/
 │
-├── app/                          # Expo Router — File-based routing
-│   ├── _layout.tsx               # Root layout: SafeAreaProvider
-│   ├── index.tsx                 # Entry point → redirects to /(main)
+├── app/                              # Expo Router — File-based routing
+│   ├── _layout.tsx                   # Root layout: Auth guard, Push setup, QueryProvider, SubscriptionModalsHost
+│   ├── index.tsx                     # Entry point
+│   ├── +not-found.tsx                # 404 fallback screen
 │   │
-│   ├── (auth)/                   # Auth group (no tab bar)
+│   ├── (auth)/                       # Onboarding & Auth group (no tab bar)
 │   │   ├── _layout.tsx
-│   │   ├── login.tsx
-│   │   ├── register.tsx
-│   │   ├── forgot-password.tsx
-│   │   └── verify-email.tsx
+│   │   ├── welcome.tsx               # Hero welcome screen
+│   │   ├── goals.tsx                 # Onboarding 1/7: Fitness goal
+│   │   ├── gender.tsx                # Onboarding 2/7: Biological sex
+│   │   ├── birth-year.tsx            # Onboarding 3/7: Birth year
+│   │   ├── height.tsx                # Onboarding 4/7: Height (cm/ft)
+│   │   ├── weight.tsx                # Onboarding 5/7: Current weight & BMI
+│   │   ├── goal-preferences.tsx      # Onboarding 6/7: Target weight & strategy
+│   │   ├── activity-level.tsx        # Onboarding 7/7: Activity level
+│   │   ├── plan-preview.tsx          # Calculated BMR/TDEE & macro plan preview
+│   │   ├── user-metrics.tsx          # Legacy redirect → /(auth)/gender
+│   │   ├── register.tsx              # Sign up (Email / Google) + profile sync
+│   │   ├── login.tsx                 # Sign in (Email / Google)
+│   │   ├── verify-email.tsx          # 6-digit OTP email verification
+│   │   ├── forgot-password.tsx       # Request password reset code
+│   │   ├── verify-reset-code.tsx     # Verify reset code
+│   │   └── reset-password.tsx        # Set new password
 │   │
-│   ├── (main)/                   # Main app group (with tab bar)
-│   │   ├── _layout.tsx           # Tab navigator — Onyx bar + Saffron FAB
-│   │   ├── index.tsx             # Home Dashboard
+│   ├── (main)/                       # Main app group (with bottom tab bar)
+│   │   ├── _layout.tsx               # Tab navigator
+│   │   ├── index.tsx                 # Home Dashboard
 │   │   ├── meals/
-│   │   │   ├── index.tsx         # Meal list
-│   │   │   ├── add.tsx           # Add new meal
-│   │   │   └── [id].tsx          # Meal detail (dynamic route)
-│   │   ├── nutrition.tsx         # Macro breakdown
-│   │   ├── progress.tsx          # Progress charts
-│   │   └── profile.tsx           # Profile & goals
+│   │   │   ├── index.tsx             # Daily meals log
+│   │   │   ├── add.tsx               # Add meal (Search / Manual / AI Text)
+│   │   │   ├── camera.tsx            # AI food camera scanner
+│   │   │   ├── ai-breakdown.tsx      # AI scan nutrition breakdown & confirm
+│   │   │   └── [id].tsx              # Meal detail (dynamic route)
+│   │   ├── progress/
+│   │   │   ├── index.tsx             # Progress overview (BMI, Weight, Streak)
+│   │   │   ├── calorie.tsx           # Calorie & macro intake analytics
+│   │   │   └── weight.tsx            # Weight history & logging
+│   │   ├── ai/
+│   │   │   ├── index.tsx             # AI Coach conversations / entry
+│   │   │   └── chat.tsx              # AI Coach chat screen (text & photo)
+│   │   └── settings.tsx              # Settings tab
 │   │
-│   ├── ai/                       # AI Chat
-│   │   ├── index.tsx             # Conversation list
-│   │   └── [conversationId].tsx  # Chat screen (dynamic route)
+│   ├── notifications/
+│   │   ├── _layout.tsx
+│   │   └── index.tsx                 # Notification center
 │   │
 │   └── settings/
-│       ├── index.tsx
-│       └── subscription.tsx      # Pro plan
+│       ├── _layout.tsx
+│       ├── index.tsx                 # Account & preferences
+│       ├── subscription.tsx          # Free / Pro plans & VietQR checkout
+│       ├── notifications.tsx         # Meal reminder settings
+│       ├── help.tsx                  # FAQ & Help
+│       └── privacy.tsx               # Privacy & security
 │
 ├── src/
-│   ├── features/                 # Feature-based modules
-│   │   ├── auth/                 # Login, register, JWT
-│   │   │   ├── api/auth.api.ts
-│   │   │   └── types.ts
-│   │   ├── meals/                # Meal CRUD
-│   │   │   ├── api/meals.api.ts
-│   │   │   └── types.ts
-│   │   ├── nutrition/            # Calorie & macro calculations
-│   │   │   ├── api/nutrition.api.ts
-│   │   │   └── types.ts
-│   │   ├── ai/                   # AI chat & image analysis
-│   │   ├── profile/              # User profile
-│   │   ├── progress/             # History & analytics
-│   │   └── subscription/         # Free / Pro plans
+│   ├── features/                     # Feature-based modules
+│   │   ├── ai/                       # AI chat & food image analysis
+│   │   ├── auth/                     # Login, register, Google Sign-In, Zod schemas
+│   │   ├── meals/                    # Meal CRUD & camera components
+│   │   ├── notifications/            # Push registration & meal reminders
+│   │   ├── nutrition/                # Nutrition summary & daily targets
+│   │   ├── profile/                  # User profile & EditGoalsModal
+│   │   ├── progress/                 # Weight logs, BMI gauge, calorie charts
+│   │   ├── settings/                 # Profile editing, FAQ, settings hooks
+│   │   └── subscription/             # Free / Pro plans & upgrade modals
 │   │
 │   ├── components/
-│   │   ├── ui/                   # Reusable UI: Button, Input, Loading
-│   │   ├── common/
-│   │   │   └── Text.tsx          # AppText with typography variants
-│   │   └── nutrition/
-│   │       └── CalorieRing.tsx   # SVG circular calorie progress ring
+│   │   ├── common/                   # Text, WeeklyCalendarStrip
+│   │   ├── home/                     # CalorieRemainingCard
+│   │   ├── ui/                       # Button, Input, Card, Badge, BottomNav, ProgressRing, etc.
+│   │   └── index.ts
 │   │
 │   ├── constants/
-│   │   └── theme.ts              # Design tokens (colors, spacing, typography)
+│   │   ├── colors.ts
+│   │   ├── theme.ts                  # Design tokens (colors, spacing, typography)
+│   │   └── index.ts
 │   │
 │   ├── lib/
-│   │   ├── api.ts                # Axios instance + JWT interceptors
-│   │   └── storage.ts            # AsyncStorage wrapper
+│   │   ├── api.ts                    # Axios instance + Bearer token interceptors
+│   │   ├── firebase.ts               # Firebase initialization
+│   │   ├── queryClient.tsx           # TanStack Query provider
+│   │   └── storage.ts                # SecureStore (native) / AsyncStorage (web) wrapper
 │   │
 │   ├── config/
-│   │   └── env.ts                # Reads EXPO_PUBLIC_* environment variables
+│   │   └── env.ts                    # Reads EXPO_PUBLIC_* environment variables
 │   │
-│   ├── store/
-│   │   └── authStore.ts          # Auth state (Zustand)
+│   ├── store/                        # Zustand stores
+│   │   ├── aiScanStore.ts
+│   │   ├── authStore.ts
+│   │   ├── onboardingStore.ts
+│   │   ├── subscriptionStore.ts
+│   │   ├── themeStore.ts
+│   │   └── unitStore.ts
 │   │
 │   ├── hooks/
+│   │   ├── useAppTheme.ts
 │   │   └── useDebounce.ts
 │   │
 │   ├── utils/
-│   │   ├── format.ts             # Number and date formatting
-│   │   ├── validation.ts         # Validation schemas
-│   │   └── nutrition.ts          # BMR, TDEE, macro target calculations
+│   │   ├── format.ts                 # Number and date formatting
+│   │   ├── navigationGuard.ts
+│   │   ├── nutrition.ts
+│   │   ├── nutritionCalculator.ts    # BMR, TDEE, BMI & macro target calculations
+│   │   ├── nutritionCalculator.test.ts
+│   │   └── validation.ts
 │   │
 │   └── types/
-│       ├── api.ts                # ApiResponse, PaginatedResponse, ApiError
-│       └── nutrition.ts          # NutritionTarget, DailySummary, MealLog
+│       ├── api.ts                    # ApiResponse, PaginatedResponse, ApiError
+│       ├── nutrition.ts              # NutritionTarget, DailySummary, MealLog
+│       └── index.ts
 │
-├── assets/
-│   ├── images/                   # App icon, splash screen, adaptive icon
-│   └── fonts/
-│
-├── .env                          # Environment variables (do not commit)
-├── .env.example                  # Environment variable template
-├── app.json                      # Expo configuration
-├── babel.config.js               # Babel + module-resolver (path aliases)
-├── metro.config.js               # Metro bundler configuration
-├── tsconfig.json                 # TypeScript strict mode + path aliases
+├── assets/                           # Icons, images, fonts
+├── scripts/                          # Helper scripts
+├── .env                              # Environment variables (do not commit)
+├── .env.example                      # Environment variable template
+├── app.json                          # Expo configuration
+├── eas.json                          # EAS Build profiles
+├── google-services.json              # Firebase Android config
+├── babel.config.js                   # Babel + module-resolver (path aliases)
+├── metro.config.js                   # Metro bundler configuration
+├── tsconfig.json                     # TypeScript strict mode + path aliases
 └── package.json
 ```
 
@@ -153,10 +190,10 @@ mobile-nutraai/
 
 | Tool | Version |
 |---|---|
-| Node.js | >= 18.x |
+| Node.js | >= 20.x (supports `--experimental-strip-types` for unit tests) |
 | npm | >= 10.x |
 | Expo CLI | Via `npx expo` (no global install needed) |
-| Expo Go | [iOS](https://apps.apple.com/app/expo-go/id982107779) / [Android](https://play.google.com/store/apps/details?id=host.exp.exponent) |
+| Android Studio / Xcode | Required for `npm run android` / `npm run ios` (dev client) |
 
 ---
 
@@ -177,37 +214,33 @@ cp .env.example .env
 
 Edit `.env`:
 ```env
-# For physical device (Expo Go): use your machine's LAN IP
+# For physical device: use your machine's LAN IP or tunnel URL
 EXPO_PUBLIC_API_URL=http://192.168.x.x:3000
 
 # For web / emulator
 EXPO_PUBLIC_API_URL=http://localhost:3000
 ```
 
-> ⚠️ **Important**: When using Expo Go on a physical device, `localhost` won't reach the backend. Use your machine's LAN IP address instead.
+> ⚠️ **Important**: When running on a physical device, `localhost` won't reach the backend. Use your machine's LAN IP address instead.
 
-### 3. Start the dev server
+### 3. Start the dev server & tests
 
 ```bash
-# Start Metro server (all platforms)
+# Start Metro server
 npm start
-# or
+# or clear cache
 npx expo start --clear
 
 # Web only
 npm run web
 
-# Android (requires connected device or AVD)
+# Native dev builds (Android / iOS)
 npm run android
-
-# iOS (macOS only)
 npm run ios
+
+# Run nutrition calculator unit tests
+npm test
 ```
-
-### 4. Preview the app
-
-- **Physical device**: Install **Expo Go**, then scan the QR code shown in the terminal
-- **Web browser**: Press `w` in the terminal after Metro starts
 
 ---
 
@@ -269,21 +302,23 @@ import theme from '@/constants/theme';
 
 | Route | Screen | Description |
 |---|---|---|
-| `/(auth)/login` | Login | JWT-based login |
-| `/(auth)/register` | Register | Create new account |
-| `/(auth)/forgot-password` | Forgot Password | Email-based password reset |
-| `/(auth)/verify-email` | Verify Email | OTP email verification |
+| `/(auth)/welcome` | Welcome | Hero landing screen (Get Started / Sign In) |
+| `/(auth)/goals` ... `/(auth)/activity-level` | Onboarding (7 steps) | Goal, gender, birth year, height, weight, target weight, activity level |
+| `/(auth)/plan-preview` | Plan Preview | Calculated daily calories & macro targets |
+| `/(auth)/login` | Login | Email/Password & Google Sign-In |
+| `/(auth)/register` | Register | Create account & sync onboarding profile |
+| `/(auth)/verify-email` | Verify Email | 6-digit OTP email verification |
+| `/(auth)/forgot-password` | Forgot Password | Email-based password reset flow |
 | `/(main)` | Home Dashboard | Calorie ring, macro bars, today's meals |
-| `/(main)/meals` | Meal List | Meal history by date |
-| `/(main)/meals/add` | Add Meal | Log meal via Manual / AI Text / AI Image |
+| `/(main)/meals` | Meal List | Daily meal history |
+| `/(main)/meals/add` | Add Meal | Log meal via Search / Manual / AI Text |
+| `/(main)/meals/camera` | AI Camera | Scan food photo for macro estimation |
 | `/(main)/meals/[id]` | Meal Detail | View & edit a meal entry |
-| `/(main)/nutrition` | Nutrition | Detailed macro analysis |
-| `/(main)/progress` | Progress | Weekly / monthly trend charts |
-| `/(main)/profile` | Profile | BMR/TDEE, fitness goal, settings |
-| `/ai` | AI Conversations | List of AI chat sessions |
-| `/ai/[id]` | AI Chat | Chat with AI Nutritionist |
-| `/settings` | Settings | App preferences |
-| `/settings/subscription` | Subscription | Upgrade to Pro |
+| `/(main)/progress` | Progress | Weight, BMI, calorie trends & streak |
+| `/(main)/ai` | AI Coach | AI Nutritionist conversations & chat (`/chat`) |
+| `/(main)/settings` | Settings Tab | Quick access to profile & preferences |
+| `/notifications` | Notifications | Notification center |
+| `/settings/subscription` | Subscription | Free / Pro plans & VietQR checkout |
 
 ---
 
@@ -291,36 +326,34 @@ import theme from '@/constants/theme';
 
 ### Feature-Based Modules
 
-Each feature under `src/features/` contains:
+Each feature under `src/features/` organizes domain code into:
 ```
 features/auth/
 ├── api/          # Axios API calls
-├── components/   # Feature-specific UI components
-├── hooks/        # Custom hooks (useLogin, useRegister, ...)
+├── services/     # External auth integrations (e.g. Google Sign-In)
 ├── types.ts      # TypeScript type definitions
-└── schemas.ts    # Validation schemas (Zod)
+└── validation.ts # Validation schemas (Zod)
 ```
 
 ### API Client
 
 `src/lib/api.ts` — Axios instance with:
-- **Request interceptor**: Automatically attaches `Authorization: Bearer <token>`
-- **Response interceptor**: Handles 401 errors and refreshes tokens automatically
+- **Request interceptor**: Automatically attaches `Authorization: Bearer <token>` from `storage.getToken()`
+- **Response interceptor**: Normalizes API responses and handles 401 unauthorized errors
 
 ### Navigation Flow
 
 ```
-app/index.tsx
+app/index.tsx (protected by app/_layout.tsx)
     │
-    ├── Not authenticated  →  /(auth)/login
+    ├── Not authenticated  →  /(auth)/welcome  →  7-step onboarding  →  /(auth)/register or /(auth)/login
     │
     └── Authenticated      →  /(main)
-                                  │
-                                  ├── Tab: Home
-                                  ├── Tab: Nutrition
-                                  ├── FAB: + Log Meal  →  /(main)/meals/add
-                                  ├── Tab: Progress
-                                  └── Tab: Profile
+                                  ├── Home (index)
+                                  ├── Meals (meals/)
+                                  ├── Progress (progress/)
+                                  ├── AI Coach (ai/)
+                                  └── Settings (settings)
 ```
 
 ---
