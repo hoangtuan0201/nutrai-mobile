@@ -51,7 +51,7 @@ export default function LoginScreen() {
     setGoogleLoading(true);
     clearError();
     try {
-      const result = await performGoogleAuth();
+      const result = await performGoogleAuth({ fromRegister: false });
       if (!result.success) {
         if (result.error) {
           if (Platform.OS === 'web') {
@@ -63,22 +63,7 @@ export default function LoginScreen() {
         return;
       }
 
-      // Check if user is newly created OR has incomplete profile metrics
-      let needsOnboarding = Boolean(result.isNewUser);
-      if (!needsOnboarding) {
-        try {
-          const { profileApi } = await import('../../src/features/profile/api/profile.api');
-          const profile = await profileApi.getProfile();
-          if (!profile?.fitnessGoal || !profile?.heightCm) {
-            needsOnboarding = true;
-          }
-        } catch {
-          // Ignore profile check error
-        }
-      }
-
-      if (needsOnboarding) {
-        useAuthStore.getState().setIsNewUser(true);
+      if (result.needsOnboarding) {
         router.replace('/(auth)/goals' as any);
       } else {
         router.replace('/(main)');

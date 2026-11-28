@@ -10,6 +10,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -41,21 +43,26 @@ export default function PlanPreviewScreen() {
   const isLoggedIn = Boolean(user || accessToken);
 
   const goal = useOnboardingStore((s) => s.fitnessGoal);
+  const gender = useOnboardingStore((s) => s.gender);
+  const weightKg = useOnboardingStore((s) => s.weightKg);
+  const heightCm = useOnboardingStore((s) => s.heightCm);
+  const age = useOnboardingStore((s) => s.age);
+  const activityLevel = useOnboardingStore((s) => s.activityLevel);
+  const storedCalculatedPlan = useOnboardingStore((s) => s.calculatedPlan);
 
   const calculatedPlan = React.useMemo(() => {
-    const s = useOnboardingStore.getState();
     return (
-      s.calculatedPlan ||
+      storedCalculatedPlan ||
       calculateClientNutritionPlan({
-        gender: s.gender,
-        weightKg: s.weightKg,
-        heightCm: s.heightCm,
-        age: s.age,
-        activityLevel: s.activityLevel,
-        fitnessGoal: s.fitnessGoal,
+        gender,
+        weightKg,
+        heightCm,
+        age,
+        activityLevel,
+        fitnessGoal: goal,
       })
     );
-  }, []);
+  }, [storedCalculatedPlan, gender, weightKg, heightCm, age, activityLevel, goal]);
 
   const calories = calculatedPlan.calories.toLocaleString();
   const protein = calculatedPlan.protein.toString();
@@ -63,6 +70,7 @@ export default function PlanPreviewScreen() {
   const fat = calculatedPlan.fat.toString();
 
   const [isCalculating, setIsCalculating] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -78,7 +86,9 @@ export default function PlanPreviewScreen() {
   }, []);
 
   const handleContinue = async () => {
+    if (isSyncing) return;
     if (isLoggedIn) {
+      setIsSyncing(true);
       const s = useOnboardingStore.getState();
       try {
         await profileApi.updateProfile({
@@ -91,11 +101,20 @@ export default function PlanPreviewScreen() {
           dateOfBirth: s.dateOfBirth,
         });
         s.markSynced();
+        await useAuthStore.getState().setIsNewUser(false);
+        router.replace('/(main)');
       } catch (err) {
-        console.warn('Profile sync on continue warning:', err);
+        console.warn('Profile sync on continue failed:', err);
+        const msg =
+          'Unable to save your nutrition plan right now. Please check your internet connection and try again.';
+        if (Platform.OS === 'web') {
+          window.alert(msg);
+        } else {
+          Alert.alert('Could not save profile', msg);
+        }
+      } finally {
+        setIsSyncing(false);
       }
-      useAuthStore.getState().setIsNewUser(false);
-      router.replace('/(main)');
     } else {
       router.push('/(auth)/register');
     }
@@ -110,7 +129,10 @@ export default function PlanPreviewScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/(auth)/activity-level' as any);
+          }}
           style={styles.backBtn}
         >
           <ArrowLeft size={20} color={theme.colors.textPrimary} />
@@ -196,15 +218,19 @@ export default function PlanPreviewScreen() {
       {!isCalculating && (
         <View style={styles.footer}>
           <Button
-            title="Continue"
+            title={isSyncing ? 'Saving your plan...' : 'Continue'}
             size="lg"
             variant="primary"
             fullWidth
+            disabled={isSyncing}
             onPress={handleContinue}
           />
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) router.back();
+              else router.replace('/(auth)/activity-level' as any);
+            }}
             style={styles.backLink}
           >
             <Text style={styles.backLinkText}>Back</Text>

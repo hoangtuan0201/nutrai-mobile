@@ -17,7 +17,6 @@ import { useAuthStore } from '../src/store/authStore';
 import { useAppTheme } from '../src/hooks/useAppTheme';
 import { usePushNotificationSetup } from '../src/features/notifications/hooks/usePushNotificationSetup';
 import { SubscriptionModalsHost } from '../src/features/subscription/components/SubscriptionModalsHost';
-import { useOnboardingStore } from '../src/store/onboardingStore';
 
 const ONBOARDING_ROUTES = [
   'goals',
@@ -63,15 +62,13 @@ function useProtectedRoute() {
         return;
       }
 
-      const hasOnboardingPlan = Boolean(useOnboardingStore.getState().calculatedPlan);
-
-      if (isNewUser && !hasOnboardingPlan) {
-        // Brand new user without completed onboarding plan must complete it first
+      if (isNewUser) {
+        // User has an incomplete profile on the server and must finish onboarding before entering (main)
         if (!isOnboarding) {
           router.replace('/(auth)/goals' as any);
         }
-      } else if (inAuthGroup && !isOnboarding) {
-        // Logged in user with plan or existing user → redirect to main app
+      } else if (inAuthGroup) {
+        // Logged in user with completed profile → redirect to main app
         router.replace('/(main)');
       }
     }

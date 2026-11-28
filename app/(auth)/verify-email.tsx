@@ -114,7 +114,13 @@ export default function VerifyEmailScreen() {
             variant="primary"
             fullWidth
             rightIcon={<ArrowRight size={18} color="#FFFFFF" />}
-            onPress={() => router.replace('/(main)')}
+            onPress={() => {
+              if (useAuthStore.getState().isNewUser) {
+                router.replace('/(auth)/goals' as any);
+              } else {
+                router.replace('/(main)');
+              }
+            }}
             style={styles.primaryAction}
           />
         </View>
@@ -139,7 +145,11 @@ export default function VerifyEmailScreen() {
               activeOpacity={0.7}
               onPress={() => {
                 clearNeedsEmailVerification();
-                router.replace('/(main)');
+                if (useAuthStore.getState().isNewUser) {
+                  router.replace('/(auth)/goals' as any);
+                } else {
+                  router.replace('/(main)');
+                }
               }}
               style={styles.backBtn}
               accessibilityLabel="Back"

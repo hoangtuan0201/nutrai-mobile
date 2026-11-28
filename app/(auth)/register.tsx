@@ -46,14 +46,14 @@ export default function RegisterScreen() {
   const [agreeTerms, setAgreeTerms] = React.useState(true);
   const [googleLoading, setGoogleLoading] = React.useState(false);
 
-  const syncOnboardingProfile = async () => {
+  const syncOnboardingProfile = async (): Promise<boolean> => {
     try {
       const { useOnboardingStore, mapGoalToBackend } = await import('../../src/store/onboardingStore');
-      const { profileApi } = await import('../../src/features/profile/api/profile.api');
+      const { profileApi, isProfileComplete } = await import('../../src/features/profile/api/profile.api');
       const onboarding = useOnboardingStore.getState();
 
       if (!onboarding.isSynced) {
-        await profileApi.updateProfile({
+        const updated = await profileApi.updateProfile({
           gender: onboarding.gender,
           heightCm: onboarding.heightCm,
           weightKg: onboarding.weightKg,
@@ -63,9 +63,12 @@ export default function RegisterScreen() {
           dateOfBirth: onboarding.dateOfBirth,
         });
         onboarding.markSynced();
+        return isProfileComplete(updated);
       }
+      return true;
     } catch (e) {
       console.warn('Auto profile sync on register failed:', e);
+      return false;
     }
   };
 
@@ -77,8 +80,10 @@ export default function RegisterScreen() {
     clearError();
     try {
       await registerUser(data);
-      await syncOnboardingProfile();
-      useAuthStore.getState().setIsNewUser(false);
+      const synced = await syncOnboardingProfile();
+      if (synced) {
+        await useAuthStore.getState().setIsNewUser(false);
+      }
       router.replace({
         pathname: '/(auth)/verify-email' as any,
         params: { email: data.email.trim().toLowerCase() },
@@ -92,11 +97,13 @@ export default function RegisterScreen() {
     setGoogleLoading(true);
     clearError();
     try {
-      const result = await performGoogleAuth();
+      const result = await performGoogleAuth({ fromRegister: true });
       if (result.success) {
-        await syncOnboardingProfile();
-        useAuthStore.getState().setIsNewUser(false);
-        router.replace('/(main)');
+        if (result.needsOnboarding) {
+          router.replace('/(auth)/plan-preview' as any);
+        } else {
+          router.replace('/(main)');
+        }
       } else if (result.error) {
         if (Platform.OS === 'web') {
           window.alert(result.error);

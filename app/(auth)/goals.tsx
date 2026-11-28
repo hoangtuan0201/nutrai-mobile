@@ -9,6 +9,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
+  Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -42,11 +44,45 @@ const GOALS = [
 ];
 
 import { useOnboardingStore, FitnessGoalType } from '../../src/store/onboardingStore';
+import { useAuthStore } from '../../src/store/authStore';
 
 export default function ChooseGoalScreen() {
   const router = useRouter();
   const setGoal = useOnboardingStore((s) => s.setGoal);
   const currentGoal = useOnboardingStore((s) => s.fitnessGoal);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  const handleBack = () => {
+    if (user) {
+      const performSignOut = async () => {
+        await logout();
+        router.replace('/(auth)/welcome' as any);
+      };
+
+      if (Platform.OS === 'web') {
+        if (window.confirm('You need to complete your profile to continue. Sign out instead?')) {
+          void performSignOut();
+        }
+      } else {
+        Alert.alert(
+          'Sign out?',
+          'You need to finish setting up your profile to continue. Do you want to sign out instead?',
+          [
+            { text: 'Stay', style: 'cancel' },
+            { text: 'Sign Out', style: 'destructive', onPress: () => void performSignOut() },
+          ],
+        );
+      }
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(auth)/welcome' as any);
+    }
+  };
 
   // Map internal store enum to UI ids
   const getInitialUiId = () => {
@@ -72,6 +108,7 @@ export default function ChooseGoalScreen() {
       <OnboardingHeader
         step={1}
         totalSteps={7}
+        onBack={handleBack}
       />
 
       {/* Body */}

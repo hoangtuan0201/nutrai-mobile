@@ -50,6 +50,24 @@ export interface UpdateProfileDto {
   fitnessGoal?: 'WEIGHT_LOSS' | 'MAINTENANCE' | 'MUSCLE_GAIN';
 }
 
+/**
+ * Matches backend ProfileService.computeMetrics requirements:
+ * all 6 physical/goal fields must be present for a complete profile.
+ */
+export function isProfileComplete(
+  profile: ProfileResponseDto | null | undefined,
+): boolean {
+  if (!profile) return false;
+  return Boolean(
+    profile.weightKg &&
+      profile.heightCm &&
+      profile.dateOfBirth &&
+      profile.gender &&
+      profile.activityLevel &&
+      profile.fitnessGoal,
+  );
+}
+
 export const profileApi = {
   getProfile: async (): Promise<ProfileResponseDto> => {
     const response = await apiClient.get<ProfileResponseDto>('/profile');

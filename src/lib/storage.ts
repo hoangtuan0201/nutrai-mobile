@@ -12,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const KEYS = {
   ACCESS_TOKEN: 'nutraai_access_token',
   USER: 'nutraai_user',
+  NEEDS_ONBOARDING: 'nutraai_needs_onboarding',
 } as const;
 
 const isWeb = Platform.OS === 'web';
@@ -60,11 +61,21 @@ export const storage = {
     await setItem(KEYS.USER, JSON.stringify(user));
   },
 
+  // ─── Onboarding completion flag ───────────────────
+  async getNeedsOnboarding(): Promise<boolean> {
+    const raw = await getItem(KEYS.NEEDS_ONBOARDING);
+    return raw === 'true';
+  },
+  async setNeedsOnboarding(value: boolean): Promise<void> {
+    await setItem(KEYS.NEEDS_ONBOARDING, value ? 'true' : 'false');
+  },
+
   // ─── Clear all ─────────────────────────────────────
   async clearAll(): Promise<void> {
     await Promise.all([
       removeItem(KEYS.ACCESS_TOKEN),
       removeItem(KEYS.USER),
+      removeItem(KEYS.NEEDS_ONBOARDING),
     ]);
   },
 };

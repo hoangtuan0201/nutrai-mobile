@@ -6,6 +6,7 @@ import { useAuthStore } from '../../../store/authStore';
 export interface GoogleAuthResult {
   success: boolean;
   isNewUser?: boolean;
+  needsOnboarding?: boolean;
   error?: string;
 }
 
@@ -35,7 +36,9 @@ if (webClientId) {
  * 5. Sends Firebase ID Token to NestJS backend (POST /auth/google).
  * 6. NestJS issues internal JWT; SecureStore persists session.
  */
-export async function performGoogleAuth(): Promise<GoogleAuthResult> {
+export async function performGoogleAuth(
+  options?: { fromRegister?: boolean },
+): Promise<GoogleAuthResult> {
   const { loginWithGoogle } = useAuthStore.getState();
 
   if (!webClientId) {
@@ -68,8 +71,12 @@ export async function performGoogleAuth(): Promise<GoogleAuthResult> {
     const firebaseIdToken = await userCredential.user.getIdToken();
 
     // 4. Send Firebase ID Token to NestJS backend for internal JWT issuance
-    const res = await loginWithGoogle(firebaseIdToken);
-    return { success: true, isNewUser: res?.isNewUser };
+    const res = await loginWithGoogle(firebaseIdToken, options);
+    return {
+      success: true,
+      isNewUser: res?.isNewUser,
+      needsOnboarding: res?.needsOnboarding,
+    };
 
   } catch (error: any) {
     // Handle standard Google Sign-In status codes
